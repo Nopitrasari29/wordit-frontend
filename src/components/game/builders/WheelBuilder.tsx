@@ -1,0 +1,113 @@
+import { useState } from "react";
+
+export default function WheelBuilder({ onSave }: any) {
+
+    const [title, setTitle] = useState("");
+    const [level, setLevel] = useState("SD");
+
+    const [items, setItems] = useState([""]);
+
+    function updateItem(i: number, value: string) {
+
+        const list = [...items];
+        list[i] = value;
+        setItems(list);
+
+    }
+
+    function addItem() {
+
+        setItems([...items, ""]);
+
+    }
+
+    function publish() {
+
+        onSave({
+            template: "wheel",
+            title,
+            level,
+            items,
+            status: "published"
+        })
+
+    }
+
+    function saveDraft() {
+
+        onSave({
+            template: "wheel",
+            title,
+            level,
+            items,
+            status: "draft"
+        })
+
+    }
+
+    return (
+
+        <div className="space-y-6">
+
+            <h2 className="text-2xl font-bold">
+                Create Wheel Game
+            </h2>
+
+            <input
+                className="border p-3 w-full"
+                placeholder="Activity Title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+            />
+
+            <select
+                className="border p-2"
+                value={level}
+                onChange={(e) => setLevel(e.target.value)}
+            >
+                <option>SD</option>
+                <option>SMP</option>
+                <option>SMA</option>
+                <option>UNIVERSITY</option>
+            </select>
+
+            {items.map((item, i) => (
+                <input
+                    key={i}
+                    className="border p-2 w-full"
+                    placeholder={`Item ${i + 1}`}
+                    value={item}
+                    onChange={(e) => updateItem(i, e.target.value)}
+                />
+            ))}
+
+            <button
+                onClick={addItem}
+                className="bg-gray-200 px-4 py-2 rounded"
+            >
+                Add Item
+            </button>
+
+            <div className="flex gap-4">
+
+                <button
+                    onClick={saveDraft}
+                    className="bg-yellow-500 text-white px-6 py-2"
+                >
+                    Save Draft
+                </button>
+
+                <button
+                    onClick={publish}
+                    className="bg-blue-600 text-white px-6 py-2"
+                >
+                    Publish
+                </button>
+
+            </div>
+
+        </div>
+
+    )
+
+}
