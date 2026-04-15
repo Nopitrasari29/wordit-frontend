@@ -1,41 +1,66 @@
-import { useSearchParams } from "react-router-dom"
-import { templates } from "../../../data/templates"
+import { useNavigate } from "react-router-dom"
 import TemplateCard from "../../../components/game/TemplateCard"
-import GameCreatorWizard from "../../../components/game/GameCreatorWizard"
+
+const templates = [
+  {
+    name: "ANAGRAM",
+    title: "Anagram",
+    description: "Susun huruf menjadi kata yang benar",
+  },
+  {
+    name: "FLASHCARD",
+    title: "Flashcard",
+    description: "Belajar menggunakan kartu interaktif",
+  },
+  {
+    name: "HANGMAN",
+    title: "Hangman",
+    description: "Tebak kata sebelum karakter habis",
+  },
+  {
+    name: "MAZE_CHASE",
+    title: "Maze Chase",
+    description: "Kejar jawaban yang benar di labirin",
+  },
+  {
+    name: "SPIN_THE_WHEEL",
+    title: "Spin The Wheel",
+    description: "Putar roda untuk memilih soal",
+  },
+  {
+    name: "WORD_SEARCH",
+    title: "Word Search",
+    description: "Cari kata dalam puzzle",
+  },
+]
 
 export default function ChooseTemplatePage() {
+  const navigate = useNavigate()
 
-    const [params] = useSearchParams()
-    const level = params.get("level")
+  function selectTemplate(template: string) {
+    navigate(`/teacher/create/level?template=${template}`)
+  }
 
-    const filtered =
-        templates.filter(t => t.levels.includes(level || ""))
+  return (
+    <div className="max-w-6xl mx-auto py-10 px-6">
 
-    return (
+      <h1 className="text-3xl font-bold mb-8">
+        Choose Game Template
+      </h1>
 
-        <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
 
-            <GameCreatorWizard step={1} />
+        {templates.map((template) => (
+          <TemplateCard
+            key={template.name}
+            title={template.title}
+            description={template.description}
+            onClick={() => selectTemplate(template.name)}
+          />
+        ))}
 
-            <h1 className="text-3xl font-bold">
-                Choose Template
-            </h1>
+      </div>
 
-            <div className="grid md:grid-cols-3 gap-6">
-
-                {filtered.map(template => (
-
-                    <TemplateCard
-                        key={template.id}
-                        template={template}
-                    />
-
-                ))}
-
-            </div>
-
-        </div>
-
-    )
-
+    </div>
+  )
 }

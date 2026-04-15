@@ -1,41 +1,20 @@
-// sementara mock
+import { API_URL } from "./api"
+import type { TemplateType, EducationLevel } from "../../types/game"
 
-export type AIQuestion = {
-    question: string
-    answers: string[]
-    correct: number
+export type AIGeneratePayload = {
+    topic: string
+    templateType: TemplateType
+    educationLevel: EducationLevel
+    count?: number
 }
 
-export const generateQuestions = async (
-    topic: string
-): Promise<AIQuestion[]> => {
-
-    const questions: AIQuestion[] = [
-
-        {
-            question: `What is ${topic}?`,
-            answers: [
-                "Option A",
-                "Option B",
-                "Option C",
-                "Option D"
-            ],
-            correct: 0
-        },
-
-        {
-            question: `Example of ${topic}?`,
-            answers: [
-                "Example A",
-                "Example B",
-                "Example C",
-                "Example D"
-            ],
-            correct: 1
-        }
-
-    ]
-
-    return questions
-
+export async function generateGameWithAI(payload: AIGeneratePayload, token: string): Promise<{ gameJson: any }> {
+    const res = await fetch(`${API_URL}/ai/generate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify(payload),
+    })
+    const json = await res.json()
+    if (!res.ok) throw new Error(json.message || "Failed to generate with AI")
+    return json.data
 }

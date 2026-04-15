@@ -1,15 +1,6 @@
-import { useAuth } from "../context/AuthContext"
+import { useContext } from "react"
+import { AuthContext } from "../context/AuthContext"
 
-export default function useAuthHook() {
-
-    const { user, token, login, logout, isAuthenticated } = useAuth()
-
-    return {
-        user,
-        token,
-        login,
-        logout,
-        isAuthenticated
-    }
-
+export function useAuth() {
+  return useContext(AuthContext)
 }

@@ -1,118 +1,114 @@
 import { useState } from "react"
-import { useNavigate, Link } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
+import { useAuth } from "../../context/AuthContext"
 
 export default function RegisterPage() {
 
-    const navigate = useNavigate()
+  const { register } = useAuth()
+  const navigate = useNavigate()
 
-    const [name, setName] = useState("")
-    const [email, setEmail] = useState("")
-    const [password, setPassword] = useState("")
+  const [name, setName] = useState("")
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [role, setRole] = useState("STUDENT")
 
-    function handleRegister(e: any) {
+  async function submit(e: any) {
 
-        e.preventDefault()
+    e.preventDefault()
 
-        const users = JSON.parse(localStorage.getItem("users") || "[]")
+    try {
 
-        const exists = users.find(
-            (u: any) => u.email === email
-        )
+      await register(name, email, password, role)
 
-        if (exists) {
+      alert("Register success")
 
-            alert("Email sudah terdaftar")
-            return
+      navigate("/login")
 
-        }
+    } catch (err: any) {
 
-        const newUser = {
-
-            id: crypto.randomUUID(),
-            name,
-            email,
-            password,
-
-            /* ROLE TIDAK BISA DIPILIH USER */
-
-            role: "STUDENT",
-
-            createdAt: new Date().toISOString()
-
-        }
-
-        users.push(newUser)
-
-        localStorage.setItem(
-            "users",
-            JSON.stringify(users)
-        )
-
-        alert("Register berhasil")
-
-        navigate("/login")
+      alert(err.message || "Register failed")
 
     }
 
-    return (
+  }
 
-        <div className="flex justify-center items-center h-screen bg-gray-100">
+  return (
 
-            <form
-                onSubmit={handleRegister}
-                className="bg-white p-8 rounded-xl shadow w-[400px] space-y-4"
-            >
+    <div className="flex justify-center items-center py-20">
 
-                <h1 className="text-2xl font-bold text-center">
-                    Register
-                </h1>
+      <div className="bg-white shadow rounded p-8 w-full max-w-md">
 
-                <input
-                    placeholder="Full Name"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className="border w-full p-3 rounded"
-                />
+        <h1 className="text-2xl font-bold mb-6 text-center">
+          Register
+        </h1>
 
-                <input
-                    type="email"
-                    placeholder="Email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="border w-full p-3 rounded"
-                />
+        <form onSubmit={submit} className="space-y-4">
 
-                <input
-                    type="password"
-                    placeholder="Password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="border w-full p-3 rounded"
-                />
+          <input
+            className="w-full border px-4 py-2 rounded"
+            placeholder="Full Name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
 
-                <button
-                    className="bg-indigo-600 text-white w-full py-2 rounded"
-                >
-                    Register
-                </button>
+          <input
+            className="w-full border px-4 py-2 rounded"
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
 
-                <p className="text-center text-sm">
+          <input
+            type="password"
+            className="w-full border px-4 py-2 rounded"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
 
-                    Sudah punya akun?
+          <select
+            className="w-full border px-4 py-2 rounded"
+            value={role}
+            onChange={(e) => setRole(e.target.value)}
+          >
 
-                    <Link
-                        to="/login"
-                        className="text-blue-600 ml-2"
-                    >
-                        Login
-                    </Link>
+            <option value="STUDENT">
+              STUDENT
+            </option>
 
-                </p>
+            <option value="TEACHER">
+              TEACHER
+            </option>
 
-            </form>
+            <option value="ADMIN">
+              ADMIN
+            </option>
 
-        </div>
+          </select>
 
-    )
+          <button
+            type="submit"
+            className="w-full bg-indigo-600 text-white py-2 rounded"
+          >
+            Register
+          </button>
+
+        </form>
+
+        <p className="text-center mt-4 text-sm">
+
+          Already have account?
+
+          <Link to="/login" className="text-indigo-600 ml-1">
+            Login
+          </Link>
+
+        </p>
+
+      </div>
+
+    </div>
+
+  )
 
 }

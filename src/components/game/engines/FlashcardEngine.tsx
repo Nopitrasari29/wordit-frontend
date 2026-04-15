@@ -1,41 +1,39 @@
 import { useState } from "react"
 
-export default function FlashcardEngine({ cards }: any) {
+export default function FlashcardEngine(){
 
-    const [index, setIndex] = useState(0)
-    const [flip, setFlip] = useState(false)
+const cards=[
+{q:"Capital of France",a:"Paris"},
+{q:"2+2",a:"4"}
+]
 
-    const card = cards[index]
+const [index,setIndex]=useState(0)
+const [show,setShow]=useState(false)
 
-    return (
+const card=cards[index]
 
-        <div className="text-center">
+return(
 
-            <div
-                onClick={() => setFlip(!flip)}
-                className="border p-10 text-xl cursor-pointer"
-            >
-                {flip ? card.back : card.front}
-            </div>
+<div>
 
-            <div className="flex justify-between mt-6">
+<h2>Flashcard</h2>
 
-                <button
-                    onClick={() => setIndex(Math.max(index - 1, 0))}
-                >
-                    Prev
-                </button>
+<div className="card">
 
-                <button
-                    onClick={() => setIndex(Math.min(index + 1, cards.length - 1))}
-                >
-                    Next
-                </button>
+<h3>{show?card.a:card.q}</h3>
 
-            </div>
+</div>
 
-        </div>
+<button onClick={()=>setShow(!show)}>
+Flip
+</button>
 
-    )
+<button onClick={()=>setIndex((index+1)%cards.length)}>
+Next
+</button>
+
+</div>
+
+)
 
 }

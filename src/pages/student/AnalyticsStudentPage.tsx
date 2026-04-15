@@ -1,33 +1,32 @@
-import ScoreChart from "../../components/analytics/ScoreChart"
-import ResultTable from "../../components/analytics/ResultTable"
+export default function AnalyticsStudentPage(){
 
-export default function AnalyticsStudentPage() {
+return(
 
-    const chartData = [
-        { game: "Quiz 1", score: 70 },
-        { game: "Quiz 2", score: 85 },
-        { game: "Quiz 3", score: 90 }
-    ]
+<div className="container">
 
-    const results = [
-        { player: "Fika", game: "Quiz 1", score: 70, accuracy: 75 },
-        { player: "Fika", game: "Quiz 2", score: 85, accuracy: 90 }
-    ]
+<h1>My Learning Analytics</h1>
 
-    return (
+<div className="analytics">
 
-        <div className="space-y-8">
+<div className="box">
+Games Played
+<h2>24</h2>
+</div>
 
-            <h1 className="text-3xl font-bold">
-                My Analytics
-            </h1>
+<div className="box">
+Accuracy
+<h2>78%</h2>
+</div>
 
-            <ScoreChart data={chartData} />
+<div className="box">
+Avg Score
+<h2>82</h2>
+</div>
 
-            <ResultTable results={results} />
+</div>
 
-        </div>
+</div>
 
-    )
+)
 
 }

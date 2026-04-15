@@ -1,119 +1,72 @@
 import { useState } from "react"
 
-export default function FlashcardBuilder({ onSave }: any) {
+export default function FlashcardBuilder({ value, onChange }: any) {
 
-    const [title, setTitle] = useState("")
-    const [level, setLevel] = useState("SD")
+    const [cards, setCards] = useState(value?.data?.cards || [])
 
-    const [cards, setCards] = useState([
-        { front: "", back: "" }
-    ])
+    function update(newCards: any) {
 
-    function updateFront(i: number, value: string) {
+        setCards(newCards)
 
-        const c = [...cards]
-        c[i].front = value
-        setCards(c)
+        onChange({
 
-    }
+            data: { cards: newCards }
 
-    function updateBack(i: number, value: string) {
-
-        const c = [...cards]
-        c[i].back = value
-        setCards(c)
-
-    }
-
-    function addCard() {
-
-        setCards([...cards, { front: "", back: "" }])
-
-    }
-
-    function publish() {
-
-        onSave({
-            template: "flashcard",
-            title,
-            level,
-            cards,
-            status: "published"
         })
 
     }
 
-    function saveDraft() {
+    function add() {
 
-        onSave({
-            template: "flashcard",
-            title,
-            level,
-            cards,
-            status: "draft"
-        })
+        update([...cards, { front: "", back: "" }])
+
+    }
+
+    function change(i: number, key: string, val: string) {
+
+        const copy = [...cards]
+
+        copy[i][key] = val
+
+        update(copy)
+
+    }
+
+    function remove(i: number) {
+
+        update(cards.filter((_: any, index: number) => index !== i))
 
     }
 
     return (
 
-        <div className="space-y-6">
+        <div>
 
-            <h2 className="text-2xl font-bold">
-                Create Flashcard
-            </h2>
+            <h3>Flashcards</h3>
 
-            <input
-                className="border p-3 w-full"
-                placeholder="Activity Title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-            />
+            {cards.map((c: any, i: number) => (
 
-            {cards.map((card, i) => (
-                <div key={i} className="grid grid-cols-2 gap-4">
+                <div key={i}>
 
                     <input
-                        className="border p-2"
-                        placeholder="Front"
-                        value={card.front}
-                        onChange={(e) => updateFront(i, e.target.value)}
+                        placeholder="front"
+                        value={c.front}
+                        onChange={(e) => change(i, "front", e.target.value)}
                     />
 
                     <input
-                        className="border p-2"
-                        placeholder="Back"
-                        value={card.back}
-                        onChange={(e) => updateBack(i, e.target.value)}
+                        placeholder="back"
+                        value={c.back}
+                        onChange={(e) => change(i, "back", e.target.value)}
                     />
+
+                    <button onClick={() => remove(i)}>delete</button>
 
                 </div>
+
             ))}
 
-            <button
-                onClick={addCard}
-                className="bg-gray-200 px-4 py-2"
-            >
-                Add Card
-            </button>
-
-            <div className="flex gap-4">
-
-                <button
-                    onClick={saveDraft}
-                    className="bg-yellow-500 text-white px-6 py-2"
-                >
-                    Save Draft
-                </button>
-
-                <button
-                    onClick={publish}
-                    className="bg-blue-600 text-white px-6 py-2"
-                >
-                    Publish
-                </button>
-
-            </div>
+            <button onClick={add}>Add card</button>
 
         </div>
 

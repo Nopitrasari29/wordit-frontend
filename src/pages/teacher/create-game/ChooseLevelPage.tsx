@@ -1,19 +1,46 @@
-import PageWrapper from "../../../components/ui/PageWrapper"
-import EducationLevelSelector from "../../../components/game/education/EducationLevelSelector"
+import { useNavigate, useSearchParams } from "react-router-dom"
+
+const levels = ["SD", "SMP", "SMA", "UNIVERSITY"]
 
 export default function ChooseLevelPage() {
 
-    return (
+  const navigate = useNavigate()
+  const [params] = useSearchParams()
 
-        <PageWrapper
-            title="Choose Education Level"
-            color="#3b82f6"
-        >
+  const template = params.get("template")
 
-            <EducationLevelSelector />
+  function selectLevel(level: string) {
 
-        </PageWrapper>
+    navigate(`/teacher/create?template=${template}&level=${level}`)
 
-    )
+  }
+
+  return (
+
+    <div className="max-w-4xl mx-auto py-10 px-6">
+
+      <h1 className="text-3xl font-bold mb-8">
+        Choose Education Level
+      </h1>
+
+      <div className="grid md:grid-cols-2 gap-6">
+
+        {levels.map((level) => (
+
+          <button
+            key={level}
+            onClick={() => selectLevel(level)}
+            className="p-6 border rounded-xl hover:bg-gray-50"
+          >
+            {level}
+          </button>
+
+        ))}
+
+      </div>
+
+    </div>
+
+  )
 
 }

@@ -1,14 +1,14 @@
-export type UserRole =
-    | "admin"
-    | "teacher"
-    | "student"
+export type Role = "STUDENT" | "TEACHER" | "ADMIN"
 
 export interface User {
 
-    id: string
-    name: string
-    email: string
-    role: UserRole
-    createdAt?: string
+  id: string
+  name: string
+  email: string
+  role: Role
+
+  photoUrl?: string
+
+  createdAt?: string
 
 }

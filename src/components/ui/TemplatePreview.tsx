@@ -1,20 +1,30 @@
 type Props = {
-    name: string;
-    icon?: string;
-};
+  templateType: string
+}
 
-export default function TemplatePreview({ name, icon = "🎮" }: Props) {
-    return (
-        <div className="bg-white rounded-xl shadow-md p-10 text-center hover:shadow-xl hover:-translate-y-1 transition">
+export default function TemplatePreview({ templateType }: Props) {
 
-            <div className="text-4xl mb-4">
-                {icon}
-            </div>
+  return (
 
-            <h3 className="text-lg font-semibold">
-                {name}
-            </h3>
+    <div className="border rounded-xl p-6 bg-gray-50">
 
-        </div>
-    );
+      <h2 className="text-lg font-semibold mb-4">
+        Template Preview
+      </h2>
+
+      <div className="text-gray-600">
+
+        {templateType === "ANAGRAM" && "Rearrange letters to form words"}
+        {templateType === "FLASHCARD" && "Flip cards to learn concepts"}
+        {templateType === "HANGMAN" && "Guess the hidden word"}
+        {templateType === "MAZE_CHASE" && "Navigate maze to find answers"}
+        {templateType === "SPIN_THE_WHEEL" && "Spin wheel to get questions"}
+        {templateType === "WORD_SEARCH" && "Find hidden words"}
+
+      </div>
+
+    </div>
+
+  )
+
 }

@@ -1,65 +1,150 @@
-export type Game = {
-    id?: string
-    title: string
-    template: string
-    level: string
-    questions: any[]
+const API_URL = "http://localhost:3000/api"
+
+function getToken() {
+  return localStorage.getItem("token")
 }
 
-export const generateGameCode = () => {
+/* ================================
+   GET ALL GAMES (Explore)
+================================ */
 
-    return Math.random()
-        .toString(36)
-        .substring(2, 7)
-        .toUpperCase()
+export async function getGames(params?: any) {
 
+  const query = new URLSearchParams()
+
+  if (params?.educationLevel) query.append("educationLevel", params.educationLevel)
+  if (params?.templateType) query.append("templateType", params.templateType)
+  if (params?.search) query.append("search", params.search)
+  if (params?.page) query.append("page", params.page)
+  if (params?.limit) query.append("limit", params.limit)
+
+  const res = await fetch(`${API_URL}/games?${query.toString()}`)
+
+  const json = await res.json()
+
+  if (!res.ok) throw new Error(json.message)
+
+  return json.data
 }
 
-export const saveDraftGame = (game: Game) => {
+/* ================================
+   GET GAME DETAIL
+================================ */
 
-    const games =
-        JSON.parse(localStorage.getItem("wordit_games") || "[]")
+export async function getGame(id: string) {
 
-    const newGame = {
-
-        ...game,
-        id: crypto.randomUUID(),
-        status: "draft",
-        createdAt: new Date().toISOString()
-
+  const res = await fetch(`${API_URL}/games/${id}`, {
+    headers: {
+      Authorization: `Bearer ${getToken()}`
     }
+  })
 
-    games.push(newGame)
+  const json = await res.json()
 
-    localStorage.setItem(
-        "wordit_games",
-        JSON.stringify(games)
-    )
+  if (!res.ok) throw new Error(json.message)
 
+  return json.data
 }
 
-export const publishGame = (game: Game) => {
+/* ================================
+   GET MY GAMES (Teacher Dashboard)
+================================ */
 
-    const games =
-        JSON.parse(localStorage.getItem("wordit_games") || "[]")
+export async function getMyGames() {
 
-    const newGame = {
-
-        ...game,
-        id: crypto.randomUUID(),
-        status: "published",
-        gameCode: generateGameCode(),
-        createdAt: new Date().toISOString()
-
+  const res = await fetch(`${API_URL}/games/user/my-games`, {
+    headers: {
+      Authorization: `Bearer ${getToken()}`
     }
+  })
 
-    games.push(newGame)
+  const json = await res.json()
 
-    localStorage.setItem(
-        "wordit_games",
-        JSON.stringify(games)
-    )
+  if (!res.ok) throw new Error(json.message)
 
-    return newGame
+  return json.data
+}
 
+/* ================================
+   CREATE GAME
+================================ */
+
+export async function createGame(data: any) {
+
+  const res = await fetch(`${API_URL}/games`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${getToken()}`
+    },
+    body: JSON.stringify(data)
+  })
+
+  const json = await res.json()
+
+  if (!res.ok) throw new Error(json.message)
+
+  return json.data
+}
+
+/* ================================
+   UPDATE GAME
+================================ */
+
+export async function updateGame(id: string, data: any) {
+
+  const res = await fetch(`${API_URL}/games/${id}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${getToken()}`
+    },
+    body: JSON.stringify(data)
+  })
+
+  const json = await res.json()
+
+  if (!res.ok) throw new Error(json.message)
+
+  return json.data
+}
+
+/* ================================
+   DELETE GAME
+================================ */
+
+export async function deleteGame(id: string) {
+
+  const res = await fetch(`${API_URL}/games/${id}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${getToken()}`
+    }
+  })
+
+  const json = await res.json()
+
+  if (!res.ok) throw new Error(json.message)
+
+  return json.data
+}
+
+/* ================================
+   PUBLISH GAME
+================================ */
+
+export async function publishGame(id: string) {
+
+  const res = await fetch(`${API_URL}/games/${id}/publish`, {
+    method: "PATCH",
+    headers: {
+      Authorization: `Bearer ${getToken()}`
+    }
+  })
+
+  const json = await res.json()
+
+  if (!res.ok) throw new Error(json.message)
+
+  return json.data
 }

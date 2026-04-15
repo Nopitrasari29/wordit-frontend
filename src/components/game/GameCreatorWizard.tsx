@@ -1,36 +1,61 @@
-type Props = {
-    step: number
-}
+import { useState } from "react"
 
-export default function GameCreatorWizard({ step }: Props) {
+import GameTemplateController from "./GameTemplateController"
+import GameBuilderRouter from "./GameBuilderRouter"
 
-    const steps = [
-        "Choose Level",
-        "Choose Template",
-        "Create Game",
-        "Add Questions",
-        "Preview"
-    ]
+export default function GameCreatorWizard({
+
+    onSubmit
+
+}: any) {
+
+    const [template, setTemplate] = useState<any>(null)
+
+    const [gameJson, setGameJson] = useState<any>({})
 
     return (
 
-        <div className="flex gap-3 mb-8 flex-wrap">
+        <div>
 
-            {steps.map((s, i) => (
+            <h2>Create Game</h2>
 
-                <div
-                    key={i}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium ${step === i
-                            ? "bg-indigo-600 text-white"
-                            : "bg-gray-200 text-gray-700"
-                        }`}
-                >
+            <GameTemplateController
 
-                    {i + 1}. {s}
+                template={template}
+                setTemplate={setTemplate}
 
-                </div>
+            />
 
-            ))}
+            {template && (
+
+                <GameBuilderRouter
+
+                    templateType={template}
+                    value={gameJson}
+                    onChange={setGameJson}
+
+                />
+
+            )}
+
+            <button
+
+                onClick={() => {
+
+                    onSubmit({
+
+                        templateType: template,
+                        gameJson
+
+                    })
+
+                }}
+
+            >
+
+                Save Game
+
+            </button>
 
         </div>
 

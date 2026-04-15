@@ -1,112 +1,56 @@
 import { useState } from "react"
 
-export default function WordSearchBuilder({ onSave }: any) {
+export default function WordSearchBuilder({ value, onChange }: any) {
 
-    const [title, setTitle] = useState("")
-    const [level, setLevel] = useState("SD")
+    const [words, setWords] = useState(value?.data?.words || [])
+    const [grid, setGrid] = useState(value?.data?.gridSize || 10)
 
-    const [words, setWords] = useState([""])
+    function update(newWords: any) {
 
-    function updateWord(i: number, value: string) {
+        setWords(newWords)
 
-        const w = [...words]
-        w[i] = value
-        setWords(w)
+        onChange({
 
-    }
+            data: {
 
-    function addWord() {
+                gridSize: grid,
+                words: newWords
 
-        setWords([...words, ""])
+            }
 
-    }
-
-    function publish() {
-
-        onSave({
-            template: "wordsearch",
-            title,
-            level,
-            words,
-            status: "published"
-        })
-
-    }
-
-    function saveDraft() {
-
-        onSave({
-            template: "wordsearch",
-            title,
-            level,
-            words,
-            status: "draft"
         })
 
     }
 
     return (
 
-        <div className="space-y-6">
+        <div>
 
-            <h2 className="text-2xl font-bold">
-                Create Word Search
-            </h2>
+            <h3>Word Search</h3>
 
             <input
-                className="border p-3 w-full"
-                placeholder="Activity Title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
+                type="number"
+                value={grid}
+                onChange={(e) => setGrid(Number(e.target.value))}
             />
 
-            <select
-                className="border p-2"
-                value={level}
-                onChange={(e) => setLevel(e.target.value)}
-            >
+            {words.map((w: any, i: number) => (
 
-                <option>SD</option>
-                <option>SMP</option>
-                <option>SMA</option>
-                <option>UNIVERSITY</option>
-
-            </select>
-
-            {words.map((w, i) => (
                 <input
                     key={i}
-                    className="border p-2 w-full"
-                    placeholder={`Word ${i + 1}`}
                     value={w}
-                    onChange={(e) => updateWord(i, e.target.value)}
+                    onChange={(e) => {
+
+                        const copy = [...words]
+                        copy[i] = e.target.value
+                        update(copy)
+
+                    }}
                 />
+
             ))}
 
-            <button
-                onClick={addWord}
-                className="bg-gray-200 px-4 py-2"
-            >
-                Add Word
-            </button>
-
-            <div className="flex gap-4">
-
-                <button
-                    onClick={saveDraft}
-                    className="bg-yellow-500 text-white px-6 py-2"
-                >
-                    Save Draft
-                </button>
-
-                <button
-                    onClick={publish}
-                    className="bg-blue-600 text-white px-6 py-2"
-                >
-                    Publish
-                </button>
-
-            </div>
+            <button onClick={() => update([...words, ""])}>Add word</button>
 
         </div>
 

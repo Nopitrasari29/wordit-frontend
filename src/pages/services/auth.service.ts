@@ -1,58 +1,25 @@
-type Role = "student" | "teacher" | "admin"
+import api from "./api"
 
-type User = {
-    email: string
-    role: Role
-}
+export async function register(data: any) {
 
-export const login = async (
-    email: string,
-    password: string
-) => {
+    const res = await api.post("/auth/register", data)
 
-    if (email && password) {
-
-        const token = "wordit-demo-token"
-
-        const user: User = {
-            email,
-            role: "teacher"
-        }
-
-        localStorage.setItem("token", token)
-        localStorage.setItem("user", JSON.stringify(user))
-
-        return {
-            success: true,
-            token,
-            user
-        }
-
-    }
-
-    return { success: false }
+    return res.data.data
 
 }
 
-export const register = async (
-    name: string,
-    email: string,
-    password: string
-) => {
+export async function login(data: any) {
 
-    if (name && email && password) {
+    const res = await api.post("/auth/login", data)
 
-        return { success: true }
-
-    }
-
-    return { success: false }
+    return res.data.data
 
 }
 
-export const logout = () => {
+export async function logout() {
 
-    localStorage.removeItem("token")
-    localStorage.removeItem("user")
+    const res = await api.post("/auth/logout")
+
+    return res.data.data
 
 }

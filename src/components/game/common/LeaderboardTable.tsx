@@ -1,75 +1,49 @@
-interface Player {
-    name: string
-    score: number
-}
+export default function LeaderboardTable({ leaderboard }: any) {
 
-type Props = {
-    players: Player[]
-}
-
-export default function LeaderboardTable({ players }: Props) {
+  if (!leaderboard || leaderboard.length === 0) {
 
     return (
-
-        <div className="bg-white p-6 rounded-xl shadow">
-
-            <h3 className="text-lg font-semibold mb-4">
-                Leaderboard
-            </h3>
-
-            <table className="w-full border">
-
-                <thead className="bg-gray-100">
-
-                    <tr>
-
-                        <th className="p-2 border text-center">
-                            Rank
-                        </th>
-
-                        <th className="p-2 border text-left">
-                            Player
-                        </th>
-
-                        <th className="p-2 border text-center">
-                            Score
-                        </th>
-
-                    </tr>
-
-                </thead>
-
-                <tbody>
-
-                    {players.map((p, i) => (
-
-                        <tr
-                            key={i}
-                            className={i === 0 ? "bg-yellow-50 font-semibold" : ""}
-                        >
-
-                            <td className="p-2 border text-center">
-                                {i + 1}
-                            </td>
-
-                            <td className="p-2 border">
-                                {p.name}
-                            </td>
-
-                            <td className="p-2 border text-center">
-                                {p.score}
-                            </td>
-
-                        </tr>
-
-                    ))}
-
-                </tbody>
-
-            </table>
-
-        </div>
-
+      <p className="text-gray-400 text-sm">
+        No leaderboard data yet
+      </p>
     )
+
+  }
+
+  return (
+
+    <table className="w-full text-sm">
+
+      <thead>
+
+        <tr className="text-left border-b">
+
+          <th className="py-2">Rank</th>
+          <th>Name</th>
+          <th>Score</th>
+
+        </tr>
+
+      </thead>
+
+      <tbody>
+
+        {leaderboard.map((p: any, i: number) => (
+
+          <tr key={i} className="border-b">
+
+            <td className="py-2">{i + 1}</td>
+            <td>{p.name}</td>
+            <td>{p.score}</td>
+
+          </tr>
+
+        ))}
+
+      </tbody>
+
+    </table>
+
+  )
 
 }

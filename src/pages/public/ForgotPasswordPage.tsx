@@ -1,65 +1,54 @@
-import { Link } from "react-router-dom"
 import { useState } from "react"
+import { Link } from "react-router-dom"
 
 export default function ForgotPasswordPage() {
 
     const [email, setEmail] = useState("")
+    const [message, setMessage] = useState("")
 
-    const handleSubmit = (e: React.FormEvent) => {
+    function submit(e: any) {
 
         e.preventDefault()
 
-        console.log("Reset password:", email)
+        setMessage("If the email exists, reset instructions will be sent.")
 
     }
 
     return (
 
-        <div className="flex justify-center items-center min-h-screen bg-gray-100">
+        <div style={{ maxWidth: 400, margin: "auto" }}>
 
-            <div className="bg-white shadow-lg rounded-xl p-10 w-[420px]">
+            <h1>Forgot Password</h1>
 
-                <h1 className="text-2xl font-bold text-center mb-4">
-                    Reset Password
-                </h1>
+            <form onSubmit={submit}>
 
-                <form onSubmit={handleSubmit} className="space-y-4">
+                <input
+                    placeholder="Enter your email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                />
 
-                    <input
-                        type="email"
-                        placeholder="Enter your email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        className="w-full border px-3 py-2 rounded-lg"
-                        required
-                    />
+                <button type="submit">
 
-                    <button
-                        type="submit"
-                        className="w-full bg-indigo-600 text-white py-2 rounded-lg"
-                    >
-                        Send Reset Link
-                    </button>
+                    Send Reset Link
 
-                </form>
+                </button>
 
-                <p className="text-sm text-center mt-6">
+            </form>
 
-                    Back to
+            {message && <p>{message}</p>}
 
-                    <Link
-                        to="/login"
-                        className="text-indigo-600 ml-1"
-                    >
-                        Login
-                    </Link>
+            <div style={{ marginTop: 20 }}>
 
-                </p>
+                <Link to="/login">
+
+                    Back to Login
+
+                </Link>
 
             </div>
 
         </div>
 
     )
-
 }

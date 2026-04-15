@@ -1,37 +1,61 @@
+import { useEffect, useState } from "react"
+import { useParams } from "react-router-dom"
+
+import { getGame, updateGame } from "../../services/game.service"
+
+import GameBuilderRouter from "../../../components/game/GameBuilderRouter"
+
 export default function EditGamePage() {
+
+    const { id } = useParams()
+
+    const [game, setGame] = useState<any>(null)
+
+    useEffect(() => {
+
+        async function load() {
+
+            const data = await getGame(id!)
+
+            setGame(data)
+
+        }
+
+        load()
+
+    }, [id])
+
+    if (!game) {
+
+        return <p>Loading...</p>
+
+    }
+
+    async function save() {
+
+        await updateGame(id!, {
+
+            gameJson: game.gameJson
+
+        })
+
+        alert("saved")
+
+    }
 
     return (
 
-        <div className="space-y-6">
+        <div>
 
-            <h1 className="text-3xl font-bold">
-                Edit Game
-            </h1>
+            <h1>Edit Game</h1>
 
-            <input
-                placeholder="Game Title"
-                className="border p-3 w-full rounded"
+            <GameBuilderRouter
+                templateType={game.templateType}
+                value={game.gameJson}
+                onChange={(json: any) => setGame({ ...game, gameJson: json })}
             />
 
-            <select className="border p-3 w-full rounded">
-
-                <option>Quiz</option>
-                <option>True or False</option>
-                <option>Flashcard</option>
-                <option>Matching Pair</option>
-                <option>Word Search</option>
-                <option>Anagram</option>
-                <option>Short Answer</option>
-                <option>Speed Sort</option>
-                <option>Wheel</option>
-
-            </select>
-
-            <button className="bg-blue-600 text-white px-4 py-2 rounded">
-
-                Save Changes
-
-            </button>
+            <button onClick={save}>Save</button>
 
         </div>
 

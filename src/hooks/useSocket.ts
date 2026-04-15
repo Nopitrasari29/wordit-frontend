@@ -1,28 +1,5 @@
-import { useEffect } from "react"
-import socket from "../services/socket"
+import { io } from "socket.io-client"
 
-export function useSocket(gameCode: string, playerName: string) {
+const socket = io("http://localhost:3000")
 
-    useEffect(() => {
-
-        socket.connect()
-
-        socket.emit("join_game", {
-            gameCode,
-            playerName
-        })
-
-        return () => {
-
-            socket.emit("leave_game", {
-                gameCode,
-                playerName
-            })
-
-            socket.disconnect()
-
-        }
-
-    }, [gameCode, playerName])
-
-}
+export default socket

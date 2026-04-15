@@ -1,55 +1,19 @@
-import { useSearchParams } from "react-router-dom"
-import GameCreatorWizard from "../../../components/game/GameCreatorWizard"
-
-import QuizBuilder from "../../../components/game/builders/QuizBuilder"
-import TrueFalseBuilder from "../../../components/game/builders/TrueOrFalseBuilder"
-import FlashcardBuilder from "../../../components/game/builders/FlashcardBuilder"
-import MatchingBuilder from "../../../components/game/builders/MatchingPairBuilder"
-import WordSearchBuilder from "../../../components/game/builders/WordSearchBuilder"
-import AnagramBuilder from "../../../components/game/builders/AnagramBuilder"
-import ShortAnswerBuilder from "../../../components/game/builders/ShortAnswerBuilder"
-import SpeedSortBuilder from "../../../components/game/builders/SpeedSortBuilder"
-import WheelBuilder from "../../../components/game/builders/WheelBuilder"
+import GameBuilderRouter from "../../../components/game/GameBuilderRouter"
 
 export default function CreateGamePage() {
 
-    const [params] = useSearchParams()
-    const template = params.get("template")
+  return (
 
-    function renderBuilder() {
+    <div className="max-w-6xl mx-auto py-10 px-6">
 
-        switch (template) {
+      <h1 className="text-3xl font-bold mb-6">
+        Create Game
+      </h1>
 
-            case "quiz": return <QuizBuilder />
-            case "truefalse": return <TrueFalseBuilder />
-            case "flashcard": return <FlashcardBuilder />
-            case "matching": return <MatchingBuilder />
-            case "wordsearch": return <WordSearchBuilder />
-            case "anagram": return <AnagramBuilder />
-            case "shortanswer": return <ShortAnswerBuilder />
-            case "speedsort": return <SpeedSortBuilder />
-            case "wheel": return <WheelBuilder />
+      <GameBuilderRouter />
 
-            default: return <div>Select template</div>
+    </div>
 
-        }
-
-    }
-
-    return (
-
-        <div className="space-y-6">
-
-            <GameCreatorWizard step={2} />
-
-            <h1 className="text-3xl font-bold">
-                Create Game
-            </h1>
-
-            {renderBuilder()}
-
-        </div>
-
-    )
+  )
 
 }

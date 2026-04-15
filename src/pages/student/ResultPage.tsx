@@ -1,43 +1,25 @@
-import { Link } from "react-router-dom"
-
 export default function ResultPage() {
 
-    return (
+  return (
 
-        <div className="text-center space-y-6">
+    <div className="container">
 
-            <h1 className="text-3xl font-bold">
-                Game Result
-            </h1>
+      <h1>Game Result</h1>
 
-            <p className="text-xl">
-                Score: 80
-            </p>
+      <div className="result-card">
 
-            <p className="text-gray-500">
-                Correct Answers: 8 / 10
-            </p>
+        <h2>Score</h2>
 
-            <div className="flex justify-center gap-4">
+        <h1>80</h1>
 
-                <Link
-                    to="/leaderboard"
-                    className="bg-blue-600 text-white px-4 py-2 rounded"
-                >
-                    Leaderboard
-                </Link>
+        <p>Accuracy: 75%</p>
 
-                <Link
-                    to="/explore"
-                    className="bg-gray-600 text-white px-4 py-2 rounded"
-                >
-                    Back to Explore
-                </Link>
+        <button>Play Again</button>
 
-            </div>
+      </div>
 
-        </div>
+    </div>
 
-    )
+  )
 
 }

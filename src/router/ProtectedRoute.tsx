@@ -1,5 +1,6 @@
 import { Navigate } from "react-router-dom"
-import { useAuth } from "../context/AuthContext"
+
+import { useAuth } from "../hooks/useAuth"
 
 export default function ProtectedRoute({ children, role }: any) {
 
@@ -10,9 +11,8 @@ export default function ProtectedRoute({ children, role }: any) {
     }
 
     if (role && user.role !== role) {
-        return <Navigate to="/" />
+        return <Navigate to="/login" />
     }
 
     return children
-
 }

@@ -1,66 +1,55 @@
 import { useState } from "react"
+import RankingOverlay from "../common/RankingOverlay"
 
-export default function AnagramEngine({ words }: any) {
+export default function AnagramEngine({data}:any){
 
-    const [index, setIndex] = useState(0)
-    const [input, setInput] = useState("")
-    const [score, setScore] = useState(0)
+const word="PLANET"
 
-    const word = words[index]
+const shuffled=word.split("").sort(()=>Math.random()-0.5)
 
-    function shuffle(w: string) {
+const [answer,setAnswer]=useState("")
+const [score,setScore]=useState(0)
 
-        return w
-            .split("")
-            .sort(() => Math.random() - 0.5)
-            .join("")
+function submit(){
 
-    }
+if(answer.toUpperCase()===word){
+setScore(score+10)
+alert("Correct!")
+}else{
+alert("Wrong")
+}
 
-    function submit() {
+}
 
-        if (input.toLowerCase() === word.toLowerCase()) {
-            setScore(score + 1)
-        }
+return(
 
-        setInput("")
+<div>
 
-        if (index + 1 < words.length) {
-            setIndex(index + 1)
-        }
-        else {
-            alert(`Score: ${score}`)
-        }
+<h2>Arrange the letters</h2>
 
-    }
+<div style={{fontSize:30}}>
+{shuffled.join(" ")}
+</div>
 
-    return (
+<input
+value={answer}
+onChange={(e)=>setAnswer(e.target.value)}
+/>
 
-        <div className="text-center">
+<button onClick={submit}>
+Submit
+</button>
 
-            <h2 className="text-xl mb-6">
-                Unscramble the word
-            </h2>
+<RankingOverlay
+players={[
+{name:"Andi",score:100},
+{name:"Budi",score:80},
+{name:"You",score:score}
+]}
+/>
 
-            <p className="text-2xl mb-4">
-                {shuffle(word)}
-            </p>
+</div>
 
-            <input
-                className="border p-2"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-            />
-
-            <button
-                onClick={submit}
-                className="bg-blue-600 text-white px-4 py-2 ml-2"
-            >
-                Submit
-            </button>
-
-        </div>
-
-    )
+)
 
 }

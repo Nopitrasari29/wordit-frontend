@@ -1,51 +1,54 @@
-import QuizEngine from "./engines/QuizEngine"
-import TrueOrFalseEngine from "./engines/TrueOrFalseEngine"
-import FlashcardEngine from "./engines/FlashcardEngine"
-import MatchingPairEngine from "./engines/MatchingPairEngine"
-import WordSearchEngine from "./engines/WordSearchEngine"
-import AnagramEngine from "./engines/AnagramEngine"
-import ShortAnswerEngine from "./engines/ShortAnswerEngine"
-import SpeedSortEngine from "./engines/SpeedSortEngine"
-import WheelEngine from "./engines/WheelEngine"
+import { TemplateType } from "../../types/game"
 
-type Props = {
-    template: string
-}
+export default function GameTemplateController({
 
-export default function GameTemplateController({ template }: Props) {
+    template,
+    setTemplate
 
-    switch (template) {
+}: any) {
 
-        case "quiz":
-            return <QuizEngine />
+    const templates = [
 
-        case "truefalse":
-            return <TrueOrFalseEngine />
+        TemplateType.ANAGRAM,
+        TemplateType.FLASHCARD,
+        TemplateType.HANGMAN,
+        TemplateType.MAZE_CHASE,
+        TemplateType.SPIN_THE_WHEEL,
+        TemplateType.WORD_SEARCH
 
-        case "flashcard":
-            return <FlashcardEngine />
+    ]
 
-        case "matching":
-            return <MatchingPairEngine />
+    return (
 
-        case "wordsearch":
-            return <WordSearchEngine />
+        <div>
 
-        case "anagram":
-            return <AnagramEngine />
+            <h2>Select Template</h2>
 
-        case "shortanswer":
-            return <ShortAnswerEngine />
+            {templates.map((t) => (
 
-        case "speedsort":
-            return <SpeedSortEngine />
+                <button
 
-        case "wheel":
-            return <WheelEngine />
+                    key={t}
 
-        default:
-            return <div>Template Not Found</div>
+                    onClick={() => setTemplate(t)}
 
-    }
+                    style={{
+
+                        margin: 10,
+                        background: template === t ? "lightblue" : "white"
+
+                    }}
+
+                >
+
+                    {t}
+
+                </button>
+
+            ))}
+
+        </div>
+
+    )
 
 }

@@ -1,25 +1,61 @@
-import LeaderboardTable from "../../components/game/common/LeaderboardTable"
+import { useEffect, useState } from "react"
+
+import { getGames } from "../services/game.service"
 
 export default function LeaderboardPage() {
 
-    const players = [
-        { name: "Rafika", score: 90 },
-        { name: "Budi", score: 80 },
-        { name: "Siti", score: 70 }
-    ]
+    const [games, setGames] = useState([])
+
+    useEffect(() => {
+
+        async function load() {
+
+            const data = await getGames()
+
+            setGames(data)
+
+        }
+
+        load()
+
+    }, [])
 
     return (
 
-        <div className="space-y-6">
+        <div>
 
-            <h1 className="text-3xl font-bold">
-                Leaderboard
-            </h1>
+            <h1>Leaderboard</h1>
 
-            <LeaderboardTable players={players} />
+            <table>
+
+                <thead>
+
+                    <tr>
+                        <th>Game</th>
+                        <th>Plays</th>
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                    {games.map((g: any) => (
+
+                        <tr key={g.id}>
+
+                            <td>{g.title}</td>
+
+                            <td>{g.playCount}</td>
+
+                        </tr>
+
+                    ))}
+
+                </tbody>
+
+            </table>
 
         </div>
 
     )
-
 }

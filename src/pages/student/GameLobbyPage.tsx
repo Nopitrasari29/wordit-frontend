@@ -1,27 +1,40 @@
-import { useNavigate } from "react-router-dom"
+import { useEffect, useState } from "react"
 
-export default function GameLobbyPage() {
+import socket from "../../hooks/useSocket"
 
-    const navigate = useNavigate()
+export default function GameLobbyPage({ gameId }: any) {
+
+    const [players, setPlayers] = useState<string[]>([])
+
+    useEffect(() => {
+
+        socket.emit("joinLobby", gameId)
+
+        socket.on("players", (list: any) => {
+
+            setPlayers(list)
+
+        })
+
+    }, [])
 
     return (
 
-        <div className="space-y-6">
+        <div>
 
-            <h1 className="text-3xl font-bold">
-                Game Lobby
-            </h1>
+            <h2>Game Lobby</h2>
 
-            <p className="text-gray-500">
-                Waiting for game to start...
-            </p>
+            <p>Waiting for players...</p>
 
-            <button
-                onClick={() => navigate("/game/play")}
-                className="bg-green-600 text-white px-6 py-2 rounded"
-            >
-                Start Game
-            </button>
+            <ul>
+
+                {players.map((p, i) => (
+
+                    <li key={i}>{p}</li>
+
+                ))}
+
+            </ul>
 
         </div>
 

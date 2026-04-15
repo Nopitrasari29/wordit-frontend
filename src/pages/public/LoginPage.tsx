@@ -1,109 +1,90 @@
 import { useState } from "react"
-import { useNavigate, Link } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 import { useAuth } from "../../context/AuthContext"
 
 export default function LoginPage() {
 
-    const navigate = useNavigate()
-    const { login } = useAuth()
+  const { login } = useAuth()
 
-    const [email, setEmail] = useState("")
-    const [password, setPassword] = useState("")
+  const navigate = useNavigate()
 
-    function handleLogin(e: any) {
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
 
-        e.preventDefault()
+  async function submit(e: any) {
 
-        const users = JSON.parse(localStorage.getItem("users") || "[]")
+    e.preventDefault()
 
-        const user = users.find(
-            (u: any) => u.email === email && u.password === password
-        )
+    await login(email, password)
 
-        if (!user) {
+    const storedUser = localStorage.getItem("user")
 
-            alert("Email atau password salah")
-            return
+    if (!storedUser) return
 
-        }
+    const user = JSON.parse(storedUser)
 
-        login(user)
-
-        /* Redirect berdasarkan role */
-
-        if (user.role === "ADMIN") {
-
-            navigate("/admin/dashboard")
-
-        } else if (user.role === "TEACHER") {
-
-            navigate("/dashboard")
-
-        } else {
-
-            navigate("/student/dashboard")
-
-        }
-
+    if (user.role === "ADMIN") {
+      navigate("/admin/dashboard")
+    }
+    else if (user.role === "TEACHER") {
+      navigate("/teacher/dashboard")
+    }
+    else {
+      navigate("/student/dashboard")
     }
 
-    return (
+  }
 
-        <div className="flex justify-center items-center h-screen bg-gray-100">
+  return (
 
-            <form
-                onSubmit={handleLogin}
-                className="bg-white p-8 rounded-xl shadow w-[400px] space-y-4"
-            >
+    <div className="flex justify-center items-center py-20">
 
-                <h1 className="text-2xl font-bold text-center">
-                    Login
-                </h1>
+      <div className="bg-white shadow rounded p-8 w-full max-w-md">
 
-                <input
-                    type="email"
-                    placeholder="Email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="border w-full p-3 rounded"
-                />
+        <h1 className="text-2xl font-bold mb-6 text-center">
+          Login
+        </h1>
 
-                <input
-                    type="password"
-                    placeholder="Password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="border w-full p-3 rounded"
-                />
+        <form onSubmit={submit} className="space-y-4">
 
-                <button
-                    className="bg-indigo-600 text-white w-full py-2 rounded"
-                >
-                    Login
-                </button>
+          <input
+            className="w-full border px-4 py-2 rounded"
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
 
-                <div className="flex justify-between text-sm">
+          <input
+            type="password"
+            className="w-full border px-4 py-2 rounded"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
 
-                    <Link
-                        to="/forgot-password"
-                        className="text-blue-600"
-                    >
-                        Forgot Password?
-                    </Link>
+          <button
+            type="submit"
+            className="w-full bg-indigo-600 text-white py-2 rounded"
+          >
+            Login
+          </button>
 
-                    <Link
-                        to="/register"
-                        className="text-blue-600"
-                    >
-                        Register
-                    </Link>
+        </form>
 
-                </div>
+        <p className="text-center mt-4 text-sm">
 
-            </form>
+          Don't have an account?
 
-        </div>
+          <Link to="/register" className="text-indigo-600 ml-2">
+            Register
+          </Link>
 
-    )
+        </p>
+
+      </div>
+
+    </div>
+
+  )
 
 }

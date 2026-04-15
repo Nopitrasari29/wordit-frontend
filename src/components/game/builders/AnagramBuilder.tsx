@@ -1,113 +1,73 @@
 import { useState } from "react"
 
-export default function AnagramBuilder({ onSave }: any) {
+export default function AnagramBuilder({ value, onChange }: any) {
 
-    const [title, setTitle] = useState("")
-    const [level, setLevel] = useState("SD")
+    const [words, setWords] = useState(value?.data?.words || [])
 
-    const [words, setWords] = useState([""])
+    function update(newWords: any) {
 
-    function updateWord(i: number, value: string) {
+        setWords(newWords)
 
-        const list = [...words]
-        list[i] = value
-        setWords(list)
-
+        onChange({
+            data: {
+                words: newWords
+            }
+        })
     }
 
     function addWord() {
 
-        setWords([...words, ""])
+        update([...words, { word: "", hint: "" }])
 
     }
 
-    function publish() {
+    function updateWord(index: number, key: string, val: string) {
 
-        onSave({
-            template: "anagram",
-            title,
-            level,
-            words,
-            status: "published"
-        })
+        const updated = [...words]
+
+        updated[index][key] = val
+
+        update(updated)
 
     }
 
-    function saveDraft() {
+    function remove(index: number) {
 
-        onSave({
-            template: "anagram",
-            title,
-            level,
-            words,
-            status: "draft"
-        })
+        update(words.filter((_: any, i: number) => i !== index))
 
     }
 
     return (
 
-        <div className="space-y-6">
+        <div>
 
-            <h2 className="text-2xl font-bold">
-                Create Anagram Game
-            </h2>
+            <h3>Anagram Words</h3>
 
-            <input
-                className="border p-3 w-full"
-                placeholder="Activity Title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-            />
+            {words.map((w: any, i: number) => (
 
-            <select
-                className="border p-2"
-                value={level}
-                onChange={(e) => setLevel(e.target.value)}
-            >
-                <option>SD</option>
-                <option>SMP</option>
-                <option>SMA</option>
-                <option>UNIVERSITY</option>
-            </select>
+                <div key={i}>
 
-            {words.map((w, i) => (
-                <input
-                    key={i}
-                    className="border p-2 w-full"
-                    placeholder={`Word ${i + 1}`}
-                    value={w}
-                    onChange={(e) => updateWord(i, e.target.value)}
-                />
+                    <input
+                        placeholder="word"
+                        value={w.word}
+                        onChange={(e) => updateWord(i, "word", e.target.value)}
+                    />
+
+                    <input
+                        placeholder="hint"
+                        value={w.hint}
+                        onChange={(e) => updateWord(i, "hint", e.target.value)}
+                    />
+
+                    <button onClick={() => remove(i)}>delete</button>
+
+                </div>
+
             ))}
 
-            <button
-                onClick={addWord}
-                className="bg-gray-200 px-4 py-2"
-            >
-                Add Word
-            </button>
-
-            <div className="flex gap-4">
-
-                <button
-                    onClick={saveDraft}
-                    className="bg-yellow-500 text-white px-6 py-2"
-                >
-                    Save Draft
-                </button>
-
-                <button
-                    onClick={publish}
-                    className="bg-blue-600 text-white px-6 py-2"
-                >
-                    Publish
-                </button>
-
-            </div>
+            <button onClick={addWord}>Add word</button>
 
         </div>
 
     )
-
 }

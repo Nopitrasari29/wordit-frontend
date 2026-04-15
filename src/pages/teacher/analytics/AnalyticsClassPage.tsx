@@ -1,51 +1,70 @@
-import ScoreChart from "../../../components/analytics/ScoreChart"
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  CartesianGrid
+} from "recharts"
 
-export default function AnalyticsClassPage() {
+export default function AnalyticsClassPage({ games }: any) {
 
-    const stats = [
-        { label: "Games Created", value: 12 },
-        { label: "Games Played", value: 34 },
-        { label: "Average Score", value: "82%" }
-    ]
+  const templateStats: Record<string, number> = {}
 
-    const chartData = [
-        { game: "Quiz 1", score: 75 },
-        { game: "Quiz 2", score: 82 },
-        { game: "Quiz 3", score: 88 }
-    ]
+  games.forEach((g: any) => {
 
-    return (
+    if (!templateStats[g.templateType]) {
+      templateStats[g.templateType] = 0
+    }
 
-        <div className="space-y-8">
+    templateStats[g.templateType] += g.playCount || 0
 
-            <h1 className="text-3xl font-bold">
-                Class Analytics
-            </h1>
+  })
 
-            <div className="grid md:grid-cols-3 gap-6">
+  const chartData = Object.entries(templateStats).map(
+    ([template, plays]) => ({
+      template,
+      plays
+    })
+  )
 
-                {stats.map((s, i) => (
+  return (
 
-                    <div key={i} className="bg-white p-6 rounded-xl shadow">
+    <div className="bg-white p-6 rounded shadow">
 
-                        <p className="text-gray-500">
-                            {s.label}
-                        </p>
+      <h2 className="text-xl font-semibold mb-4">
+        Class Analytics
+      </h2>
 
-                        <h2 className="text-2xl font-bold">
-                            {s.value}
-                        </h2>
+      <p className="text-sm text-gray-500 mb-6">
+        Game Plays by Template
+      </p>
 
-                    </div>
+      <div className="h-64">
 
-                ))}
+        <ResponsiveContainer width="100%" height="100%">
 
-            </div>
+          <BarChart data={chartData}>
 
-            <ScoreChart data={chartData} />
+            <CartesianGrid strokeDasharray="3 3" />
 
-        </div>
+            <XAxis dataKey="template" />
 
-    )
+            <YAxis />
+
+            <Tooltip />
+
+            <Bar dataKey="plays" fill="#6366f1" />
+
+          </BarChart>
+
+        </ResponsiveContainer>
+
+      </div>
+
+    </div>
+
+  )
 
 }

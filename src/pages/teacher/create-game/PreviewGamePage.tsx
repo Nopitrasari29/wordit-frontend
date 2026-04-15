@@ -1,29 +1,32 @@
+import { useSearchParams } from "react-router-dom"
+import GameRenderer from "../../../components/game/GameRenderer"
+
 export default function PreviewGamePage() {
 
-    return (
+  const [params] = useSearchParams()
 
-        <div className="space-y-6">
+  const template = params.get("template")
 
-            <h1 className="text-3xl font-bold">
-                Preview Game
-            </h1>
+  const mockGame = {
+    templateType: template || "ANAGRAM",
+    data: {},
+  }
 
-            <div className="bg-white p-6 rounded shadow">
+  return (
 
-                <p>
-                    Game preview will appear here.
-                </p>
+    <div className="max-w-6xl mx-auto px-6 py-10">
 
-            </div>
+      <h1 className="text-2xl font-bold mb-6">
+        Game Preview
+      </h1>
 
-            <button className="bg-green-600 text-white px-6 py-2 rounded">
+      <GameRenderer
+        templateType={mockGame.templateType}
+        gameData={mockGame.data}
+      />
 
-                Publish Game
+    </div>
 
-            </button>
-
-        </div>
-
-    )
+  )
 
 }
