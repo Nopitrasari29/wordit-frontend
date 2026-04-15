@@ -12,96 +12,86 @@ type Props = {
 }
 
 export default function QuestionForm({ template, onAdd }: Props) {
-
     const [question, setQuestion] = useState("")
     const [answer, setAnswer] = useState("")
     const [answers, setAnswers] = useState(["", "", "", ""])
 
     const submit = () => {
-
         if (!question) return
 
         if (template === "quiz" || template === "truefalse") {
-
             onAdd({
                 question,
                 answers
             })
-
         } else {
-
             onAdd({
                 question,
                 answer
             })
-
         }
 
         setQuestion("")
         setAnswer("")
         setAnswers(["", "", "", ""])
-
     }
 
     return (
+        <div className="bg-white border border-slate-100 p-6 md:p-8 rounded-[2rem] shadow-sm mb-6 font-sans">
 
-        <div className="border p-4 rounded-xl bg-white shadow mb-4">
+            <h3 className="text-lg font-black text-slate-800 mb-4">Tambahkan Pertanyaan</h3>
 
-            <input
-                placeholder="Question"
-                value={question}
-                onChange={(e) => setQuestion(e.target.value)}
-                className="border p-2 w-full mb-3 rounded"
-            />
-
-            {(template === "quiz" || template === "truefalse") && (
-
-                <div className="space-y-2">
-
-                    {answers.map((a, i) => (
-
-                        <input
-                            key={i}
-                            placeholder={`Answer ${i + 1}`}
-                            value={a}
-                            onChange={(e) => {
-
-                                const newArr = [...answers]
-                                newArr[i] = e.target.value
-                                setAnswers(newArr)
-
-                            }}
-                            className="border p-2 w-full rounded"
-                        />
-
-                    ))}
-
-                </div>
-
-            )}
-
-            {(template === "shortanswer") && (
-
+            <div className="space-y-4">
+                {/* Input Soal Utama */}
                 <input
-                    placeholder="Correct Answer"
-                    value={answer}
-                    onChange={(e) => setAnswer(e.target.value)}
-                    className="border p-2 w-full rounded"
+                    placeholder="Tulis pertanyaan di sini..."
+                    value={question}
+                    onChange={(e) => setQuestion(e.target.value)}
+                    className="w-full bg-slate-50 text-slate-800 px-6 py-4 rounded-full border-2 border-slate-100 focus:border-indigo-500 focus:bg-white outline-none transition-all font-bold placeholder:font-medium"
                 />
 
-            )}
+                {/* Input Multiple Choice */}
+                {(template === "quiz" || template === "truefalse") && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {answers.map((a, i) => (
+                            <input
+                                key={i}
+                                placeholder={`Jawaban Pilihan ${i + 1}`}
+                                value={a}
+                                onChange={(e) => {
+                                    const newArr = [...answers]
+                                    newArr[i] = e.target.value
+                                    setAnswers(newArr)
+                                }}
+                                className={`w-full px-6 py-3.5 rounded-full border-2 outline-none transition-all font-bold placeholder:font-medium ${i === 0
+                                        ? "bg-emerald-50/50 border-emerald-100 focus:border-emerald-500 focus:bg-white text-emerald-800"
+                                        : "bg-slate-50 border-slate-100 focus:border-indigo-500 focus:bg-white text-slate-800"
+                                    }`}
+                            />
+                        ))}
+                    </div>
+                )}
 
-            <button
-                onClick={submit}
-                className="bg-blue-600 text-white px-4 py-2 mt-3 rounded-lg hover:bg-blue-700 transition"
-            >
+                {/* Input Short Answer */}
+                {(template === "shortanswer") && (
+                    <input
+                        placeholder="Jawaban Benar"
+                        value={answer}
+                        onChange={(e) => setAnswer(e.target.value)}
+                        className="w-full bg-emerald-50/50 text-emerald-800 px-6 py-4 rounded-full border-2 border-emerald-100 focus:border-emerald-500 focus:bg-white outline-none transition-all font-bold placeholder:font-medium"
+                    />
+                )}
 
-                Add Question
-
-            </button>
+                <div className="flex justify-end pt-2">
+                    <button
+                        onClick={submit}
+                        className="bg-slate-800 hover:bg-slate-700 text-white font-black px-8 py-3.5 rounded-full shadow-lg hover:shadow-slate-500/30 hover:-translate-y-1 transition-all active:scale-95"
+                    >
+                        + Add Question
+                    </button>
+                </div>
+            </div>
 
         </div>
-
     )
-
 }

@@ -1,41 +1,19 @@
-import Wave from "./Wave"
-
-type Props = {
-    title: string
-    color: string
-    children: React.ReactNode
-}
-
 export default function PageWrapper({ title, color, children }: Props) {
-
     return (
-
-        <div className="page-enter">
-
-            {/* HEADER */}
+        <div className="page-enter min-h-screen bg-slate-50 font-sans">
             <div
-                className="rounded-xl p-10 text-white shadow-lg mb-4"
-                style={{
-                    background: `linear-gradient(135deg, ${color}, #2563eb)`
-                }}
+                className="pt-32 pb-20 px-6 text-white shadow-xl relative overflow-hidden"
+                style={{ background: `linear-gradient(135deg, ${color}, #4f46e5)` }}
             >
-                <h1 className="text-4xl font-bold">
-                    {title}
-                </h1>
+                <div className="absolute top-0 left-0 w-full h-full opacity-10 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white via-transparent to-transparent bg-[length:40px_40px]"></div>
+                <h1 className="text-5xl font-black tracking-tight relative z-10 max-w-6xl mx-auto">{title}</h1>
             </div>
 
-            {/* WAVE */}
-            <Wave color="#F1F5F9" />
+            <Wave color="#f8fafc" />
 
-            {/* CONTENT */}
-            <div className="mt-6">
-
+            <div className="max-w-6xl mx-auto px-6 -mt-10 relative z-20 pb-20">
                 {children}
-
             </div>
-
         </div>
-
     )
-
 }

@@ -5,36 +5,43 @@ import MazeChaseEngine from "./engines/MazeChaseEngine"
 import SpinWheelEngine from "./engines/SpinWheelEngine"
 import WordSearchEngine from "./engines/WordSearchEngine"
 
-interface Props{
-  templateType:string
-  gameData:any
+interface Props {
+  templateType: string
+  gameData: any
 }
 
-export default function GameRenderer({templateType,gameData}:Props){
+export default function GameRenderer({ templateType, gameData }: Props) {
+  // Komponen pembungkus agar semua engine game memiliki frame yang cantik
+  const EngineWrapper = ({ children }: { children: React.ReactNode }) => (
+    <div className="w-full h-full min-h-[500px] flex items-center justify-center p-4 bg-white/50 backdrop-blur-sm rounded-[2.5rem]">
+      {children}
+    </div>
+  );
 
-  switch(templateType){
-
+  switch (templateType) {
     case "ANAGRAM":
-      return <AnagramEngine data={gameData} />
+      return <EngineWrapper><AnagramEngine data={gameData} /></EngineWrapper>
 
     case "FLASHCARD":
-      return <FlashcardEngine data={gameData} />
+      return <EngineWrapper><FlashcardEngine data={gameData} /></EngineWrapper>
 
     case "HANGMAN":
-      return <HangmanEngine data={gameData} />
+      return <EngineWrapper><HangmanEngine data={gameData} /></EngineWrapper>
 
     case "MAZE_CHASE":
-      return <MazeChaseEngine data={gameData} />
+      return <EngineWrapper><MazeChaseEngine data={gameData} /></EngineWrapper>
 
     case "SPIN_THE_WHEEL":
-      return <SpinWheelEngine data={gameData} />
+      return <EngineWrapper><SpinWheelEngine data={gameData} /></EngineWrapper>
 
     case "WORD_SEARCH":
-      return <WordSearchEngine data={gameData} />
+      return <EngineWrapper><WordSearchEngine data={gameData} /></EngineWrapper>
 
     default:
-      return <p>Unsupported template</p>
-
+      return (
+        <div className="text-center p-20 bg-white rounded-[2rem] shadow-sm border border-slate-100">
+          <p className="text-slate-400 font-black text-xl italic">Unsupported template</p>
+        </div>
+      )
   }
-
 }

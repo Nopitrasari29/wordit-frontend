@@ -1,13 +1,10 @@
 export const templateIcons: Record<string, string> = {
 
-    quiz: "📝",
-    truefalse: "✔️",
-    flashcard: "🗂",
-    matching: "🔗",
-    wordsearch: "🔎",
-    anagram: "🔤",
-    shortanswer: "💬",
-    speedsort: "⚡",
-    wheel: "🎡"
+  ANAGRAM: "🔤",
+  FLASHCARD: "🗂",
+  HANGMAN: "🪓",
+  MAZE_CHASE: "🧩",
+  SPIN_THE_WHEEL: "🎡",
+  WORD_SEARCH: "🔎"
 
 }

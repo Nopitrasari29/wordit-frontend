@@ -16,10 +16,9 @@ export default function Input({
     onChange,
 }: Props) {
     return (
-        <div className="w-full">
-
+        <div className="w-full flex flex-col gap-2">
             {label && (
-                <label className="block mb-1 text-sm font-medium">
+                <label className="text-sm font-bold text-slate-700 ml-2">
                     {label}
                 </label>
             )}
@@ -29,15 +28,14 @@ export default function Input({
                 placeholder={placeholder}
                 value={value}
                 onChange={onChange}
-                className="border p-3 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full bg-slate-50 text-slate-800 px-6 py-4 rounded-full border-2 border-slate-100 focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/20 outline-none transition-all font-semibold placeholder:font-normal"
             />
 
             {error && (
-                <p className="text-red-500 text-xs mt-1">
+                <p className="text-rose-500 font-bold text-xs mt-1 ml-2">
                     {error}
                 </p>
             )}
-
         </div>
     );
 }

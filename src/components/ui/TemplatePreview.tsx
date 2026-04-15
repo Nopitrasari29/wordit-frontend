@@ -1,30 +1,20 @@
-type Props = {
-  templateType: string
-}
-
 export default function TemplatePreview({ templateType }: Props) {
+  const content: any = {
+    ANAGRAM: { text: "Rearrange letters to form words", icon: "🧩" },
+    FLASHCARD: { text: "Flip cards to learn concepts", icon: "🎴" },
+    HANGMAN: { text: "Guess the hidden word", icon: "🧗" },
+    MAZE_CHASE: { text: "Navigate maze to find answers", icon: "🏃" },
+    SPIN_THE_WHEEL: { text: "Spin wheel to get questions", icon: "🎡" },
+    WORD_SEARCH: { text: "Find hidden words", icon: "🔍" },
+  }
+
+  const current = content[templateType] || { text: "Pilih template untuk melihat deskripsi.", icon: "🎮" };
 
   return (
-
-    <div className="border rounded-xl p-6 bg-gray-50">
-
-      <h2 className="text-lg font-semibold mb-4">
-        Template Preview
-      </h2>
-
-      <div className="text-gray-600">
-
-        {templateType === "ANAGRAM" && "Rearrange letters to form words"}
-        {templateType === "FLASHCARD" && "Flip cards to learn concepts"}
-        {templateType === "HANGMAN" && "Guess the hidden word"}
-        {templateType === "MAZE_CHASE" && "Navigate maze to find answers"}
-        {templateType === "SPIN_THE_WHEEL" && "Spin wheel to get questions"}
-        {templateType === "WORD_SEARCH" && "Find hidden words"}
-
-      </div>
-
+    <div className="bg-slate-50 border-4 border-dashed border-slate-200 rounded-[2.5rem] p-8 text-center flex flex-col items-center justify-center">
+      <div className="text-6xl mb-4">{current.icon}</div>
+      <h2 className="text-xl font-black text-slate-800 mb-2">Template Preview</h2>
+      <p className="text-slate-500 font-bold leading-relaxed max-w-xs">{current.text}</p>
     </div>
-
   )
-
 }

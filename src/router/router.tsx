@@ -1,65 +1,54 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom"
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import ProtectedRoute from "./ProtectedRoute";
+import MainLayout from "../components/layout/MainLayout";
 
-import ProtectedRoute from "./ProtectedRoute"
-import MainLayout from "../components/layout/MainLayout"
+/* PUBLIC PAGES */
+import LandingPage from "../pages/public/LandingPage";
+import LoginPage from "../pages/public/LoginPage";
+import RegisterPage from "../pages/public/RegisterPage";
+import ExplorePage from "../pages/public/ExplorePage";
+import ForgotPasswordPage from "../pages/public/ForgotPasswordPage";
+import NotFoundPage from "../pages/public/NotFoundPage";
 
-/* PUBLIC */
+/* PROFILE PAGES */
+import ProfilePage from "../pages/profile/ProfilePage";
+import EditProfilePage from "../pages/profile/EditProfilePage";
 
-import LandingPage from "../pages/public/LandingPage"
-import LoginPage from "../pages/public/LoginPage"
-import RegisterPage from "../pages/public/RegisterPage"
-import ExplorePage from "../pages/public/ExplorePage"
-import ForgotPasswordPage from "../pages/public/ForgotPasswordPage"
-import NotFoundPage from "../pages/public/NotFoundPage"
+/* STUDENT PAGES */
+import StudentDashboard from "../pages/student/StudentDashboard";
+import JoinGamePage from "../pages/student/JoinGamePage";
+import EnterPlayerPage from "../pages/student/EnterPlayerPage";
+import GameLobbyPage from "../pages/student/GameLobbyPage";
+import GameSessionPage from "../pages/student/GameSessionPage";
+import PlayGamePage from "../pages/student/PlayGamePage";
+import ResultPage from "../pages/student/ResultPage";
+import AnalyticsStudentPage from "../pages/student/AnalyticsStudentPage";
+import LeaderboardPage from "../pages/student/LeaderboardPage";
 
-/* PROFILE */
+/* TEACHER PAGES */
+import TeacherDashboard from "../pages/teacher/TeacherDashboard";
+import MyProjectsPage from "../pages/teacher/create-game/MyProjectsPage";
+import ChooseLevelPage from "../pages/teacher/create-game/ChooseLevelPage";
+import ChooseTemplatePage from "../pages/teacher/create-game/ChooseTemplatePage";
+import GameBuilderPage from "../pages/teacher/create-game/GameBuilderPage";
+import EditGamePage from "../pages/teacher/create-game/EditGamePage";
+import PreviewGamePage from "../pages/teacher/create-game/PreviewGamePage";
+import AddQuestionsPage from "../pages/teacher/create-game/AddQuestionsPage";
+import ClassPage from "../pages/teacher/ClassPage";
+import AnalyticsClassPage from "../pages/teacher/analytics/AnalyticsClassPage";
 
-import ProfilePage from "../pages/profile/ProfilePage"
-import EditProfilePage from "../pages/profile/EditProfilePage"
-
-/* STUDENT */
-
-import StudentDashboard from "../pages/student/StudentDashboard"
-import JoinGamePage from "../pages/student/JoinGamePage"
-import PlayGamePage from "../pages/student/PlayGamePage"
-import ResultPage from "../pages/student/ResultPage"
-import AnalyticsStudentPage from "../pages/student/AnalyticsStudentPage"
-import LeaderboardPage from "../pages/student/LeaderboardPage"
-import EnterPlayerPage from "../pages/student/EnterPlayerPage"
-import GameLobbyPage from "../pages/student/GameLobbyPage"
-import GameSessionPage from "../pages/student/GameSessionPage"
-
-/* TEACHER */
-
-import TeacherDashboard from "../pages/teacher/TeacherDashboard"
-import ClassPage from "../pages/teacher/ClassPage"
-
-import MyProjectsPage from "../pages/teacher/create-game/MyProjectsPage"
-import ChooseLevelPage from "../pages/teacher/create-game/ChooseLevelPage"
-import ChooseTemplatePage from "../pages/teacher/create-game/ChooseTemplatePage"
-import GameBuilderPage from "../pages/teacher/create-game/GameBuilderPage"
-import AddQuestionsPage from "../pages/teacher/create-game/AddQuestionsPage"
-import EditGamePage from "../pages/teacher/create-game/EditGamePage"
-import PreviewGamePage from "../pages/teacher/create-game/PreviewGamePage"
-
-import AnalyticsClassPage from "../pages/teacher/analytics/AnalyticsClassPage"
-
-/* ADMIN */
-
-import AdminDashboard from "../pages/admin/AdminDashboard"
-import UserManagementPage from "../pages/admin/UserManagementPage"
-import SystemLogsPage from "../pages/admin/SystemLogsPage"
+/* ADMIN PAGES */
+import AdminDashboard from "../pages/admin/AdminDashboard";
+import UserManagementPage from "../pages/admin/UserManagementPage";
+import SystemLogsPage from "../pages/admin/SystemLogsPage";
 
 export default function Router() {
   return (
     <BrowserRouter>
-
       <Routes>
-
         <Route element={<MainLayout />}>
 
           {/* ================= PUBLIC ================= */}
-
           <Route path="/" element={<LandingPage />} />
           <Route path="/explore" element={<ExplorePage />} />
           <Route path="/login" element={<LoginPage />} />
@@ -67,239 +56,54 @@ export default function Router() {
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
           {/* ================= PROFILE ================= */}
-
-          <Route
-            path="/profile"
-            element={
-              <ProtectedRoute>
-                <ProfilePage />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/profile/edit"
-            element={
-              <ProtectedRoute>
-                <EditProfilePage />
-              </ProtectedRoute>
-            }
-          />
+          <Route element={<ProtectedRoute />}>
+            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/profile/edit" element={<EditProfilePage />} />
+          </Route>
 
           {/* ================= STUDENT ================= */}
-
-          <Route
-            path="/student/dashboard"
-            element={
-              <ProtectedRoute role="STUDENT">
-                <StudentDashboard />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/student/analytics"
-            element={
-              <ProtectedRoute role="STUDENT">
-                <AnalyticsStudentPage />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/join"
-            element={
-              <ProtectedRoute>
-                <JoinGamePage />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/play/:gameId"
-            element={
-              <ProtectedRoute>
-                <PlayGamePage />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/result/:sessionId"
-            element={
-              <ProtectedRoute>
-                <ResultPage />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/leaderboard/:gameId"
-            element={
-              <ProtectedRoute>
-                <LeaderboardPage />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/game/enter"
-            element={
-              <ProtectedRoute>
-                <EnterPlayerPage />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/game/lobby/:sessionId"
-            element={
-              <ProtectedRoute>
-                <GameLobbyPage />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/game/session/:sessionId"
-            element={
-              <ProtectedRoute>
-                <GameSessionPage />
-              </ProtectedRoute>
-            }
-          />
+          <Route element={<ProtectedRoute role="STUDENT" />}>
+            <Route path="/student/dashboard" element={<StudentDashboard />} />
+            <Route path="/student/analytics" element={<AnalyticsStudentPage />} />
+            <Route path="/join" element={<JoinGamePage />} />
+            <Route path="/game/enter" element={<EnterPlayerPage />} />
+            <Route path="/game/lobby/:sessionId" element={<GameLobbyPage />} />
+            <Route path="/game/session/:sessionId" element={<GameSessionPage />} />
+            <Route path="/play/:gameId" element={<PlayGamePage />} />
+            <Route path="/result/:sessionId" element={<ResultPage />} />
+            <Route path="/leaderboard/:gameId" element={<LeaderboardPage />} />
+          </Route>
 
           {/* ================= TEACHER ================= */}
+          <Route element={<ProtectedRoute role="TEACHER" />}>
+            <Route path="/teacher/dashboard" element={<TeacherDashboard />} />
+            <Route path="/teacher/projects" element={<MyProjectsPage />} />
+            <Route path="/teacher/class" element={<ClassPage />} />
+            <Route path="/teacher/analytics" element={<AnalyticsClassPage />} />
 
-          <Route
-            path="/teacher/dashboard"
-            element={
-              <ProtectedRoute role="TEACHER">
-                <TeacherDashboard />
-              </ProtectedRoute>
-            }
-          />
+            {/* Create Game Flow (Sesuai SKPL: Level -> Template -> Builder) */}
+            <Route path="/teacher/create/level" element={<ChooseLevelPage />} />
+            <Route path="/teacher/create/template" element={<ChooseTemplatePage />} />
+            <Route path="/teacher/create/builder" element={<GameBuilderPage />} />
+            <Route path="/teacher/create/questions" element={<AddQuestionsPage />} />
 
-          <Route
-            path="/teacher/class"
-            element={
-              <ProtectedRoute role="TEACHER">
-                <ClassPage />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/teacher/projects"
-            element={
-              <ProtectedRoute role="TEACHER">
-                <MyProjectsPage />
-              </ProtectedRoute>
-            }
-          />
-
-          {/* CREATE GAME FLOW */}
-
-          <Route
-            path="/teacher/create/level"
-            element={
-              <ProtectedRoute role="TEACHER">
-                <ChooseLevelPage />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/teacher/create/template"
-            element={
-              <ProtectedRoute role="TEACHER">
-                <ChooseTemplatePage />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/teacher/create/builder"
-            element={
-              <ProtectedRoute role="TEACHER">
-                <GameBuilderPage />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/teacher/create/questions"
-            element={
-              <ProtectedRoute role="TEACHER">
-                <AddQuestionsPage />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/teacher/game/edit/:gameId"
-            element={
-              <ProtectedRoute role="TEACHER">
-                <EditGamePage />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/teacher/game/preview/:gameId"
-            element={
-              <ProtectedRoute role="TEACHER">
-                <PreviewGamePage />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/teacher/analytics"
-            element={
-              <ProtectedRoute role="TEACHER">
-                <AnalyticsClassPage />
-              </ProtectedRoute>
-            }
-          />
+            {/* Management */}
+            <Route path="/teacher/game/edit/:gameId" element={<EditGamePage />} />
+            <Route path="/teacher/game/preview/:gameId" element={<PreviewGamePage />} />
+          </Route>
 
           {/* ================= ADMIN ================= */}
-
-          <Route
-            path="/admin/dashboard"
-            element={
-              <ProtectedRoute role="ADMIN">
-                <AdminDashboard />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/admin/users"
-            element={
-              <ProtectedRoute role="ADMIN">
-                <UserManagementPage />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/admin/logs"
-            element={
-              <ProtectedRoute role="ADMIN">
-                <SystemLogsPage />
-              </ProtectedRoute>
-            }
-          />
+          <Route element={<ProtectedRoute role="ADMIN" />}>
+            <Route path="/admin/dashboard" element={<AdminDashboard />} />
+            <Route path="/admin/users" element={<UserManagementPage />} />
+            <Route path="/admin/logs" element={<SystemLogsPage />} />
+          </Route>
 
           {/* ================= 404 ================= */}
-
           <Route path="*" element={<NotFoundPage />} />
 
         </Route>
-
       </Routes>
-
     </BrowserRouter>
-  )
+  );
 }

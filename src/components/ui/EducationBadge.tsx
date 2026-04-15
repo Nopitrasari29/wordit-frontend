@@ -1,20 +1,12 @@
-interface Props {
-    level: string;
-}
-
 export default function EducationBadge({ level }: Props) {
     const colors: any = {
-        SD: "bg-green-500",
+        SD: "bg-emerald-500",
         SMP: "bg-blue-500",
-        SMA: "bg-purple-500",
-        UNIVERSITY: "bg-red-500",
+        SMA: "bg-indigo-500",
+        UNIVERSITY: "bg-rose-500",
     };
-
     return (
-        <span
-            className={`text-white text-xs px-2 py-1 rounded ${colors[level] || "bg-gray-500"
-                }`}
-        >
+        <span className={`${colors[level] || "bg-slate-500"} text-white text-[10px] font-black tracking-widest uppercase px-3 py-1 rounded-full shadow-sm`}>
             {level}
         </span>
     );

@@ -1,42 +1,11 @@
-type Props = {
-    label: string
-    onDropAnswer?: (answer: string) => void
-}
-
 export default function DropZone({ label, onDropAnswer }: Props) {
-
-    const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
-
-        e.preventDefault()
-
-        const answer = e.dataTransfer.getData("answer")
-
-        if (onDropAnswer) {
-
-            onDropAnswer(answer)
-
-        }
-
-    }
-
-    const allowDrop = (e: React.DragEvent<HTMLDivElement>) => {
-
-        e.preventDefault()
-
-    }
-
     return (
-
         <div
             onDrop={handleDrop}
             onDragOver={allowDrop}
-            className="border-2 border-dashed border-gray-400 p-6 rounded-lg text-center bg-gray-50"
+            className="border-4 border-dashed border-indigo-200 p-8 rounded-[2.5rem] text-center bg-indigo-50/30 text-indigo-400 font-black text-xl hover:bg-indigo-50 hover:border-indigo-400 transition-all duration-300"
         >
-
             {label}
-
         </div>
-
     )
-
 }
