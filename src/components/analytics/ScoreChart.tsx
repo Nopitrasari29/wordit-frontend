@@ -1,17 +1,56 @@
-export default function ScoreChart({ data }: Props) {
+import {
+    BarChart,
+    Bar,
+    XAxis,
+    YAxis,
+    Tooltip,
+    ResponsiveContainer,
+    CartesianGrid
+} from "recharts"
+
+export default function ScoreChart({ data }: { data: any[] }) {
     return (
-        <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100 font-sans">
-            <h3 className="text-xl font-black text-slate-800 mb-8 flex items-center gap-2">
-                📈 Progress Skor Kamu
-            </h3>
-            <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={data}>
+        <div className="h-72 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+
+                    {/* Grid halus sesuai gaya Bubbly */}
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                    <XAxis dataKey="game" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontWeight: 700, fontSize: 12 }} />
-                    <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontWeight: 700, fontSize: 12 }} />
-                    <Tooltip contentStyle={{ borderRadius: '1rem', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }} />
-                    <Line type="monotone" dataKey="score" stroke="#4f46e5" strokeWidth={6} dot={{ r: 8, fill: '#4f46e5', strokeWidth: 4, stroke: '#fff' }} />
-                </LineChart>
+
+                    <XAxis
+                        dataKey="game"
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{ fill: '#64748b', fontWeight: 800, fontSize: 12 }}
+                        dy={10}
+                    />
+
+                    <YAxis
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{ fill: '#64748b', fontWeight: 800, fontSize: 12 }}
+                    />
+
+                    <Tooltip
+                        cursor={{ fill: '#f8fafc' }}
+                        contentStyle={{
+                            borderRadius: '1rem',
+                            border: 'none',
+                            boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)',
+                            fontWeight: 'bold',
+                            fontFamily: 'sans-serif'
+                        }}
+                    />
+
+                    {/* Bar melengkung warna Indigo untuk Student */}
+                    <Bar
+                        dataKey="score"
+                        fill="#4f46e5"
+                        radius={[10, 10, 0, 0]}
+                        barSize={45}
+                    />
+
+                </BarChart>
             </ResponsiveContainer>
         </div>
     )

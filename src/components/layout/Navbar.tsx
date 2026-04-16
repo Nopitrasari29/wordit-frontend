@@ -18,8 +18,8 @@ export default function Navbar() {
     }, [])
 
     return (
-        <div className="fixed top-6 left-0 w-full z-50 flex justify-center px-4 font-sans">
-            <nav className="bg-white/80 backdrop-blur-xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-white px-6 py-3.5 rounded-full flex items-center justify-between w-full max-w-6xl transition-all">
+        <div className="fixed top-6 left-0 w-full z-50 flex justify-center px-4 font-sans pointer-events-none">
+            <nav className="bg-white/80 backdrop-blur-xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-white px-6 py-3.5 rounded-full flex items-center justify-between w-full max-w-6xl transition-all pointer-events-auto">
 
                 {/* LOGO */}
                 <Link to="/" className="flex items-center gap-2 hover:scale-105 transition-transform">
@@ -38,7 +38,7 @@ export default function Navbar() {
                     {user?.role === "STUDENT" && (
                         <>
                             <Link to="/student/dashboard" className="hover:text-indigo-600 transition-colors">Dashboard</Link>
-                            <Link to="/join" className="hover:text-indigo-600 transition-colors">Join Game</Link>
+                            <Link to="/student/join" className="hover:text-indigo-600 transition-colors">Join Game</Link>
                         </>
                     )}
 

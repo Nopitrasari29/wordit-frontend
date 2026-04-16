@@ -2,62 +2,68 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ===== GLOBAL ===== */
-
-body {
-    background: linear-gradient(180deg,#f8fafc 0%,#eef2ff 100%);
-    color: #1e293b;
-    min-height: 100vh;
-}
-
-/* ===== PAGE ANIMATION ===== */
-
-.page-enter {
-    animation: fade .35s ease;
-}
-
-@keyframes fade {
-    from {
-        opacity:0;
-        transform:translateY(10px)
-    }
-    to {
-        opacity:1;
-        transform:translateY(0)
+@layer base {
+    body {
+        @apply bg-white text-slate-900 antialiased;
     }
 }
 
-/* ===== FLOATING ANIMATION ===== */
+@layer utilities {
 
-.float {
-    animation: float 6s ease-in-out infinite;
+    /* Animasi Blob Lembut untuk Background */
+    .animate-blob {
+        animation: blob 7s infinite;
+    }
+
+    @keyframes blob {
+        0% {
+            transform: translate(0px, 0px) scale(1);
+        }
+
+        33% {
+            transform: translate(30px, -50px) scale(1.1);
+        }
+
+        66% {
+            transform: translate(-20px, 20px) scale(0.9);
+        }
+
+        100% {
+            transform: translate(0px, 0px) scale(1);
+        }
+    }
+
+    /* Animasi Wave mengalir pelan */
+    .animate-wave-slow {
+        animation: waveSlow 20s linear infinite;
+    }
+
+    @keyframes waveSlow {
+        0% {
+            transform: translateX(0);
+        }
+
+        100% {
+            transform: translateX(-50%);
+        }
+    }
 }
 
-@keyframes float {
-
-    0% {transform: translateY(0px)}
-    50% {transform: translateY(-10px)}
-    100% {transform: translateY(0px)}
-
+/* Custom Scrollbar agar senada dengan desain */
+::-webkit-scrollbar {
+    width: 10px;
 }
 
-/* ===== GLASS CARD ===== */
-
-.glass {
-
-    backdrop-filter: blur(10px);
-    background: rgba(255,255,255,0.7);
-    border:1px solid rgba(255,255,255,0.4);
-
+::-webkit-scrollbar-track {
+    background: #f8fafc;
 }
 
-/* ===== HERO GRADIENT ===== */
+::-webkit-scrollbar-thumb {
+    background: #e2e8f0;
+    border-radius: 10px;
+    border: 2px solid #f8fafc;
+}
 
-.hero-bg {
-
-    background:
-    radial-gradient(circle at 20% 20%,#c7d2fe 0%,transparent 40%),
-    radial-gradient(circle at 80% 30%,#a5b4fc 0%,transparent 40%),
-    radial-gradient(circle at 50% 80%,#ddd6fe 0%,transparent 40%);
-
+::-webkit-scrollbar-thumb:hover {
+    background: #cbd5e1;
 }

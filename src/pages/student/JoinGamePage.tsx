@@ -11,21 +11,20 @@ export default function JoinGamePage() {
   }
 
   return (
-    <div className="min-h-screen bg-indigo-600 flex flex-col items-center justify-center p-4 relative overflow-hidden font-sans selection:bg-indigo-900 selection:text-white">
+    // Tambahkan pt-28 untuk jarak aman dari Navbar
+    <div className="min-h-screen bg-indigo-600 flex flex-col items-center justify-center p-4 relative overflow-hidden font-sans pt-28 pb-12">
 
       {/* Pattern/Shape Background Ceria */}
-      <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-white/10 rounded-full blur-3xl float"></div>
-      <div className="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-blue-500/30 rounded-full blur-3xl float" style={{ animationDelay: '1s' }}></div>
+      <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-white/10 rounded-full blur-3xl"></div>
+      <div className="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-blue-500/30 rounded-full blur-3xl"></div>
 
-      {/* Main Container */}
       <div className="relative z-10 w-full max-w-lg text-center">
-
-        <h1 className="text-5xl md:text-7xl font-black text-white mb-10 tracking-tight drop-shadow-sm">
+        <h1 className="text-6xl md:text-8xl font-black text-white mb-10 tracking-tighter drop-shadow-xl italic">
           Word<span className="text-blue-300">IT</span>
         </h1>
 
-        <div className="bg-white p-8 md:p-12 rounded-[3rem] shadow-2xl float" style={{ animationDuration: '4s' }}>
-          <h2 className="text-2xl font-black text-slate-800 mb-8">Siap Bermain?</h2>
+        <div className="bg-white p-8 md:p-12 rounded-[3.5rem] shadow-2xl">
+          <h2 className="text-2xl font-black text-slate-800 mb-8 tracking-tight">Siap Bermain?</h2>
 
           <input
             placeholder="KODE GAME"
@@ -41,7 +40,6 @@ export default function JoinGamePage() {
             MASUK!
           </button>
         </div>
-
       </div>
     </div>
   )

@@ -47,61 +47,55 @@ export default function Router() {
     <BrowserRouter>
       <Routes>
         <Route element={<MainLayout />}>
-
-          {/* ================= PUBLIC ================= */}
           <Route path="/" element={<LandingPage />} />
           <Route path="/explore" element={<ExplorePage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
-          {/* ================= PROFILE ================= */}
           <Route element={<ProtectedRoute />}>
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/profile/edit" element={<EditProfilePage />} />
           </Route>
 
-          {/* ================= STUDENT ================= */}
           <Route element={<ProtectedRoute role="STUDENT" />}>
             <Route path="/student/dashboard" element={<StudentDashboard />} />
             <Route path="/student/analytics" element={<AnalyticsStudentPage />} />
-            <Route path="/join" element={<JoinGamePage />} />
-            <Route path="/game/enter" element={<EnterPlayerPage />} />
-            <Route path="/game/lobby/:sessionId" element={<GameLobbyPage />} />
-            <Route path="/game/session/:sessionId" element={<GameSessionPage />} />
-            <Route path="/play/:gameId" element={<PlayGamePage />} />
-            <Route path="/result/:sessionId" element={<ResultPage />} />
-            <Route path="/leaderboard/:gameId" element={<LeaderboardPage />} />
+            <Route path="/student/join" element={<JoinGamePage />} />
+            <Route path="/student/leaderboard" element={<LeaderboardPage />} />
+            <Route path="/student/leaderboard/:gameId" element={<LeaderboardPage />} />
+            <Route path="/student/game/enter" element={<EnterPlayerPage />} />
+            <Route path="/student/game/lobby/:sessionId" element={<GameLobbyPage />} />
+            <Route path="/student/game/session/:sessionId" element={<GameSessionPage />} />
+            <Route path="/student/play/:gameId" element={<PlayGamePage />} />
+            <Route path="/student/result/:sessionId" element={<ResultPage />} />
           </Route>
 
-          {/* ================= TEACHER ================= */}
           <Route element={<ProtectedRoute role="TEACHER" />}>
             <Route path="/teacher/dashboard" element={<TeacherDashboard />} />
             <Route path="/teacher/projects" element={<MyProjectsPage />} />
             <Route path="/teacher/class" element={<ClassPage />} />
             <Route path="/teacher/analytics" element={<AnalyticsClassPage />} />
 
-            {/* Create Game Flow (Sesuai SKPL: Level -> Template -> Builder) */}
+            {/* Step 1: Pilih Jenjang */}
             <Route path="/teacher/create/level" element={<ChooseLevelPage />} />
+            {/* Step 2: Pilih Template */}
             <Route path="/teacher/create/template" element={<ChooseTemplatePage />} />
+            {/* Step 3: Isi Konten */}
             <Route path="/teacher/create/builder" element={<GameBuilderPage />} />
             <Route path="/teacher/create/questions" element={<AddQuestionsPage />} />
 
-            {/* Management */}
             <Route path="/teacher/game/edit/:gameId" element={<EditGamePage />} />
             <Route path="/teacher/game/preview/:gameId" element={<PreviewGamePage />} />
           </Route>
 
-          {/* ================= ADMIN ================= */}
           <Route element={<ProtectedRoute role="ADMIN" />}>
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
             <Route path="/admin/users" element={<UserManagementPage />} />
             <Route path="/admin/logs" element={<SystemLogsPage />} />
           </Route>
 
-          {/* ================= 404 ================= */}
           <Route path="*" element={<NotFoundPage />} />
-
         </Route>
       </Routes>
     </BrowserRouter>

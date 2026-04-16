@@ -50,101 +50,103 @@ export default function UserManagementPage() {
     }
   }
 
-  if (loading) return <p className="p-10 text-center font-bold text-slate-500 font-sans pt-32">Loading users...</p>
+  if (loading) return (
+    <div className="min-h-screen flex items-center justify-center bg-slate-50 pt-32">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+    </div>
+  )
 
   return (
-    <div className="min-h-screen bg-slate-50 font-sans pb-20 pt-24 px-6">
-      <div className="max-w-7xl mx-auto space-y-8">
+    <div className="min-h-screen bg-slate-50 font-sans pb-20 pt-28 px-6 relative overflow-hidden">
+
+      {/* Dekorasi Background */}
+      <div className="absolute top-20 -right-10 w-96 h-96 bg-blue-50 rounded-full blur-3xl opacity-50"></div>
+
+      <div className="max-w-7xl mx-auto space-y-8 relative z-10">
 
         {/* HEADER */}
-        <div>
-          <h1 className="text-3xl md:text-4xl font-black text-slate-800 tracking-tight mb-2">
-            User Management 👥
-          </h1>
-          <p className="text-slate-500 font-bold">Cari dan kelola hak akses pengguna sistem.</p>
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100">
+          <div>
+            <h1 className="text-3xl md:text-4xl font-black text-slate-800 tracking-tight mb-2">
+              User Management 👥
+            </h1>
+            <p className="text-slate-400 font-bold uppercase text-xs tracking-[0.2em]">Cari dan kelola hak akses pengguna sistem.</p>
+          </div>
+
+          <div className="bg-slate-50 p-2 rounded-full border border-slate-100 flex items-center w-full max-w-sm shadow-inner transition-all focus-within:ring-4 focus-within:ring-indigo-100 focus-within:border-indigo-200 focus-within:bg-white">
+            <span className="pl-4 pr-2">🔍</span>
+            <input
+              className="flex-1 bg-transparent px-2 py-2 outline-none font-bold text-slate-700 text-sm placeholder:font-semibold placeholder:text-slate-300"
+              placeholder="Cari nama atau email..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
         </div>
 
-        {/* SEARCH BAR */}
-        <div className="bg-white p-4 rounded-full shadow-sm border border-slate-100 flex items-center max-w-md">
-          <span className="pl-4 pr-2 text-xl">🔍</span>
-          <input
-            className="flex-1 bg-transparent px-2 py-2 outline-none font-bold text-slate-700 placeholder:font-medium"
-            placeholder="Search name or email..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </div>
-
-        {/* TABLE WRAPPER */}
-        <div className="bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden overflow-x-auto">
-          <table className="w-full text-left min-w-[800px]">
-
-            <thead className="bg-slate-50 border-b-2 border-slate-100 text-slate-400">
-              <tr>
-                <th className="py-5 px-6 font-black uppercase tracking-widest text-sm text-center">Photo</th>
-                <th className="py-5 px-6 font-black uppercase tracking-widest text-sm">Name & Email</th>
-                <th className="py-5 px-6 font-black uppercase tracking-widest text-sm">Role</th>
-                <th className="py-5 px-6 font-black uppercase tracking-widest text-sm text-right">Actions</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {filteredUsers.length === 0 ? (
+        {/* TABLE SECTION */}
+        <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left min-w-[800px]">
+              <thead className="bg-slate-50 border-b border-slate-100 text-slate-400">
                 <tr>
-                  <td colSpan={4} className="text-center py-10 font-bold text-slate-400">Tidak ada user ditemukan.</td>
+                  <th className="py-6 px-8 font-black uppercase tracking-widest text-[10px] text-center">Photo</th>
+                  <th className="py-6 px-4 font-black uppercase tracking-widest text-[10px]">Identitas Pengguna</th>
+                  <th className="py-6 px-4 font-black uppercase tracking-widest text-[10px]">Akses Sistem (Role)</th>
+                  <th className="py-6 px-8 font-black uppercase tracking-widest text-[10px] text-right">Tindakan</th>
                 </tr>
-              ) : (
-                filteredUsers.map((user) => (
-                  <tr key={user.id} className="border-b border-slate-50 hover:bg-slate-50/50 transition-colors">
+              </thead>
 
-                    {/* PHOTO */}
-                    <td className="py-4 px-6 text-center">
-                      {user.photoUrl ? (
-                        <img src={user.photoUrl} className="w-12 h-12 rounded-full mx-auto object-cover border-2 border-slate-100" alt="Avatar" />
-                      ) : (
-                        <div className="w-12 h-12 bg-indigo-50 text-indigo-500 rounded-full mx-auto flex items-center justify-center font-black">
-                          {user.name.charAt(0)}
-                        </div>
-                      )}
-                    </td>
-
-                    {/* NAME & EMAIL */}
-                    <td className="py-4 px-6">
-                      <p className="font-black text-slate-800 text-lg">{user.name}</p>
-                      <p className="text-slate-500 font-bold text-sm">{user.email}</p>
-                    </td>
-
-                    {/* ROLE (SELECT) */}
-                    <td className="py-4 px-6">
-                      <select
-                        value={user.role}
-                        onChange={(e) => changeRole(user.id, e.target.value)}
-                        className="bg-slate-100 border border-slate-200 text-slate-700 px-4 py-2 rounded-full font-bold outline-none hover:bg-slate-200 transition-colors cursor-pointer text-sm"
-                      >
-                        <option value="STUDENT">👨‍🎓 STUDENT</option>
-                        <option value="TEACHER">👨‍🏫 TEACHER</option>
-                        <option value="ADMIN">🛡️ ADMIN</option>
-                      </select>
-                    </td>
-
-                    {/* ACTIONS */}
-                    <td className="py-4 px-6 text-right">
-                      <button
-                        className="bg-rose-50 hover:bg-rose-500 text-rose-500 hover:text-white px-5 py-2 rounded-full font-bold text-sm transition-all"
-                        onClick={() => removeUser(user.id)}
-                      >
-                        Delete
-                      </button>
-                    </td>
-
+              <tbody className="divide-y divide-slate-50">
+                {filteredUsers.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="text-center py-20 font-bold text-slate-300 italic text-lg">Tidak ada user ditemukan 🏜️</td>
                   </tr>
-                ))
-              )}
-            </tbody>
+                ) : (
+                  filteredUsers.map((user) => (
+                    <tr key={user.id} className="hover:bg-slate-50/50 transition-colors group">
+                      <td className="py-5 px-8 text-center">
+                        {user.photoUrl ? (
+                          <img src={user.photoUrl} className="w-14 h-14 rounded-2xl mx-auto object-cover border-4 border-white shadow-sm transition-transform group-hover:scale-110" alt="Avatar" />
+                        ) : (
+                          <div className="w-14 h-14 bg-indigo-50 text-indigo-500 rounded-2xl mx-auto flex items-center justify-center font-black text-xl shadow-inner uppercase">
+                            {user.name.charAt(0)}
+                          </div>
+                        )}
+                      </td>
 
-          </table>
+                      <td className="py-5 px-4">
+                        <p className="font-black text-slate-800 text-lg group-hover:text-indigo-600 transition-colors">{user.name}</p>
+                        <p className="text-slate-400 font-bold text-sm">{user.email}</p>
+                      </td>
+
+                      <td className="py-5 px-4">
+                        <select
+                          value={user.role}
+                          onChange={(e) => changeRole(user.id, e.target.value)}
+                          className="bg-slate-50 border-2 border-slate-100 text-slate-700 px-5 py-2.5 rounded-full font-black outline-none hover:bg-white hover:border-indigo-300 transition-all cursor-pointer text-xs"
+                        >
+                          <option value="STUDENT">🎓 STUDENT</option>
+                          <option value="TEACHER">👩‍🏫 TEACHER</option>
+                          <option value="ADMIN">🛡️ ADMIN</option>
+                        </select>
+                      </td>
+
+                      <td className="py-5 px-8 text-right">
+                        <button
+                          className="bg-white border-2 border-slate-100 text-rose-500 hover:bg-rose-500 hover:text-white hover:border-rose-500 px-6 py-2.5 rounded-full font-black text-xs transition-all shadow-sm active:scale-95"
+                          onClick={() => removeUser(user.id)}
+                        >
+                          Hapus User
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
-
       </div>
     </div>
   )

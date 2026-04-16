@@ -1,38 +1,39 @@
-import { useNavigate, useSearchParams } from "react-router-dom"
+import { useNavigate } from "react-router-dom";
 
-const levels = [
-  { id: "SD", icon: "🏫", color: "hover:border-emerald-400 hover:bg-emerald-50" },
-  { id: "SMP", icon: "🏢", color: "hover:border-blue-400 hover:bg-blue-50" },
-  { id: "SMA", icon: "🏛️", color: "hover:border-indigo-400 hover:bg-indigo-50" },
-  { id: "UNIVERSITY", icon: "🎓", color: "hover:border-rose-400 hover:bg-rose-50" }
-]
+const LEVELS = [
+  { id: "SD", label: "Sekolah Dasar (SD)", icon: "🎒", color: "bg-orange-500" },
+  { id: "SMP", label: "Sekolah Menengah (SMP)", icon: "🏫", color: "bg-blue-500" },
+  { id: "SMA", label: "SMA / SMK", icon: "📚", color: "bg-emerald-500" },
+  { id: "UNI", label: "Universitas / Umum", icon: "🎓", color: "bg-indigo-600" },
+];
 
 export default function ChooseLevelPage() {
-  const navigate = useNavigate()
-  const [params] = useSearchParams()
-  const template = params.get("template")
-
-  function selectLevel(level: string) {
-    navigate(`/teacher/create?template=${template}&level=${level}`)
-  }
+  const navigate = useNavigate();
 
   return (
-    <div className="max-w-4xl mx-auto py-20 px-6 font-sans text-center">
-      <h1 className="text-4xl md:text-5xl font-black text-slate-800 mb-4 tracking-tight">Pilih Jenjang 🎒</h1>
-      <p className="text-slate-500 font-bold mb-12 text-lg">Sesuaikan tingkat kesulitan game dengan muridmu.</p>
+    <div className="max-w-4xl mx-auto py-20 px-6 font-sans">
+      <div className="text-center mb-12">
+        <h1 className="text-4xl font-black text-slate-800 mb-4">Pilih Jenjang Pendidikan 🎒</h1>
+        <p className="text-slate-500 font-bold">Konten kuis akan disesuaikan dengan tingkat kesulitan jenjang ini.</p>
+      </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-        {levels.map((lvl) => (
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {LEVELS.map((level) => (
           <button
-            key={lvl.id}
-            onClick={() => selectLevel(lvl.id)}
-            className={`p-10 bg-white border-4 border-slate-100 rounded-[2.5rem] shadow-sm transition-all duration-300 flex flex-col items-center gap-4 group ${lvl.color} hover:-translate-y-2 hover:shadow-xl`}
+            key={level.id}
+            onClick={() => navigate(`/teacher/create/template?level=${level.id}`)}
+            className="group bg-white p-8 rounded-[2.5rem] border-4 border-slate-100 hover:border-indigo-500 shadow-sm hover:shadow-2xl transition-all flex items-center gap-6 text-left"
           >
-            <span className="text-5xl group-hover:scale-125 transition-transform duration-300">{lvl.icon}</span>
-            <span className="text-xl font-black text-slate-700">{lvl.id}</span>
+            <div className={`w-20 h-20 ${level.color} rounded-3xl flex items-center justify-center text-4xl shadow-lg group-hover:scale-110 transition-transform`}>
+              {level.icon}
+            </div>
+            <div>
+              <h3 className="text-2xl font-black text-slate-800">{level.label}</h3>
+              <p className="text-slate-400 font-bold text-sm">Pilih tingkat ini ➔</p>
+            </div>
           </button>
         ))}
       </div>
     </div>
-  )
+  );
 }
