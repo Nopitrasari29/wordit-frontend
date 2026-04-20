@@ -1,79 +1,70 @@
-type Question = {
-    question: string
-    answers?: string[]
-    answer?: string
+interface Question {
+    id?: string;
+    word?: string;
+    hint?: string;
 }
 
-type Props = {
-    questions: Question[]
+interface Props {
+    questions: Question[];
+    onDelete: (index: number) => void;
+    onUpdate: (index: number, updatedItem: any) => void;
 }
 
-export default function QuestionList({ questions }: Props) {
-
-    if (questions.length === 0) {
-        return (
-            <div className="bg-white p-10 rounded-[2rem] shadow-sm border border-slate-100 text-center font-sans">
-                <div className="text-5xl mb-4 opacity-70">📭</div>
-                <p className="text-slate-500 font-bold">No questions added yet. Yuk mulai tambahkan!</p>
-            </div>
-        )
-    }
-
+export default function QuestionList({ questions, onDelete, onUpdate }: Props) {
     return (
-        <div className="font-sans">
-            <h2 className="text-xl font-black text-slate-800 mb-6 flex items-center gap-2">
-                Daftar Pertanyaan <span className="bg-indigo-100 text-indigo-600 px-3 py-1 rounded-full text-sm">{questions.length}</span>
-            </h2>
-
-            <div className="space-y-4">
-                {questions.map((q, i) => (
+        <div className="space-y-4">
+            {questions.length === 0 ? (
+                <div className="text-center py-12 bg-slate-50 rounded-[2rem] border-2 border-dashed border-slate-200">
+                    <p className="text-slate-400 font-bold">Belum ada soal. Tambah manual atau pakai AI di atas!</p>
+                </div>
+            ) : (
+                questions.map((q, i) => (
                     <div
-                        key={i}
-                        className="bg-white p-6 rounded-[1.5rem] shadow-sm border border-slate-100 relative overflow-hidden group hover:shadow-md transition-all"
+                        key={q.id || i}
+                        className="bg-white p-8 rounded-[2.5rem] shadow-sm border-2 border-slate-50 flex items-center gap-6 relative group transition-all hover:border-indigo-100"
                     >
-                        {/* Garis Aksen Kiri */}
-                        <div className="absolute left-0 top-0 h-full w-2 bg-indigo-400"></div>
+                        {/* Nomor Soal */}
+                        <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center font-black text-lg shrink-0 group-hover:bg-indigo-600 group-hover:text-white transition-all">
+                            {i + 1}
+                        </div>
 
-                        <div className="flex items-start gap-4 pl-2">
-                            {/* Nomer Bulat */}
-                            <div className="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center font-black text-sm shrink-0 mt-1">
-                                {i + 1}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 flex-1">
+                            {/* INPUT KATA TARGET (JAWABAN) */}
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-slate-400 uppercase ml-4 tracking-widest">Kata Target (Jawaban)</label>
+                                <input
+                                    value={q.word || ""}
+                                    onChange={(e) => onUpdate(i, { word: e.target.value })}
+                                    className="w-full bg-slate-50 border-none rounded-2xl px-6 py-3 font-black text-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none uppercase"
+                                    placeholder="CONTOH"
+                                />
                             </div>
 
-                            <div className="flex-1">
-                                <p className="font-black text-slate-800 text-lg mb-3">
-                                    {q.question}
-                                </p>
-
-                                {/* Multiple Choice Answers */}
-                                {q.answers && (
-                                    <div className="flex flex-wrap gap-2">
-                                        {q.answers.map((a, j) => (
-                                            <span
-                                                key={j}
-                                                className={`px-4 py-1.5 rounded-full text-xs font-bold border ${j === 0 // Asumsi jawaban pertama adalah yang benar berdasarkan UI form sebelumnya
-                                                        ? "bg-emerald-50 text-emerald-700 border-emerald-100"
-                                                        : "bg-slate-50 text-slate-600 border-slate-100"
-                                                    }`}
-                                            >
-                                                {j === 0 ? `✓ ${a || 'Kosong'}` : a || 'Kosong'}
-                                            </span>
-                                        ))}
-                                    </div>
-                                )}
-
-                                {/* Short Answer */}
-                                {q.answer && (
-                                    <p className="bg-emerald-50 text-emerald-700 border border-emerald-100 px-4 py-2 rounded-full text-sm font-bold inline-block">
-                                        ✓ Jawaban: {q.answer}
-                                    </p>
-                                )}
+                            {/* INPUT HINT / PETUNJUK */}
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-slate-400 uppercase ml-4 tracking-widest">Petunjuk / Hint</label>
+                                <input
+                                    value={q.hint || ""}
+                                    onChange={(e) => onUpdate(i, { hint: e.target.value })}
+                                    className="w-full bg-slate-50 border-none rounded-2xl px-6 py-3 font-bold text-slate-500 focus:ring-2 focus:ring-indigo-500 outline-none"
+                                    placeholder="Masukkan petunjuk menebak kata..."
+                                />
                             </div>
                         </div>
 
+                        {/* TOMBOL HAPUS */}
+                        <button
+                            onClick={() => onDelete(i)}
+                            className="p-4 bg-red-50 text-red-500 rounded-2xl opacity-0 group-hover:opacity-100 transition-all hover:bg-red-500 hover:text-white shadow-sm"
+                            title="Hapus Soal"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                        </button>
                     </div>
-                ))}
-            </div>
+                ))
+            )}
         </div>
-    )
+    );
 }
