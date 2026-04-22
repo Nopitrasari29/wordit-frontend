@@ -1,45 +1,150 @@
-import { useSearchParams } from "react-router-dom"
-import GameRenderer from "../../../components/game/GameRenderer"
+import { useEffect, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import GameRenderer from "../../../components/game/GameRenderer";
+import { getGameById } from "../../services/game.service"; 
+import { toast } from "react-hot-toast";
 
 export default function PreviewGamePage() {
-  const [params] = useSearchParams()
-  const template = params.get("template")
+  // 🎯 Mengambil gameId dari URL (Route: /teacher/game/preview/:gameId)
+  const { gameId } = useParams(); 
+  const navigate = useNavigate();
 
-  const mockGame = {
-    templateType: template || "ANAGRAM",
-    data: {},
+  const [game, setGame] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [errorDetail, setErrorDetail] = useState("");
+
+  useEffect(() => {
+    const fetchGameData = async () => {
+      if (!gameId) {
+        setErrorDetail("ID Game tidak ditemukan.");
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        // 📡 Ambil data utuh dari database Docker PostgreSQL
+        const response = await getGameById(gameId); 
+        
+        // Memastikan data mendarat dengan selamat (Handling format Axios)
+        const finalData = (response as any).data || response;
+        
+        if (!finalData) {
+          throw new Error("Data kuis tidak ditemukan di server.");
+        }
+
+        console.log("🎮 DATA PREVIEW DIMUAT:", finalData);
+        setGame(finalData);
+      } catch (err: any) {
+        console.error("❌ Preview Fetch Error:", err);
+        setErrorDetail(err.message || "Gagal memuat preview kuis.");
+        toast.error("Waduh, gagal narik data kuis nih, Nop! 🌵");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchGameData();
+  }, [gameId]);
+
+  // --- RENDER LOADING STATE ---
+  if (loading) {
+    return (
+      <div className="min-h-screen w-full flex flex-col items-center justify-center bg-slate-50 font-sans">
+        <div className="w-16 h-16 border-8 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+        <p className="mt-6 font-black text-slate-400 uppercase tracking-[0.4em] animate-pulse">Menyiapkan Arena...</p>
+      </div>
+    );
+  }
+
+  // --- RENDER ERROR STATE ---
+  if (errorDetail || !game) {
+    return (
+      <div className="min-h-screen w-full flex flex-col items-center justify-center bg-rose-50 p-6 text-center">
+        <div className="text-8xl mb-6">🏜️</div>
+        <h2 className="text-3xl font-black text-rose-600 uppercase tracking-tighter">Gagal Preview</h2>
+        <p className="text-rose-400 font-bold mt-2 max-w-md">{errorDetail}</p>
+        <button 
+          onClick={() => navigate("/teacher/projects")}
+          className="mt-10 bg-rose-600 text-white px-10 py-4 rounded-full font-black uppercase text-xs tracking-widest shadow-xl active:scale-95 transition-all"
+        >
+          Kembali ke Projects
+        </button>
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-slate-900 font-sans flex flex-col items-center py-12 px-6 overflow-hidden">
-      <div className="max-w-4xl w-full">
-        <div className="flex justify-between items-center mb-10">
-          <div>
-            <h1 className="text-3xl font-black text-white tracking-tight">Game Preview 🕹️</h1>
-            <p className="text-slate-400 font-bold">Melihat tampilan game saat dimainkan siswa</p>
+    <div className="min-h-screen bg-slate-50 pt-28 pb-20 font-sans">
+      <div className="max-w-[1100px] mx-auto px-6 space-y-10">
+        
+        {/* 1. HEADER INFO */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 px-4">
+          <div className="space-y-2">
+            <div className="flex items-center gap-3">
+               <span className="bg-indigo-600 text-white px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">
+                  Preview Mode
+               </span>
+               <p className="text-indigo-400 font-black text-[10px] uppercase tracking-[0.3em]">
+                  {game.templateType}
+               </p>
+            </div>
+            <h1 className="text-5xl font-black text-slate-800 tracking-tighter italic leading-none">
+              {game.title}
+            </h1>
           </div>
-          <div className="bg-indigo-500 text-white px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest animate-pulse">
-            Live Mode
-          </div>
+          
+          <button 
+            onClick={() => navigate(`/teacher/game/edit/${gameId}`)}
+            className="bg-white border-2 border-slate-200 text-slate-400 px-8 py-3 rounded-full font-black text-xs uppercase tracking-widest hover:border-indigo-500 hover:text-indigo-600 transition-all shadow-sm"
+          >
+            Edit Kuis ✏️
+          </button>
         </div>
 
-        {/* Mockup Frame */}
-        <div className="relative mx-auto w-full max-w-[800px] bg-slate-800 p-4 md:p-8 rounded-[3rem] border-[12px] border-slate-700 shadow-2xl overflow-hidden min-h-[500px]">
-          {/* Subtle reflection effect */}
-          <div className="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-b from-white/5 to-transparent pointer-events-none"></div>
-
-          <div className="relative bg-white rounded-[2rem] overflow-hidden min-h-[400px]">
-            <GameRenderer
-              templateType={mockGame.templateType}
-              gameData={mockGame.data}
-            />
-          </div>
+        {/* 2. MAIN ACTIVITY CONTAINER (Arena Preview) */}
+        <div className="relative group">
+            {/* Dekorasi Glow di Belakang */}
+            <div className="absolute -inset-4 bg-gradient-to-tr from-indigo-500 to-purple-500 rounded-[5rem] opacity-10 blur-2xl group-hover:opacity-20 transition-opacity duration-700"></div>
+            
+            <div className="relative bg-white rounded-[4.5rem] shadow-2xl border-[14px] border-indigo-50 min-h-[650px] flex items-center justify-center overflow-hidden transition-all duration-500">
+                {/* 🎯 CORE RENDERER: Menghidupkan Engine Game */}
+                <GameRenderer 
+                    templateType={game.templateType} 
+                    gameData={game} 
+                />
+            </div>
         </div>
 
-        <p className="text-center text-slate-500 mt-8 font-bold text-sm italic">
-          Tip: Gunakan tampilan ini untuk memastikan soal dan gambar terlihat jelas.
-        </p>
+        {/* 3. CONTROL FOOTER */}
+        <div className="bg-slate-900 p-10 rounded-[4rem] shadow-2xl flex flex-col md:flex-row items-center justify-between gap-8 relative overflow-hidden">
+            {/* Pattern Background */}
+            <div className="absolute inset-0 opacity-10 pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]"></div>
+            
+            <div className="relative z-10">
+                <h4 className="text-white font-black text-xl italic tracking-tight">Siap untuk dipublikasikan?</h4>
+                <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mt-1">Cek kembali semua soal sebelum dibagikan ke siswa</p>
+            </div>
+
+            <div className="flex items-center gap-6 relative z-10 w-full md:w-auto">
+                <button 
+                  onClick={() => navigate("/teacher/projects")}
+                  className="flex-1 md:flex-none text-slate-400 font-black uppercase text-[10px] tracking-widest hover:text-white transition-all"
+                >
+                  Nanti Saja
+                </button>
+                
+                {/* 🎯 REVISI PATEN: Tombol Play sekarang beneran mengarah ke PlayPage */}
+                <button 
+                  onClick={() => navigate(`/play/${gameId}`)}
+                  className="flex-1 md:flex-none bg-indigo-600 text-white px-16 py-6 rounded-full font-black text-xl hover:bg-indigo-500 hover:scale-105 shadow-xl shadow-indigo-900/50 transition-all active:scale-95 flex items-center justify-center gap-3"
+                >
+                  MULAI MAIN! 🚀
+                </button>
+            </div>
+        </div>
+
       </div>
     </div>
-  )
+  );
 }

@@ -1,150 +1,65 @@
-const API_URL = "http://localhost:3000/api"
+import api from "./api"; 
+import type { Game, TemplateType, EducationLevel } from "../../types/game";
 
-function getToken() {
-  return localStorage.getItem("token")
-}
+/**
+ * 🎯 GET ALL GAMES (Explore)
+ */
+export const getGames = async (params?: {
+  educationLevel?: EducationLevel;
+  templateType?: TemplateType;
+  search?: string;
+  page?: number;
+  limit?: number;
+}) => {
+  const res = await api.get("/games", { params });
+  return res.data.data;
+};
 
-/* ================================
-   GET ALL GAMES (Explore)
-================================ */
+/**
+ * 🎯 GET GAME DETAIL (Dipakai di EditGamePage)
+ * FIX: Nama diubah dari getGame -> getGameById agar sesuai dengan EditGamePage
+ */
+export const getGameById = async (id: string): Promise<Game> => {
+  const res = await api.get(`/games/${id}`);
+  return res.data.data;
+};
 
-export async function getGames(params?: any) {
+/**
+ * 🎯 GET MY GAMES (Teacher Dashboard)
+ */
+export const getMyGames = async (): Promise<Game[]> => {
+  const res = await api.get("/games/user/my-games");
+  return res.data.data;
+};
 
-  const query = new URLSearchParams()
+/**
+ * 🎯 CREATE GAME
+ */
+export const createGame = async (data: Partial<Game>) => {
+  const res = await api.post("/games", data);
+  return res.data.data;
+};
 
-  if (params?.educationLevel) query.append("educationLevel", params.educationLevel)
-  if (params?.templateType) query.append("templateType", params.templateType)
-  if (params?.search) query.append("search", params.search)
-  if (params?.page) query.append("page", params.page)
-  if (params?.limit) query.append("limit", params.limit)
+/**
+ * 🎯 UPDATE GAME
+ */
+export const updateGame = async (id: string, data: Partial<Game>) => {
+  const res = await api.patch(`/games/${id}`, data);
+  return res.data.data;
+};
 
-  const res = await fetch(`${API_URL}/games?${query.toString()}`)
+/**
+ * 🎯 DELETE GAME
+ */
+export const deleteGame = async (id: string) => {
+  const res = await api.delete(`/games/${id}`);
+  return res.data.data;
+};
 
-  const json = await res.json()
-
-  if (!res.ok) throw new Error(json.message)
-
-  return json.data
-}
-
-/* ================================
-   GET GAME DETAIL
-================================ */
-
-export async function getGame(id: string) {
-
-  const res = await fetch(`${API_URL}/games/${id}`, {
-    headers: {
-      Authorization: `Bearer ${getToken()}`
-    }
-  })
-
-  const json = await res.json()
-
-  if (!res.ok) throw new Error(json.message)
-
-  return json.data
-}
-
-/* ================================
-   GET MY GAMES (Teacher Dashboard)
-================================ */
-
-export async function getMyGames() {
-
-  const res = await fetch(`${API_URL}/games/user/my-games`, {
-    headers: {
-      Authorization: `Bearer ${getToken()}`
-    }
-  })
-
-  const json = await res.json()
-
-  if (!res.ok) throw new Error(json.message)
-
-  return json.data
-}
-
-/* ================================
-   CREATE GAME
-================================ */
-
-export async function createGame(data: any) {
-
-  const res = await fetch(`${API_URL}/games`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${getToken()}`
-    },
-    body: JSON.stringify(data)
-  })
-
-  const json = await res.json()
-
-  if (!res.ok) throw new Error(json.message)
-
-  return json.data
-}
-
-/* ================================
-   UPDATE GAME
-================================ */
-
-export async function updateGame(id: string, data: any) {
-
-  const res = await fetch(`${API_URL}/games/${id}`, {
-    method: "PATCH",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${getToken()}`
-    },
-    body: JSON.stringify(data)
-  })
-
-  const json = await res.json()
-
-  if (!res.ok) throw new Error(json.message)
-
-  return json.data
-}
-
-/* ================================
-   DELETE GAME
-================================ */
-
-export async function deleteGame(id: string) {
-
-  const res = await fetch(`${API_URL}/games/${id}`, {
-    method: "DELETE",
-    headers: {
-      Authorization: `Bearer ${getToken()}`
-    }
-  })
-
-  const json = await res.json()
-
-  if (!res.ok) throw new Error(json.message)
-
-  return json.data
-}
-
-/* ================================
-   PUBLISH GAME
-================================ */
-
-export async function publishGame(id: string) {
-
-  const res = await fetch(`${API_URL}/games/${id}/publish`, {
-    method: "PATCH",
-    headers: {
-      Authorization: `Bearer ${getToken()}`
-    }
-  })
-
-  const json = await res.json()
-
-  if (!res.ok) throw new Error(json.message)
-
-  return json.data
-}
+/**
+ * 🎯 PUBLISH GAME
+ */
+export const publishGame = async (id: string) => {
+  const res = await api.patch(`/games/${id}/publish`);
+  return res.data.data;
+};

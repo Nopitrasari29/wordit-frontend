@@ -36,6 +36,7 @@ import PreviewGamePage from "../pages/teacher/create-game/PreviewGamePage";
 import AddQuestionsPage from "../pages/teacher/create-game/AddQuestionsPage";
 import ClassPage from "../pages/teacher/ClassPage";
 import AnalyticsClassPage from "../pages/teacher/analytics/AnalyticsClassPage";
+import HostSessionPage from "../pages/teacher/HostSessionPage"; // 🎯 FIX: Pastikan ini diimport!
 
 /* ADMIN PAGES */
 import AdminDashboard from "../pages/admin/AdminDashboard";
@@ -47,48 +48,53 @@ export default function Router() {
     <BrowserRouter>
       <Routes>
         <Route element={<MainLayout />}>
+          {/* ================= PUBLIC ROUTES ================= */}
           <Route path="/" element={<LandingPage />} />
           <Route path="/explore" element={<ExplorePage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
+          {/* ================= GENERAL PROTECTED (Auth Only) ================= */}
           <Route element={<ProtectedRoute />}>
+            {/* 🎮 Rute Play ditaruh di sini agar Teacher bisa Preview & Student bisa Play */}
+            <Route path="/play/:gameId" element={<PlayGamePage />} /> 
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/profile/edit" element={<EditProfilePage />} />
           </Route>
 
+          {/* ================= STUDENT ROUTES ================= */}
           <Route element={<ProtectedRoute role="STUDENT" />}>
             <Route path="/student/dashboard" element={<StudentDashboard />} />
             <Route path="/student/analytics" element={<AnalyticsStudentPage />} />
             <Route path="/student/join" element={<JoinGamePage />} />
             <Route path="/student/leaderboard" element={<LeaderboardPage />} />
-            <Route path="/student/leaderboard/:gameId" element={<LeaderboardPage />} />
             <Route path="/student/game/enter" element={<EnterPlayerPage />} />
             <Route path="/student/game/lobby/:sessionId" element={<GameLobbyPage />} />
             <Route path="/student/game/session/:sessionId" element={<GameSessionPage />} />
-            <Route path="/student/play/:gameId" element={<PlayGamePage />} />
             <Route path="/student/result/:sessionId" element={<ResultPage />} />
           </Route>
 
+          {/* ================= TEACHER ROUTES ================= */}
           <Route element={<ProtectedRoute role="TEACHER" />}>
             <Route path="/teacher/dashboard" element={<TeacherDashboard />} />
             <Route path="/teacher/projects" element={<MyProjectsPage />} />
             <Route path="/teacher/class" element={<ClassPage />} />
             <Route path="/teacher/analytics" element={<AnalyticsClassPage />} />
+            
+            {/* 🚀 FIX: Rute untuk Host Mode (Layar Proyektor Guru) */}
+            <Route path="/teacher/session/host/:gameId" element={<HostSessionPage />} /> 
 
-            {/* Step 1: Pilih Jenjang */}
+            {/* Pembuatan Game */}
             <Route path="/teacher/create/level" element={<ChooseLevelPage />} />
-            {/* Step 2: Pilih Template */}
             <Route path="/teacher/create/template" element={<ChooseTemplatePage />} />
-            {/* Step 3: Isi Konten */}
             <Route path="/teacher/create/builder" element={<GameBuilderPage />} />
             <Route path="/teacher/create/questions" element={<AddQuestionsPage />} />
-
             <Route path="/teacher/game/edit/:gameId" element={<EditGamePage />} />
             <Route path="/teacher/game/preview/:gameId" element={<PreviewGamePage />} />
           </Route>
 
+          {/* ================= ADMIN ROUTES ================= */}
           <Route element={<ProtectedRoute role="ADMIN" />}>
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
             <Route path="/admin/users" element={<UserManagementPage />} />

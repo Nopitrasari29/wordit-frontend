@@ -1,4 +1,18 @@
+import React from "react";
+
+// 1. Definisikan interface Props agar TypeScript tahu tipe data 'answer'
+interface Props {
+  answer: string;
+}
+
 export default function DraggableAnswer({ answer }: Props) {
+    
+    // 2. Buat fungsi handleDragStart untuk menangani logika drag
+    const handleDragStart = (e: React.DragEvent<HTMLDivElement>) => {
+        // Menyimpan data jawaban ke dalam dataTransfer agar bisa dibaca saat drop
+        e.dataTransfer.setData("text/plain", answer);
+    };
+
     return (
         <div
             draggable

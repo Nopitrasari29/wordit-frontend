@@ -1,54 +1,86 @@
 import { useState } from "react"
 
-export default function HangmanEngine() {
-    const word = "BIOLOGY"
-    const [guess, setGuess] = useState("")
+export default function HangmanEngine({ data }: { data: any }) {
+    const quizWords = data?.gameJson?.words || []
+    const [currentIndex, setCurrentIndex] = useState(0)
     const [used, setUsed] = useState<string[]>([])
+    const [guess, setGuess] = useState("")
+
+    const currentData = quizWords[currentIndex]
+    const word = currentData?.word?.toUpperCase() || ""
+
+    if (quizWords.length === 0) return (
+        <div className="p-20 text-center text-slate-400 font-black italic uppercase tracking-widest">
+            😵 Belum ada kata...
+        </div>
+    )
 
     function submit() {
-        if (!guess) return
-        setUsed([...used, guess])
+        const char = guess.trim().toUpperCase()
+        if (!char || used.includes(char)) return
+        
+        const newUsed = [...used, char]
+        setUsed(newUsed)
         setGuess("")
+
+        const isComplete = word.split("").every((l: string) => newUsed.includes(l))
+        
+        if (isComplete) {
+            setTimeout(() => {
+                if (currentIndex < quizWords.length - 1) {
+                    setCurrentIndex(prev => prev + 1)
+                    setUsed([])
+                } else {
+                    alert("Selamat! Kamu Juara Hangman! 🏆")
+                }
+            }, 300)
+        }
     }
 
     return (
-        <div className="flex flex-col items-center p-6 space-y-10 font-sans">
-            <h2 className="text-3xl font-black text-slate-800">Hangman 🧗</h2>
+        <div className="flex flex-col items-center p-8 space-y-10 font-sans w-full max-w-2xl mx-auto">
+            <div className="text-center space-y-4">
+                <h2 className="text-4xl font-black text-slate-800 tracking-tighter italic">Hangman 🧗</h2>
+                <div className="bg-amber-50 border-4 border-amber-100 px-8 py-4 rounded-[2.5rem] shadow-sm">
+                    <p className="text-amber-700 font-black italic text-xl">"{currentData?.hint || "Cari katanya!"}"</p>
+                </div>
+            </div>
 
-            {/* DISPLAY WORD */}
-            <div className="flex flex-wrap justify-center gap-2">
-                {word.split("").map((l, i) => (
+            <div className="flex flex-wrap justify-center gap-3">
+                {word.split("").map((l: string, i: number) => (
                     <div
                         key={i}
-                        className={`w-12 h-14 border-b-8 flex items-center justify-center text-3xl font-black transition-all ${used.includes(l) ? 'border-emerald-500 text-emerald-600' : 'border-slate-200 text-transparent'
-                            }`}
+                        className={`w-14 h-16 border-b-[10px] flex items-center justify-center text-4xl font-black transition-all duration-500 ${
+                            used.includes(l) ? 'border-indigo-500 text-indigo-600 scale-110' : 'border-slate-200 text-transparent'
+                        }`}
                     >
                         {used.includes(l) ? l : ""}
                     </div>
                 ))}
             </div>
 
-            <div className="w-full max-w-xs flex flex-col gap-4">
+            <div className="w-full max-w-sm space-y-4">
                 <input
-                    className="w-full bg-white border-4 border-slate-100 p-4 rounded-2xl text-center text-2xl font-black focus:border-amber-400 outline-none uppercase"
+                    className="w-full bg-slate-50 border-4 border-slate-100 p-6 rounded-[2.5rem] text-center text-4xl font-black focus:border-indigo-500 focus:bg-white outline-none uppercase transition-all shadow-inner"
                     maxLength={1}
                     placeholder="?"
                     value={guess}
-                    onChange={(e) => setGuess(e.target.value.toUpperCase())}
+                    onChange={(e) => setGuess(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && submit()}
                 />
                 <button
                     onClick={submit}
-                    className="bg-amber-400 hover:bg-amber-300 text-amber-900 font-black py-4 rounded-2xl text-xl shadow-lg transition-all"
+                    className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-black py-5 rounded-[2.5rem] text-xl shadow-lg shadow-indigo-100 active:scale-95 transition-all"
                 >
-                    Tebak Huruf!
+                    TEBAK HURUF! 🚀
                 </button>
             </div>
 
-            <div className="text-center">
-                <p className="text-slate-400 font-bold mb-2">Huruf yang sudah dicoba:</p>
+            <div className="w-full bg-white p-8 rounded-[3rem] border-2 border-slate-50 text-center">
+                <p className="text-[10px] font-black text-slate-400 uppercase mb-4 tracking-[0.2em]">History Huruf</p>
                 <div className="flex gap-2 justify-center flex-wrap">
                     {used.map((u, i) => (
-                        <span key={i} className="bg-slate-100 text-slate-500 px-3 py-1 rounded-full font-black uppercase">{u}</span>
+                        <span key={i} className="bg-slate-50 text-slate-400 px-4 py-2 rounded-xl font-black uppercase border border-slate-100">{u}</span>
                     ))}
                 </div>
             </div>

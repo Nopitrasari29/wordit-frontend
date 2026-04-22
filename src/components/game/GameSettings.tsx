@@ -1,3 +1,15 @@
+// src/components/game/GameSettings.tsx
+
+// 🎯 TAMBAHKAN INI: Mendefinisikan struktur Props
+interface Props {
+  settings: {
+    timer: number;
+    shuffle: boolean;
+    attempts: number;
+  };
+  setSettings: (settings: any) => void;
+}
+
 export default function GameSettings({ settings, setSettings }: Props) {
     return (
         <div className="bg-white p-8 rounded-[2.5rem] border-2 border-slate-100 shadow-sm font-sans">
@@ -6,6 +18,7 @@ export default function GameSettings({ settings, setSettings }: Props) {
             </h3>
 
             <div className="space-y-6">
+                {/* Timer Section */}
                 <div>
                     <label className="block text-sm font-black text-slate-600 mb-2 ml-2">Timer per Soal (Detik)</label>
                     <input
@@ -16,6 +29,7 @@ export default function GameSettings({ settings, setSettings }: Props) {
                     />
                 </div>
 
+                {/* Shuffle Section */}
                 <label className="flex items-center gap-3 cursor-pointer group bg-slate-50 p-4 rounded-2xl border-2 border-transparent hover:border-indigo-100 transition-all">
                     <input
                         type="checkbox"
@@ -26,6 +40,7 @@ export default function GameSettings({ settings, setSettings }: Props) {
                     <span className="font-bold text-slate-700">Acak Urutan Pertanyaan</span>
                 </label>
 
+                {/* Attempts Section */}
                 <div>
                     <label className="block text-sm font-black text-slate-600 mb-2 ml-2">Maksimal Kesempatan (Nyawa)</label>
                     <input

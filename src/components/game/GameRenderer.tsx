@@ -1,47 +1,86 @@
-import AnagramEngine from "./engines/AnagramEngine"
-import FlashcardEngine from "./engines/FlashcardEngine"
-import HangmanEngine from "./engines/HangmanEngine"
-import MazeChaseEngine from "./engines/MazeChaseEngine"
-import SpinWheelEngine from "./engines/SpinWheelEngine"
-import WordSearchEngine from "./engines/WordSearchEngine"
+import AnagramEngine from "./engines/AnagramEngine";
+import FlashcardEngine from "./engines/FlashcardEngine";
+import HangmanEngine from "./engines/HangmanEngine";
+import MazeChaseEngine from "./engines/MazeChaseEngine";
+import SpinWheelEngine from "./engines/SpinWheelEngine";
+import WordSearchEngine from "./engines/WordSearchEngine";
 
 interface Props {
-  templateType: string
-  gameData: any
+  templateType: any; 
+  gameData: any;
 }
 
 export default function GameRenderer({ templateType, gameData }: Props) {
-  // Komponen pembungkus agar semua engine game memiliki frame yang cantik
+  
+  // 🔍 DEBUGGING: Buka Console (F12) untuk melihat pesan ini
+  console.log("🛠️ DEBUG RENDERER:", { 
+    receivedType: templateType, 
+    typeOfReceived: typeof templateType,
+    data: gameData 
+  });
+
+  /**
+   * 🛠️ SUPER AUTO-FIX (Paten):
+   * Menangani jika sistem tidak sengaja kirim objek 'game' utuh ke prop 'templateType'
+   */
+  let finalType = "";
+
+  if (typeof templateType === "string") {
+    finalType = templateType;
+  } else if (templateType && typeof templateType === "object") {
+    // Ambil string tipenya dari dalam objek
+    finalType = templateType.templateType || templateType.template || "";
+  }
+
+  // Back-up terakhir: Jika masih kosong, coba intip di dalam gameData
+  if (!finalType && gameData?.templateType) {
+    finalType = gameData.templateType;
+  }
+
+  const type = finalType?.toUpperCase().trim();
+
   const EngineWrapper = ({ children }: { children: React.ReactNode }) => (
-    <div className="w-full h-full min-h-[500px] flex items-center justify-center p-4 bg-white/50 backdrop-blur-sm rounded-[2.5rem]">
+    <div className="w-full h-full flex items-center justify-center p-2 animate-fade-in">
       {children}
     </div>
   );
 
-  switch (templateType) {
+  // 🚀 ENGINE ROUTING
+  switch (type) {
     case "ANAGRAM":
-      return <EngineWrapper><AnagramEngine data={gameData} /></EngineWrapper>
-
+      return <EngineWrapper><AnagramEngine data={gameData} /></EngineWrapper>;
     case "FLASHCARD":
-      return <EngineWrapper><FlashcardEngine data={gameData} /></EngineWrapper>
-
+      return <EngineWrapper><FlashcardEngine data={gameData} /></EngineWrapper>;
     case "HANGMAN":
-      return <EngineWrapper><HangmanEngine data={gameData} /></EngineWrapper>
-
+      return <EngineWrapper><HangmanEngine data={gameData} /></EngineWrapper>;
     case "MAZE_CHASE":
-      return <EngineWrapper><MazeChaseEngine data={gameData} /></EngineWrapper>
-
+      return <EngineWrapper><MazeChaseEngine data={gameData} /></EngineWrapper>;
     case "SPIN_THE_WHEEL":
-      return <EngineWrapper><SpinWheelEngine data={gameData} /></EngineWrapper>
-
+    case "SPIN_WHEEL":
+      return <EngineWrapper><SpinWheelEngine data={gameData} /></EngineWrapper>;
     case "WORD_SEARCH":
-      return <EngineWrapper><WordSearchEngine data={gameData} /></EngineWrapper>
+      return <EngineWrapper><WordSearchEngine data={gameData} /></EngineWrapper>;
 
     default:
       return (
-        <div className="text-center p-20 bg-white rounded-[2rem] shadow-sm border border-slate-100">
-          <p className="text-slate-400 font-black text-xl italic">Unsupported template</p>
+        <div className="text-center p-16 bg-white rounded-[3rem] border-4 border-dashed border-slate-100 max-w-md mx-auto flex flex-col items-center justify-center">
+          {/* 🎯 JOYSTICK ICON: Tanda file ini SUDAH TERPAKAI */}
+          <div className="text-7xl mb-6 grayscale opacity-20">🕹️</div>
+          <h2 className="text-xl font-black text-slate-400 uppercase tracking-tighter italic leading-none">Arena Not Ready</h2>
+          
+          <div className="space-y-1 mt-4">
+            <p className="font-bold text-slate-300 uppercase tracking-[0.2em] text-[9px]">
+               LOG: {type ? `TYPE "${type}" UNKNOWN` : "EMPTY_TYPE"}
+            </p>
+            <p className="text-[8px] text-slate-200 font-mono">
+               RAW: {JSON.stringify(templateType)?.substring(0, 30)}...
+            </p>
+          </div>
+          
+          <div className="mt-8 bg-indigo-50 px-8 py-3 rounded-full border border-indigo-100 text-[10px] font-black text-indigo-400 uppercase tracking-widest">
+              PERIKSA CONSOLE (F12)
+          </div>
         </div>
-      )
+      );
   }
 }

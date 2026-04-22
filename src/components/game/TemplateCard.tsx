@@ -1,3 +1,10 @@
+// 1. Definisikan interface Props di sini
+interface Props {
+  title: string;
+  description: string;
+  onClick: () => void;
+}
+
 export default function TemplateCard({ title, description, onClick }: Props) {
   return (
     <div

@@ -1,46 +1,56 @@
 import { useState } from "react"
 
-export default function FlashcardEngine() {
-    const cards = [
-        { q: "Capital of France", a: "Paris" },
-        { q: "2+2", a: "4" }
-    ]
-
+export default function FlashcardEngine({ data }: { data: any }) {
+    const cards = data?.gameJson?.cards || []
     const [index, setIndex] = useState(0)
     const [show, setShow] = useState(false)
     const card = cards[index]
 
-    return (
-        <div className="flex flex-col items-center justify-center p-6 space-y-10 font-sans">
-            <h2 className="text-3xl font-black text-slate-800">Flashcards 🎴</h2>
+    if (cards.length === 0) return (
+        <div className="p-20 text-center text-slate-400 font-black italic uppercase tracking-widest">
+            🎴 Belum ada kartu...
+        </div>
+    )
 
-            {/* CARD BODY */}
+    return (
+        <div className="flex flex-col items-center justify-center p-6 space-y-10 font-sans w-full max-w-2xl mx-auto">
+            <div className="text-center">
+                <h2 className="text-4xl font-black text-slate-800 tracking-tighter italic">Flashcards 🎴</h2>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mt-2">Ketuk kartu untuk melihat jawaban</p>
+            </div>
+
             <div
                 onClick={() => setShow(!show)}
-                className={`w-full max-w-md aspect-[4/3] flex items-center justify-center p-8 rounded-[3rem] shadow-2xl cursor-pointer transition-all duration-500 transform hover:scale-105 ${show ? 'bg-indigo-600 text-white rotate-3' : 'bg-white text-slate-800 border-8 border-indigo-50'
-                    }`}
+                className={`w-full aspect-[4/3] flex items-center justify-center p-12 rounded-[4rem] shadow-2xl cursor-pointer transition-all duration-700 transform ${
+                    show ? 'bg-indigo-600 text-white rotate-1 scale-105' : 'bg-white text-slate-800 border-[12px] border-indigo-50 hover:shadow-indigo-100'
+                }`}
             >
-                <h3 className="text-3xl md:text-4xl font-black text-center leading-tight">
-                    {show ? card.a : card.q}
+                <h3 className={`text-3xl md:text-5xl font-black text-center leading-tight transition-all duration-300 ${show ? 'scale-110' : ''}`}>
+                    {show ? card.back : card.front}
                 </h3>
             </div>
 
-            <div className="flex gap-4">
+            <div className="flex items-center gap-6 w-full">
                 <button
                     onClick={() => setShow(!show)}
-                    className="bg-slate-800 text-white px-8 py-3 rounded-2xl font-black hover:bg-slate-700 transition-all"
+                    className="flex-1 bg-slate-900 text-white px-8 py-5 rounded-[2rem] font-black hover:bg-slate-800 transition-all active:scale-95 shadow-xl"
                 >
-                    Flip Card
+                    Flip Card 🔄
                 </button>
                 <button
-                    onClick={() => { setShow(false); setIndex((index + 1) % cards.length) }}
-                    className="bg-emerald-500 text-white px-8 py-3 rounded-2xl font-black hover:bg-emerald-400 shadow-lg shadow-emerald-200 transition-all active:scale-95"
+                    onClick={() => { 
+                        setShow(false); 
+                        setIndex((index + 1) % cards.length);
+                    }}
+                    className="flex-1 bg-indigo-600 text-white px-8 py-5 rounded-[2rem] font-black hover:bg-indigo-500 shadow-xl shadow-indigo-100 transition-all active:scale-95"
                 >
                     Next Soal ➔
                 </button>
             </div>
 
-            <p className="text-slate-400 font-bold">Kartu {index + 1} dari {cards.length}</p>
+            <div className="bg-slate-100 px-6 py-2 rounded-full">
+                <p className="text-slate-500 font-black text-xs uppercase tracking-widest">Kartu {index + 1} / {cards.length}</p>
+            </div>
         </div>
     )
 }

@@ -15,7 +15,7 @@ export default function ChooseTemplatePage() {
   const level = searchParams.get("level") || "SD";
 
   const [templates, setTemplates] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
 
   useEffect(() => {
     async function fetchTemplates() {

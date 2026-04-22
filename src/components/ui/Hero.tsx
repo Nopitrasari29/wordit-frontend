@@ -21,7 +21,7 @@ export default function Hero() {
         {/* MAIN TITLE - Ukuran dikecilkan agar proporsional */}
         <h1 className="text-4xl md:text-6xl lg:text-7xl font-black text-slate-900 tracking-tighter leading-tight mb-8">
           The Future of <br />
-          <span className="bg-gradient-to-r from-indigo-600 via-purple-500 via-cyan-500 to-indigo-600 bg-clip-text text-transparent animate-text-gradient italic">
+          <span className="bg-gradient-to-r from-indigo-600 via-purple-500 to-indigo-600 bg-clip-text text-transparent animate-text-gradient italic">
             Connected Education
           </span>
         </h1>

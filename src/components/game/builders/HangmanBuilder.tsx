@@ -1,55 +1,87 @@
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react";
 
+// 🎯 FIX: Gunakan prop 'value' agar sinkron dengan EditGamePage
 export default function HangmanBuilder({ value, onChange }: any) {
-    const [words, setWords] = useState(value?.data?.words || [])
+    const [words, setWords] = useState<any[]>([]);
+    const hasMapped = useRef(false);
 
-    function update(newWords: any) {
-        setWords(newWords)
-        onChange({
-            data: { words: newWords }
-        })
-    }
+    // 📡 Sinkronisasi data dari Database (Parent) ke State Lokal (Child)
+    useEffect(() => {
+        // Path data kuis Hangman di gameJson adalah 'words'
+        const incomingWords = value?.words || [];
+        
+        if (incomingWords.length > 0 && !hasMapped.current) {
+            const mapped = incomingWords.map((item: any, index: number) => ({
+                id: item.id || `hangman-${Date.now()}-${index}`,
+                word: (item.word || "").toUpperCase().replace(/\s/g, ""),
+                hint: item.hint || ""
+            }));
+            setWords(mapped);
+            hasMapped.current = true; // Mencegah data ter-reset saat sedang mengedit
+        }
+    }, [value]);
 
-    function add() {
-        update([...words, { word: "", hint: "" }])
-    }
+    const sync = (list: any[]) => {
+        setWords(list);
+        // 🎯 Lapor balik ke EditGamePage dalam bentuk objek { words: list }
+        onChange({ words: list }); 
+    };
 
-    function change(i: number, key: string, val: string) {
-        const copy = [...words]
-        copy[i][key] = val
-        update(copy)
-    }
+    const updateField = (index: number, key: string, val: string) => {
+        const next = [...words];
+        next[index] = { ...next[index], [key]: val };
+        sync(next);
+    };
 
-    // Logic remove ditambahkan agar user bisa menghapus (tidak ada di logic asli tapi sangat dibutuhkan UI)
-    function remove(i: number) {
-        update(words.filter((_: any, index: number) => index !== i))
-    }
+    const addRow = () => {
+        const next = [...words, { id: Date.now(), word: "", hint: "" }];
+        sync(next);
+    };
+
+    const removeRow = (index: number) => {
+        const next = words.filter((_, i) => i !== index);
+        sync(next);
+    };
 
     return (
-        <div className="space-y-6 font-sans">
-            <h3 className="text-xl font-black text-slate-800 ml-2 text-center md:text-left">Hangman Words 🧗</h3>
+        <div className="space-y-6 animate-fade-in font-sans">
+            <div className="flex justify-between items-center px-4">
+                <h2 className="text-2xl font-black italic text-slate-800">Hangman Editor 🧗</h2>
+                <span className="bg-amber-100 text-amber-600 px-4 py-1 rounded-full font-black text-xs uppercase shadow-sm">
+                    {words.length} Kata Dimuat
+                </span>
+            </div>
 
-            <div className="grid grid-cols-1 gap-4">
-                {words.map((w: any, i: number) => (
-                    <div key={i} className="bg-slate-900 p-5 rounded-[2rem] flex flex-col md:flex-row gap-4 items-center border-b-4 border-slate-800">
-                        <div className="bg-white/10 text-white w-10 h-10 rounded-full flex items-center justify-center font-black shrink-0">
+            <div className="space-y-4">
+                {words.map((w, i) => (
+                    <div key={w.id || i} className="bg-white p-6 rounded-[2.5rem] border-2 border-slate-50 shadow-sm flex flex-col md:flex-row gap-6 items-center group hover:border-amber-200 hover:shadow-md transition-all duration-300">
+                        <div className="w-12 h-12 bg-slate-50 text-amber-600 rounded-2xl flex items-center justify-center font-black text-lg shrink-0 group-hover:bg-amber-500 group-hover:text-white transition-colors">
                             {i + 1}
                         </div>
-                        <input
-                            className="w-full bg-white/5 border-2 border-white/10 px-6 py-3 rounded-full text-white focus:border-amber-400 outline-none transition-all font-black tracking-widest uppercase placeholder:normal-case placeholder:font-normal placeholder:tracking-normal"
-                            placeholder="KATA"
-                            value={w.word}
-                            onChange={(e) => change(i, "word", e.target.value)}
-                        />
-                        <input
-                            className="w-full bg-white/5 border-2 border-white/10 px-6 py-3 rounded-full text-slate-400 focus:border-amber-400 outline-none transition-all font-bold"
-                            placeholder="Petunjuk Rahasia"
-                            value={w.hint}
-                            onChange={(e) => change(i, "hint", e.target.value)}
-                        />
-                        <button
-                            onClick={() => remove(i)}
-                            className="text-rose-400 hover:text-rose-500 font-black px-2"
+                        
+                        <div className="flex-1 w-full space-y-1">
+                            <p className="text-[10px] font-black text-slate-400 uppercase ml-4 tracking-widest">Kata Rahasia</p>
+                            <input
+                                value={w.word}
+                                onChange={(e) => updateField(i, "word", e.target.value)}
+                                className="w-full bg-slate-50 border-none rounded-2xl px-6 py-4 font-black text-slate-700 uppercase focus:ring-2 focus:ring-amber-500 outline-none text-lg"
+                                placeholder="CONTOH: DATABASE"
+                            />
+                        </div>
+
+                        <div className="flex-[2] w-full space-y-1">
+                            <p className="text-[10px] font-black text-slate-400 uppercase ml-4 tracking-widest">Petunjuk Rahasia (Hint)</p>
+                            <input
+                                value={w.hint}
+                                onChange={(e) => updateField(i, "hint", e.target.value)}
+                                className="w-full bg-slate-50 border-none rounded-2xl px-6 py-4 font-bold text-slate-500 focus:ring-2 focus:ring-amber-500 outline-none"
+                                placeholder="Berikan petunjuk untuk membantu pemain..."
+                            />
+                        </div>
+
+                        <button 
+                            onClick={() => removeRow(i)} 
+                            className="p-5 bg-rose-50 text-rose-500 rounded-3xl hover:bg-rose-500 hover:text-white transition-all active:scale-90 shadow-sm"
                         >
                             🗑️
                         </button>
@@ -57,12 +89,14 @@ export default function HangmanBuilder({ value, onChange }: any) {
                 ))}
             </div>
 
+            {/* Tombol Tambah Kata */}
             <button
-                onClick={add}
-                className="w-full py-4 bg-amber-400 hover:bg-amber-300 text-amber-900 rounded-full font-black text-lg transition-all shadow-[0_6px_0_rgb(180,130,0)] active:translate-y-1 active:shadow-none"
+                onClick={addRow}
+                className="w-full py-10 border-4 border-dashed border-slate-200 rounded-[3rem] text-slate-400 font-black hover:bg-amber-50 hover:border-amber-300 hover:text-amber-600 transition-all flex items-center justify-center gap-3 group active:scale-[0.98]"
             >
-                + Tambah Kata
+                <span className="text-4xl group-hover:scale-125 transition-transform">+</span> 
+                <span className="text-lg">Tambah Kata Manual</span>
             </button>
         </div>
-    )
+    );
 }

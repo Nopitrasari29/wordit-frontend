@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react"
-import { Link } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom" // 🎯 Tambah useNavigate
 import { useAuth } from "../../../context/AuthContext"
 import { getMyGames, deleteGame, publishGame } from "../../services/game.service"
 import { templateIcons } from "../../../data/templateIcons"
 import type { Game } from "../../../types/game"
+import { toast } from "react-hot-toast"
 
 export default function MyProjectsPage() {
     const { token } = useAuth()
+    const navigate = useNavigate() // 🎯 Inisialisasi navigasi
     const [games, setGames] = useState<Game[]>([])
     const [loading, setLoading] = useState(true)
 
@@ -29,8 +31,9 @@ export default function MyProjectsPage() {
         try {
             await deleteGame(id)
             setGames(games.filter(g => g.id !== id))
+            toast.success("Game berhasil dihapus!")
         } catch (e: any) {
-            alert(e.message)
+            toast.error(e.message)
         }
     }
 
@@ -38,9 +41,9 @@ export default function MyProjectsPage() {
         try {
             const updated = await publishGame(id)
             setGames(games.map(g => g.id === id ? { ...g, ...updated } : g))
-            alert(`Berhasil! Share Code: ${updated.shareCode}`)
+            toast.success(`Berhasil! Share Code: ${updated.shareCode}`)
         } catch (e: any) {
-            alert(e.message)
+            toast.error(e.message)
         }
     }
 
@@ -52,12 +55,7 @@ export default function MyProjectsPage() {
     )
 
     return (
-        /* PERBAIKAN UTAMA: 
-           Hapus pt-28 atau pt-24 di sini karena MainLayout sudah memberikan pt-28.
-           Kita hanya gunakan padding kecil agar tidak menempel banget ke navbar.
-        */
         <div className="min-h-screen bg-slate-50 font-sans pb-24 pt-4 px-6 relative overflow-hidden">
-
             {/* Dekorasi Background Lembut */}
             <div className="absolute top-0 -left-10 w-96 h-96 bg-indigo-100 rounded-full blur-3xl opacity-30"></div>
 
@@ -80,7 +78,7 @@ export default function MyProjectsPage() {
                 {/* PROJECT GRID */}
                 {games.length === 0 ? (
                     <div className="text-center py-24 bg-white rounded-[3rem] shadow-sm border border-slate-100 font-sans">
-                        <div className="text-7xl mb-6">🏜️</div>
+                        <div className="text-7xl mb-6">🌵</div>
                         <h3 className="text-2xl font-black text-slate-800 mb-2">Projek Masih Kosong</h3>
                         <p className="text-slate-400 font-bold mb-8">Mulailah dengan membuat materi interaktif pertamamu.</p>
                         <Link to="/teacher/create/level" className="bg-indigo-50 text-indigo-600 px-8 py-4 rounded-full font-black hover:bg-indigo-600 hover:text-white transition-all">
@@ -110,34 +108,67 @@ export default function MyProjectsPage() {
                                         </div>
                                     </div>
 
+                                    {/* STATUS & ID INFO */}
                                     <div className="flex flex-wrap gap-3 items-center bg-slate-50/80 p-4 rounded-2xl border border-slate-100 font-sans">
-                                        <span className={`text-[10px] px-4 py-2 rounded-full font-black tracking-widest uppercase ${g.isPublished ? "bg-emerald-50 text-emerald-600 border border-emerald-100" : "bg-amber-50 text-amber-600 border border-amber-100"}`}>
-                                            {g.isPublished ? "✅ Published" : "📝 Draft"}
-                                        </span>
+                                        <div className={`flex items-center gap-1.5 px-4 py-2 rounded-full border ${g.isPublished ? "bg-emerald-50 text-emerald-600 border-emerald-100" : "bg-amber-50 text-amber-600 border-amber-100"}`}>
+                                            {g.isPublished && <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>}
+                                            <span className="text-[10px] font-black uppercase tracking-widest">
+                                                {g.isPublished ? "Published" : "Draft"}
+                                            </span>
+                                        </div>
                                         {g.shareCode && (
                                             <span className="font-mono text-xs bg-white text-indigo-600 px-4 py-2 rounded-full font-black shadow-sm border border-slate-100">
                                                 ID: {g.shareCode}
                                             </span>
                                         )}
                                         <div className="ml-auto text-xs font-black text-slate-400">
-                                            <span className="text-slate-800">{g.playCount}</span> PLAYS
+                                            <span className="text-slate-800">{g.playCount || 0}</span> PLAYS
                                         </div>
                                     </div>
                                 </div>
 
+                                {/* ACTION BUTTONS */}
                                 <div className="flex flex-wrap gap-3 text-sm mt-8 pt-6 border-t border-slate-50 font-black">
-                                    <Link to={`/teacher/game/edit/${g.id}`} className="bg-slate-900 text-white px-6 py-3 rounded-full hover:bg-indigo-600 transition-all flex-1 text-center shadow-lg shadow-slate-200">
-                                        Edit
-                                    </Link>
-                                    <Link to={`/teacher/game/preview/${g.id}`} className="bg-white text-slate-700 border-2 border-slate-100 px-6 py-3 rounded-full hover:bg-slate-50 transition-all flex-1 text-center">
-                                        Preview
-                                    </Link>
-                                    {!g.isPublished && (
-                                        <button onClick={() => handlePublish(g.id)} className="bg-indigo-50 text-indigo-600 px-6 py-3 rounded-full hover:bg-indigo-600 hover:text-white transition-all flex-1">
-                                            Publish
+                                    
+                                    {/* 🚀 TOMBOL HOST LIVE: Perubahan Alur ke Host Session */}
+                                    {g.isPublished && (
+                                        <button 
+                                            onClick={() => navigate(`/teacher/session/host/${g.id}`)} 
+                                            className="bg-emerald-600 text-white px-6 py-3 rounded-full hover:bg-emerald-700 transition-all flex-1 text-center shadow-lg shadow-emerald-100 flex items-center justify-center gap-2 active:scale-95"
+                                        >
+                                            Host Live 🚀
                                         </button>
                                     )}
-                                    <button onClick={() => handleDelete(g.id)} className="text-rose-400 hover:text-rose-600 px-4 py-3 transition-colors text-xs uppercase tracking-widest">
+
+                                    {/* TOMBOL PUBLISH: Muncul jika masih Draft */}
+                                    {!g.isPublished && (
+                                        <button 
+                                            onClick={() => handlePublish(g.id)} 
+                                            className="bg-emerald-600 text-white px-6 py-3 rounded-full hover:bg-emerald-700 transition-all flex-1 shadow-lg shadow-emerald-100"
+                                        >
+                                            Publish ✨
+                                        </button>
+                                    )}
+
+                                    <Link 
+                                        to={`/teacher/game/edit/${g.id}`} 
+                                        className="bg-slate-900 text-white px-6 py-3 rounded-full hover:bg-slate-800 transition-all flex-1 text-center shadow-lg shadow-slate-200"
+                                    >
+                                        Edit
+                                    </Link>
+                                    
+                                    {/* 🕹️ PREVIEW: Guru bisa tetap tes main sendiri di sini */}
+                                    <Link 
+                                        to={`/play/${g.id}`} 
+                                        className="bg-white text-slate-700 border-2 border-slate-100 px-6 py-3 rounded-full hover:bg-slate-50 transition-all flex-1 text-center"
+                                    >
+                                        Preview 🕹️
+                                    </Link>
+                                    
+                                    <button 
+                                        onClick={() => handleDelete(g.id)} 
+                                        className="text-rose-400 hover:text-rose-600 px-4 py-3 transition-colors text-xs uppercase tracking-widest"
+                                    >
                                         Hapus
                                     </button>
                                 </div>

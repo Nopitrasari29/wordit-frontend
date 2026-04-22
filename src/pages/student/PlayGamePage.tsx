@@ -1,74 +1,108 @@
-import { useEffect, useState } from "react"
-import { useParams } from "react-router-dom"
-import GameRenderer from "../../components/game/GameRenderer"
-
-interface Game {
-  id: string
-  title: string
-  templateType: string
-  gameJson: any
-}
+import { useEffect, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+// 🎯 PASTIKAN: Import mengarah ke GameRenderer (untuk MAIN), bukan GameBuilderRouter!
+import GameRenderer from "../../components/game/GameRenderer";
+import { getGameById } from "../services/game.service";
+import { toast } from "react-hot-toast";
 
 export default function PlayGamePage() {
-  const { gameId } = useParams()
-  const [game, setGame] = useState<Game | null>(null)
+  const { gameId } = useParams();
+  const navigate = useNavigate();
+  const [game, setGame] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch(`http://localhost:3000/api/games/${gameId}`)
-      .then(res => res.json())
-      .then(data => setGame(data))
-      .catch(() => {
-        // fallback demo
-        setGame({
-          id: "demo",
-          title: "Animal Anagram",
-          templateType: "ANAGRAM",
-          gameJson: {}
-        })
-      })
-  }, [gameId])
+    const loadGameArena = async () => {
+      if (!gameId) return;
 
-  if (!game) return (
-    <div className="min-h-screen bg-slate-100 flex flex-col items-center justify-center font-sans">
-      <div className="w-16 h-16 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mb-6"></div>
-      <p className="text-xl font-black text-slate-500 animate-pulse">Menyiapkan Arena Bermain...</p>
-    </div>
-  )
+      try {
+        setLoading(true);
+        // 📡 Ambil data kuis dari database PostgreSQL melalui API
+        const response = await getGameById(gameId);
+        
+        // 🛠️ Proteksi Data: Ambil dari .data jika formatnya Axios
+        const finalData = (response as any).data || response;
+
+        if (!finalData) {
+          throw new Error("Data game tidak ditemukan.");
+        }
+
+        console.log("🎮 ARENA DIMUAT:", finalData);
+        setGame(finalData);
+      } catch (err: any) {
+        console.error("Play Error:", err);
+        toast.error("Waduh, gagal masuk arena, Nop! 🌵");
+        navigate("/teacher/projects"); 
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadGameArena();
+  }, [gameId, navigate]);
+
+  // --- LOADING STATE ---
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center font-sans">
+        <div className="w-20 h-20 border-8 border-indigo-600 border-t-transparent rounded-full animate-spin shadow-2xl shadow-indigo-500/20"></div>
+        <p className="mt-8 font-black text-indigo-400 uppercase tracking-[0.5em] animate-pulse text-xs">
+           Entering Arena...
+        </p>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-slate-100 flex flex-col font-sans selection:bg-transparent">
+    <div className="min-h-screen bg-slate-900 flex flex-col font-sans selection:bg-transparent overflow-hidden relative">
+      
+      {/* Visual Background Glow */}
+      <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -left-40 w-[600px] h-[600px] bg-indigo-600/10 rounded-full blur-[120px]"></div>
+        <div className="absolute -bottom-40 -right-40 w-[600px] h-[600px] bg-purple-600/10 rounded-full blur-[120px]"></div>
+      </div>
 
-      {/* TOP BAR: Info Game */}
-      <div className="bg-white px-6 py-4 flex justify-between items-center shadow-sm z-10 shrink-0 border-b border-slate-200">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-indigo-100 text-indigo-600 rounded-xl flex items-center justify-center font-black">
-            🎮
+      {/* TOP NAVBAR */}
+      <div className="bg-slate-800/40 backdrop-blur-xl px-10 py-6 flex justify-between items-center z-10 shrink-0 border-b border-white/5 relative">
+        <div className="flex items-center gap-5">
+          <button 
+            onClick={() => navigate(-1)}
+            className="w-12 h-12 bg-white/5 hover:bg-white/10 text-white rounded-2xl flex items-center justify-center transition-all group border border-white/10"
+          >
+            <span className="group-hover:-translate-x-1 transition-transform text-xl">❮</span>
+          </button>
+          <div>
+            <h1 className="font-black text-white text-xl md:text-3xl tracking-tighter italic leading-none">
+              {game?.title || "Untitled Activity"}
+            </h1>
+            <p className="text-indigo-400 text-[10px] font-black uppercase tracking-[0.3em] mt-2">
+              {game?.templateType?.replace("_", " ")} Mode
+            </p>
           </div>
-          <h1 className="font-black text-slate-800 text-lg md:text-xl truncate max-w-[200px] md:max-w-md">
-            {game.title}
-          </h1>
-        </div>
-
-        {/* Badge Tipe Game */}
-        <div className="hidden md:flex font-black text-indigo-600 bg-indigo-50 px-4 py-2 rounded-full border border-indigo-100 text-sm">
-          {game.templateType.replace("_", " ")}
         </div>
       </div>
 
-      {/* MAIN GAME AREA (Tempat GameRenderer berada) */}
-      <div className="flex-1 flex flex-col p-4 md:p-8 w-full">
-
-        {/* Wrapper melengkung untuk game engine kamu */}
-        <div className="bg-white flex-1 rounded-[3rem] shadow-xl border-[6px] border-indigo-50 overflow-hidden relative">
-
-          <GameRenderer
-            templateType={game.templateType}
-            gameData={game.gameJson}
-          />
+      {/* ARENA UTAMA */}
+      <div className="flex-1 flex flex-col p-4 md:p-10 w-full relative z-10">
+        <div className="bg-white flex-1 rounded-[4.5rem] shadow-2xl border-[14px] border-slate-800 overflow-hidden relative flex items-center justify-center group">
+          
+          {/* 🎯 KUNCI PATEN: Pastikan prop yang dikirim adalah STRING templateType-nya saja */}
+          {game && (
+            <GameRenderer
+              templateType={String(game.templateType)} 
+              gameData={game}
+            />
+          )}
 
         </div>
-
       </div>
+
+      <div className="py-6 text-center opacity-30">
+         <p className="text-white font-black text-[10px] uppercase tracking-[0.6em]">
+            WordIT Engine v2.0 • Paten by Nopi
+         </p>
+      </div>
+
     </div>
-  )
+  );
 }

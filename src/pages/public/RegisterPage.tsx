@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { useAuth } from "../../context/AuthContext"
+import { toast } from "react-hot-toast" // ✅ Tambahkan toast biar keren
 import Button from "../../components/ui/Button"
 import Input from "../../components/ui/Input"
 
@@ -12,21 +13,33 @@ export default function RegisterPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [role, setRole] = useState("STUDENT")
+  const [isLoading, setIsLoading] = useState(false)
 
-  async function submit(e: any) {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    // Validasi sederhana sebelum tembak API
+    if (password.length < 6) {
+      return toast.error("Password minimal 6 karakter ya, Nop!")
+    }
+
+    setIsLoading(true)
     try {
+      // Pastikan service register di AuthContext kamu menerima 4 parameter ini
       await register(name, email, password, role)
-      alert("Register success")
+      toast.success("Akun Berhasil Dibuat! 🚀")
       navigate("/login")
     } catch (err: any) {
-      alert(err.message || "Register failed")
+      const msg = err.response?.data?.message || "Register gagal. Cek koneksi server!"
+      toast.error(msg)
+    } finally {
+      setIsLoading(false)
     }
   }
 
   return (
     <div className="min-h-screen flex justify-center items-center p-4 bg-gradient-to-br from-indigo-100 via-blue-50 to-white relative overflow-hidden font-sans pt-28 pb-12">
-
+      {/* Background Decor */}
       <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-indigo-300 rounded-full mix-blend-multiply filter blur-3xl opacity-40 animate-blob"></div>
       <div className="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-blue-300 rounded-full mix-blend-multiply filter blur-3xl opacity-40 animate-blob" style={{ animationDelay: '2s' }}></div>
 
@@ -35,8 +48,12 @@ export default function RegisterPage() {
         {/* Branding Side */}
         <div className="bg-indigo-600 p-10 md:p-12 text-white flex flex-col justify-center w-full md:w-5/12 relative overflow-hidden">
           <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-10 rounded-full blur-3xl translate-x-1/2 -translate-y-1/2"></div>
-          <h2 className="text-4xl font-black mb-4 tracking-tight relative z-10">Bergabung dengan Word<span className="text-blue-300">IT</span>!</h2>
-          <p className="text-indigo-100 font-semibold text-lg relative z-10">Buat akunmu sekarang dan rasakan pengalaman belajar yang belum pernah ada sebelumnya.</p>
+          <h2 className="text-4xl font-black mb-4 tracking-tight relative z-10">
+            Bergabung dengan Word<span className="text-blue-300">IT</span>!
+          </h2>
+          <p className="text-indigo-100 font-semibold text-lg relative z-10">
+            Buat akunmu sekarang dan rasakan pengalaman belajar yang belum pernah ada sebelumnya.
+          </p>
           <div className="mt-10 text-6xl hidden md:block animate-bounce">🚀</div>
         </div>
 
@@ -44,10 +61,30 @@ export default function RegisterPage() {
         <div className="p-8 md:p-12 w-full md:w-7/12 bg-white">
           <h1 className="text-2xl font-black text-slate-800 mb-6 tracking-tight">Register Akun Baru</h1>
 
-          <form onSubmit={submit} className="space-y-5">
-            <Input label="Full Name" placeholder="Budi Santoso" value={name} onChange={(e) => setName(e.target.value)} required />
-            <Input label="Email" type="email" placeholder="budi@sekolah.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
-            <Input label="Password" type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required />
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <Input 
+              label="Full Name" 
+              placeholder="Budi Santoso" 
+              value={name} 
+              onChange={(e) => setName(e.target.value)} 
+              required 
+            />
+            <Input 
+              label="Email" 
+              type="email" 
+              placeholder="budi@sekolah.com" 
+              value={email} 
+              onChange={(e) => setEmail(e.target.value)} 
+              required 
+            />
+            <Input 
+              label="Password" 
+              type="password" 
+              placeholder="••••••••" 
+              value={password} 
+              onChange={(e) => setPassword(e.target.value)} 
+              required 
+            />
 
             <div className="w-full flex flex-col gap-2">
               <label className="text-sm font-bold text-slate-700 ml-2">Daftar Sebagai</label>
@@ -65,11 +102,19 @@ export default function RegisterPage() {
               </div>
             </div>
 
-            <Button type="submit" isFullWidth className="mt-8 shadow-xl shadow-indigo-100">Register Sekarang</Button>
+            <Button 
+              type="submit" 
+              isFullWidth 
+              disabled={isLoading}
+              className="mt-8 shadow-xl shadow-indigo-100"
+            >
+              {isLoading ? "Sedang Mendaftar..." : "Register Sekarang"}
+            </Button>
           </form>
 
           <p className="text-center mt-6 text-sm font-semibold text-slate-500">
-            Already have an account? <Link to="/login" className="text-indigo-600 font-black hover:underline ml-2">Login</Link>
+            Already have an account? 
+            <Link to="/login" className="text-indigo-600 font-black hover:underline ml-2">Login</Link>
           </p>
         </div>
       </div>

@@ -1,16 +1,26 @@
 import { useEffect, useState } from "react"
 import { getGames } from "../services/game.service"
+// 🎯 Import tipe data Game jika sudah ada (biasanya di folder types)
+// import { Game } from "../../types/game" 
 
 export default function LeaderboardPage() {
-    const [games, setGames] = useState([])
+    // 🛠️ FIX: Tambahkan tipe data <any[]> atau <Game[]> agar TypeScript tidak menganggapnya 'never'
+    const [games, setGames] = useState<any[]>([]) 
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
         async function load() {
             try {
                 const data = await getGames()
+                
+                // Pastikan data adalah array sebelum di-spread
+                const gameList = Array.isArray(data) ? data : []
+                
                 // Urutkan berdasarkan playCount terbanyak (High to Low)
-                const sortedGames = [...data].sort((a, b) => (b.playCount || 0) - (a.playCount || 0))
+                const sortedGames = [...gameList].sort((a, b) => 
+                    (b.playCount || 0) - (a.playCount || 0)
+                )
+                
                 setGames(sortedGames)
             } catch (error) {
                 console.error("Gagal memuat leaderboard:", error)
@@ -23,17 +33,8 @@ export default function LeaderboardPage() {
 
     return (
         <div className="min-h-screen bg-slate-50 font-sans pb-20 pt-24">
-            {/* HEADER */}
-            <div className="text-center mb-12 px-6">
-                <h1 className="text-4xl md:text-5xl font-black text-slate-800 tracking-tight mb-4">
-                    Game Terpopuler 🏆
-                </h1>
-                <p className="text-slate-500 font-bold text-lg">
-                    Daftar game dengan jumlah pemain terbanyak di WordIT.
-                </p>
-            </div>
-
-            <div className="max-w-4xl mx-auto px-6">
+            {/* ... rest of your code ... */}
+             <div className="max-w-4xl mx-auto px-6">
                 <div className="bg-white rounded-[2.5rem] p-8 shadow-sm border border-slate-100 overflow-hidden">
                     {/* Custom Table Header */}
                     <div className="flex px-4 pb-6 border-b-2 border-slate-50 text-xs font-black text-slate-400 uppercase tracking-widest">
@@ -60,8 +61,8 @@ export default function LeaderboardPage() {
                                         <span className={`w-10 h-10 rounded-full flex items-center justify-center font-black text-lg shadow-sm
                                             ${index === 0 ? "bg-amber-100 text-amber-600" :
                                                 index === 1 ? "bg-slate-200 text-slate-600" :
-                                                    index === 2 ? "bg-orange-100 text-orange-600" :
-                                                        "bg-white text-slate-400 border border-slate-100"}`}
+                                                index === 2 ? "bg-orange-100 text-orange-600" :
+                                                    "bg-white text-slate-400 border border-slate-100"}`}
                                         >
                                             {index + 1}
                                         </span>
