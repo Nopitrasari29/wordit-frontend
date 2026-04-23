@@ -20,7 +20,7 @@ export default function RegisterPage() {
     
     // Validasi sederhana sebelum tembak API
     if (password.length < 6) {
-      return toast.error("Password minimal 6 karakter ya, Nop!")
+      return toast.error("Password minimal 6 karakter!")
     }
 
     setIsLoading(true)

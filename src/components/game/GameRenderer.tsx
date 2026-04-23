@@ -8,9 +8,16 @@ import WordSearchEngine from "./engines/WordSearchEngine";
 interface Props {
   templateType: any; 
   gameData: any;
+  onIntermission?: () => void;
 }
 
-export default function GameRenderer({ templateType, gameData }: Props) {
+const EngineWrapper = ({ children }: { children: React.ReactNode }) => (
+  <div className="w-full h-full flex items-center justify-center p-2 animate-fade-in">
+    {children}
+  </div>
+);
+
+export default function GameRenderer({ templateType, gameData, onIntermission }: Props) {
   
   // 🔍 DEBUGGING: Buka Console (F12) untuk melihat pesan ini
   console.log("🛠️ DEBUG RENDERER:", { 
@@ -39,27 +46,21 @@ export default function GameRenderer({ templateType, gameData }: Props) {
 
   const type = finalType?.toUpperCase().trim();
 
-  const EngineWrapper = ({ children }: { children: React.ReactNode }) => (
-    <div className="w-full h-full flex items-center justify-center p-2 animate-fade-in">
-      {children}
-    </div>
-  );
-
   // 🚀 ENGINE ROUTING
   switch (type) {
     case "ANAGRAM":
-      return <EngineWrapper><AnagramEngine data={gameData} /></EngineWrapper>;
+      return <EngineWrapper><AnagramEngine data={gameData} onIntermission={onIntermission} /></EngineWrapper>;
     case "FLASHCARD":
-      return <EngineWrapper><FlashcardEngine data={gameData} /></EngineWrapper>;
+      return <EngineWrapper><FlashcardEngine data={gameData} onIntermission={onIntermission} /></EngineWrapper>;
     case "HANGMAN":
-      return <EngineWrapper><HangmanEngine data={gameData} /></EngineWrapper>;
+      return <EngineWrapper><HangmanEngine data={gameData} onIntermission={onIntermission} /></EngineWrapper>;
     case "MAZE_CHASE":
-      return <EngineWrapper><MazeChaseEngine data={gameData} /></EngineWrapper>;
+      return <EngineWrapper><MazeChaseEngine data={gameData} onIntermission={onIntermission} /></EngineWrapper>;
     case "SPIN_THE_WHEEL":
     case "SPIN_WHEEL":
-      return <EngineWrapper><SpinWheelEngine data={gameData} /></EngineWrapper>;
+      return <EngineWrapper><SpinWheelEngine data={gameData} onIntermission={onIntermission} /></EngineWrapper>;
     case "WORD_SEARCH":
-      return <EngineWrapper><WordSearchEngine data={gameData} /></EngineWrapper>;
+      return <EngineWrapper><WordSearchEngine data={gameData} onIntermission={onIntermission} /></EngineWrapper>;
 
     default:
       return (

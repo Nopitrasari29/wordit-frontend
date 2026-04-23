@@ -14,7 +14,7 @@ export default function EnterPlayerPage() {
         e.preventDefault()
         
         if (!name.trim()) {
-            return toast.error("Namanya jangan kosong dong, Nop! 🌵")
+            return toast.error("Namanya jangan kosong, ya! 🌵")
         }
 
         // 🛠️ Simpan nama di sessionStorage agar bisa dipanggil di Leaderboard nanti

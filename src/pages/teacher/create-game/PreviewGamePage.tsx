@@ -38,7 +38,7 @@ export default function PreviewGamePage() {
       } catch (err: any) {
         console.error("❌ Preview Fetch Error:", err);
         setErrorDetail(err.message || "Gagal memuat preview kuis.");
-        toast.error("Waduh, gagal narik data kuis nih, Nop! 🌵");
+        toast.error("Gagal memuat data kuis. 🌵");
       } finally {
         setLoading(false);
       }

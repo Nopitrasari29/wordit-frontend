@@ -44,7 +44,7 @@ export default function GameBuilderPage() {
   const handleSave = async (publishStatus: boolean) => {
     // 🔍 VALIDASI: Ini yang biasanya bikin tombol "seolah" nggak jalan
     if (!gamePayload.title.trim()) {
-      return toast.error("Judul game jangan dikosongin ya, Nop! ✍️");
+      return toast.error("Judul game tidak boleh kosong! ✍️");
     }
     if (gamePayload.gameItems.length === 0) {
       return toast.error("Minimal ada 1 soal biar seru! 🧩");

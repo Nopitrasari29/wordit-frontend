@@ -9,7 +9,7 @@ export default function JoinGamePage() {
   function handleJoin() {
     // 🔍 Validasi: Pastikan kode tidak kosong
     if (!code.trim()) {
-      return toast.error("Ketik kode kuisnya dulu, Nop! 🌵");
+      return toast.error("Ketik kode kuis terlebih dahulu! 🌵");
     }
     
     /**

@@ -140,13 +140,20 @@ export default function MyProjectsPage() {
                                         </button>
                                     )}
 
-                                    {/* TOMBOL PUBLISH: Muncul jika masih Draft */}
-                                    {!g.isPublished && (
+                                    {/* TOMBOL PUBLISH / UNPUBLISH: Toggle status */}
+                                    {!g.isPublished ? (
                                         <button 
                                             onClick={() => handlePublish(g.id)} 
                                             className="bg-emerald-600 text-white px-6 py-3 rounded-full hover:bg-emerald-700 transition-all flex-1 shadow-lg shadow-emerald-100"
                                         >
                                             Publish ✨
+                                        </button>
+                                    ) : (
+                                        <button 
+                                            onClick={() => handlePublish(g.id)} 
+                                            className="bg-amber-500 text-white px-6 py-3 rounded-full hover:bg-amber-600 transition-all flex-1 shadow-lg shadow-amber-100"
+                                        >
+                                            Unpublish 🔒
                                         </button>
                                     )}
 

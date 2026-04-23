@@ -23,7 +23,7 @@ export default function CreateGamePage() {
 
     // 🚀 Fungsi untuk mengirim kuis baru ke Database Docker (Paten!)
     const handleSave = async () => {
-        if (!title) return alert("Jangan lupa isi Judul Aktivitasnya ya, Nop! 😊");
+        if (!title) return alert("Judul aktivitas wajib diisi! 😊");
         
         try {
             setIsSaving(true);

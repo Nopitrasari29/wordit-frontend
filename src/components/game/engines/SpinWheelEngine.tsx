@@ -1,16 +1,25 @@
 import { useState } from "react"
+import socket from "../../../hooks/useSocket"
+import { submitAnswer } from "../../../pages/services/game.service"
 
-export default function SpinWheelEngine({ data }: { data: any }) {
+export default function SpinWheelEngine({ data }: { data: any, onIntermission?: () => void }) {
     const questions = data?.gameJson?.questions || []
+    const gameId = data?.id || ""
+    const roomCode = data?.shareCode || ""
+
     const [result, setResult] = useState<any>(null)
     const [spinning, setSpinning] = useState(false)
+    const [score, setScore] = useState(0)
+    const [currentIndex, setCurrentIndex] = useState(0)
 
     function spin() {
         if (questions.length === 0) return
         setSpinning(true)
         setResult(null)
         setTimeout(() => {
-            const r = questions[Math.floor(Math.random() * questions.length)]
+            const randomIndex = Math.floor(Math.random() * questions.length);
+            const r = questions[randomIndex];
+            setCurrentIndex(randomIndex);
             setResult(r)
             setSpinning(false)
         }, 2000)
@@ -50,9 +59,35 @@ export default function SpinWheelEngine({ data }: { data: any }) {
                     <div className="absolute top-0 left-0 w-full h-2 bg-indigo-600"></div>
                     <p className="text-slate-400 font-black text-[10px] uppercase mb-3 tracking-[0.3em]">Hasil Spin:</p>
                     <p className="text-slate-800 font-black text-3xl tracking-tight mb-4 leading-tight">"{result.question}"</p>
-                    <div className="bg-indigo-50 px-6 py-3 rounded-2xl inline-block">
+                    <div className="bg-indigo-50 px-6 py-3 rounded-2xl inline-block mb-4">
                         <p className="text-indigo-600 font-black text-sm uppercase">Jawaban: {result.answer}</p>
                     </div>
+                    
+                    <button 
+                        onClick={async () => {
+                            const newScore = score + 10;
+                            setScore(newScore);
+
+                            // 📡 Emit live score
+                            if (roomCode) {
+                                socket.emit("updateScore", { code: roomCode, score: newScore });
+                            }
+
+                            // 💾 Simpan progres
+                            if (gameId) {
+                                try {
+                                    await submitAnswer(gameId, currentIndex, result.answer, 10);
+                                } catch (e) {
+                                    console.error(e);
+                                }
+                            }
+                            
+                            setResult(null); // Tutup hasil setelah diklik
+                        }}
+                        className="w-full bg-emerald-500 hover:bg-emerald-400 text-white font-black py-4 rounded-2xl shadow-lg transition-all active:scale-95"
+                    >
+                        Tandai Selesai! (+10 Skor)
+                    </button>
                 </div>
             )}
         </div>

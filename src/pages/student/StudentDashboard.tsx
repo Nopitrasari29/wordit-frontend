@@ -4,8 +4,10 @@ import { getGames } from "../services/game.service"
 import { dummyGames } from "../../data/dummyGames"
 import { templateIcons } from "../../data/templateIcons" // 🎯 Gunakan ikon dinamis
 import ScoreChart from "../../components/analytics/ScoreChart"
+import { useAuth } from "../../context/AuthContext"
 
 export default function StudentDashboard() {
+  const { user } = useAuth()
   const [games, setGames] = useState<any[]>([])
   const [playerName, setPlayerName] = useState("Champion")
 
@@ -18,9 +20,9 @@ export default function StudentDashboard() {
   ]
 
   useEffect(() => {
-    // 🎯 Ambil nama dari session storage (hasil input EnterPlayerPage)
-    const savedName = sessionStorage.getItem("playerName")
-    if (savedName) setPlayerName(savedName)
+    // 🎯 Prioritaskan nama dari AuthContext (real user), fallback ke sessionStorage
+    const realName = user?.name || sessionStorage.getItem("playerName")
+    if (realName) setPlayerName(realName)
 
     async function load() {
       try {
@@ -35,7 +37,7 @@ export default function StudentDashboard() {
       }
     }
     load()
-  }, [])
+  }, [user?.name])
 
   return (
     <div className="space-y-10 font-sans pb-12 pt-6">
@@ -46,10 +48,10 @@ export default function StudentDashboard() {
         <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
           <div className="max-w-2xl">
             <h1 className="text-3xl md:text-5xl font-black mb-3 italic tracking-tighter">
-              Halo, {playerName}! 🌟
+              Selamat Datang, {playerName}! 🌟
             </h1>
             <p className="text-cyan-50 font-semibold text-lg leading-relaxed">
-              Lihat sejauh mana progres belajarmu hari ini. Kamu sudah melakukan pekerjaan yang luar biasa di WordIT!
+              Pantau progres belajarmu hari ini. Tingkatkan terus performamu di WordIT!
             </p>
           </div>
           <Link

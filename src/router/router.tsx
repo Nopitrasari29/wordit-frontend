@@ -72,7 +72,7 @@ export default function Router() {
             <Route path="/student/game/enter" element={<EnterPlayerPage />} />
             <Route path="/student/game/lobby/:sessionId" element={<GameLobbyPage />} />
             <Route path="/student/game/session/:sessionId" element={<GameSessionPage />} />
-            <Route path="/student/result/:sessionId" element={<ResultPage />} />
+            <Route path="/student/result" element={<ResultPage />} />
           </Route>
 
           {/* ================= TEACHER ROUTES ================= */}
