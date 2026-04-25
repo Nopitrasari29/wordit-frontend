@@ -1,154 +1,194 @@
-import { useState, useEffect } from "react"
-import { useNavigate } from "react-router-dom"
-import socket from "../../../hooks/useSocket"
-import { submitAnswer } from "../../../pages/services/game.service"
+import { useState, useEffect, useMemo, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
+import socket from "../../../hooks/useSocket";
+import { finishGame } from "../../../pages/services/game.service";
+import { toast } from "react-hot-toast";
 
-export default function WordSearchEngine({ data }: { data: any, onIntermission?: () => void }) {
-    const navigate = useNavigate()
-    const quizWords = data?.gameJson?.words || []
-    const wordsOnly = quizWords.map((w: any) => w.word.toUpperCase())
-    const gameId = data?.id || ""
-    const roomCode = data?.shareCode || ""
+export default function WordSearchEngine({ data }: { data: any }) {
+    const navigate = useNavigate();
 
-    const [foundWords, setFoundWords] = useState<string[]>([])
-    const [score, setScore] = useState(0)
-    const [isFinished, setIsFinished] = useState(false)
+    // 🔍 Sync: Mendukung data format Array maupun Object
+    const gameConfig = useMemo(() => {
+        return Array.isArray(data?.gameJson) ? data.gameJson[0] : data?.gameJson;
+    }, [data]);
 
-    // Global Timer: 15 detik per kata target
-    const [timeLeft, setTimeLeft] = useState(quizWords.length > 0 ? quizWords.length * 15 : 60)
+    const size = gameConfig?.gridSize || 8;
+    const wordsToFind = useMemo(() => {
+        const raw = gameConfig?.words || [];
+        return raw.map((w: any) => w.word.toUpperCase().replace(/\s/g, ''));
+    }, [gameConfig]);
+
+    const [grid, setGrid] = useState<string[][]>([]);
+    const [foundWords, setFoundWords] = useState<string[]>([]);
+    const [startCell, setStartCell] = useState<[number, number] | null>(null);
+    const [score, setScore] = useState(0);
+    const [timeSpent, setTimeSpent] = useState(0);
+    const [isFinished, setIsFinished] = useState(false);
+
+    // 🏗️ GRID GENERATOR ALGORITHM
+    const generateGrid = useCallback(() => {
+        if (wordsToFind.length === 0) return;
+        let newGrid = Array(size).fill(null).map(() => Array(size).fill(''));
+        const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+        // Place words
+        wordsToFind.forEach((word: string) => {
+            let placed = false;
+            let attempts = 0;
+            while (!placed && attempts < 100) {
+                const isVertical = Math.random() > 0.5;
+                const row = Math.floor(Math.random() * (isVertical ? (size - word.length + 1) : size));
+                const col = Math.floor(Math.random() * (isVertical ? size : (size - word.length + 1)));
+
+                let canPlace = true;
+                for (let i = 0; i < word.length; i++) {
+                    const char = isVertical ? newGrid[row + i][col] : newGrid[row][col + i];
+                    if (char !== '' && char !== word[i]) { canPlace = false; break; }
+                }
+
+                if (canPlace) {
+                    for (let i = 0; i < word.length; i++) {
+                        if (isVertical) newGrid[row + i][col] = word[i];
+                        else newGrid[row][col + i] = word[i];
+                    }
+                    placed = true;
+                }
+                attempts++;
+            }
+        });
+
+        // Fill remaining
+        for (let r = 0; r < size; r++) {
+            for (let c = 0; c < size; c++) {
+                if (newGrid[r][c] === '') {
+                    newGrid[r][c] = alphabet[Math.floor(Math.random() * 26)];
+                }
+            }
+        }
+        setGrid(newGrid);
+    }, [wordsToFind, size]);
 
     useEffect(() => {
-        if (isFinished || quizWords.length === 0) return;
-
-        const timer = setInterval(() => {
-            setTimeLeft(prev => {
-                if (prev <= 1) {
-                    clearInterval(timer);
-                    handleFinish(foundWords);
-                    return 0;
-                }
-                return prev - 1;
-            });
-        }, 1000);
-
+        generateGrid();
+        const timer = setInterval(() => setTimeSpent(p => p + 1), 1000);
         return () => clearInterval(timer);
-    }, [isFinished, quizWords.length, foundWords])
+    }, [generateGrid]);
 
-    function handleFinish(finalFoundWords: string[]) {
+    // 🎯 SELECTION LOGIC
+    const handleCellClick = (r: number, c: number) => {
+        if (!startCell) {
+            setStartCell([r, c]);
+        } else {
+            const [r1, c1] = startCell;
+            const [r2, c2] = [r, c];
+            let selectedStr = "";
+
+            if (r1 === r2) { // Horizontal
+                const start = Math.min(c1, c2);
+                const end = Math.max(c1, c2);
+                for (let i = start; i <= end; i++) selectedStr += grid[r1][i];
+            } else if (c1 === c2) { // Vertical
+                const start = Math.min(r1, r2);
+                const end = Math.max(r1, r2);
+                for (let i = start; i <= end; i++) selectedStr += grid[i][c1];
+            }
+
+            const reversed = selectedStr.split('').reverse().join('');
+            const foundWord = wordsToFind.find((w: string) => w === selectedStr || w === reversed);
+
+            if (foundWord && !foundWords.includes(foundWord)) {
+                const newFound = [...foundWords, foundWord];
+                const points = 100;
+                const newScore = score + points;
+
+                setFoundWords(newFound);
+                setScore(newScore);
+                toast.success(`Ditemukan: ${foundWord}! ✨`);
+
+                if (data.shareCode) {
+                    socket.emit("updateScore", { code: data.shareCode, score: newScore });
+                }
+
+                if (newFound.length === wordsToFind.length) {
+                    handleFinish(newFound, newScore);
+                }
+            } else if (selectedStr !== "") {
+                toast.error("Bukan kata target! ❌");
+            }
+            setStartCell(null);
+        }
+    };
+
+    const handleFinish = async (finalFound: string[], finalScore: number) => {
         setIsFinished(true);
-        const accuracy = Math.round((finalFoundWords.length / quizWords.length) * 100);
-        
-        const newBreakdown = wordsOnly.map((w: string) => ({
-            word: w,
-            isCorrect: finalFoundWords.includes(w),
-            time: null
-        }));
+        const payload = {
+            scoreValue: finalScore,
+            maxScore: wordsToFind.length * 100,
+            accuracy: 100,
+            timeSpent: timeSpent,
+            answersDetail: finalFound.map(w => ({ word: w, isCorrect: true })),
+        };
 
-        sessionStorage.setItem("lastScore", score.toString());
-        sessionStorage.setItem("lastAccuracy", accuracy.toString());
-        sessionStorage.setItem("lastBreakdown", JSON.stringify(newBreakdown));
+        try {
+            await finishGame(data.id || data._id, payload);
+            navigate("/student/result", { state: payload });
+        } catch (e) {
+            navigate("/student/result", { state: payload });
+        }
+    };
 
-        setTimeout(() => {
-            navigate("/student/result", { state: { score, accuracy } });
-        }, 1500);
-    }
-
-    if (quizWords.length === 0) return (
-        <div className="p-20 text-center text-slate-400 font-black italic uppercase tracking-widest">
-            🔍 Belum ada kata...
-        </div>
-    )
-
-    if (isFinished) {
-        return (
-            <div className="flex flex-col items-center justify-center p-10 text-indigo-400 font-black italic">
-                <div className="animate-spin text-4xl mb-4">🔄</div>
-                Menghitung skor akhir...
-            </div>
-        )
-    }
+    if (isFinished) return <div className="p-20 text-center font-black animate-pulse uppercase tracking-widest text-indigo-600">Menyimpan Hasil... 🏆</div>;
 
     return (
-        <div className="flex flex-col items-center p-10 space-y-12 font-sans w-full max-w-3xl mx-auto">
-            {/* Header & Timer */}
-            <div className="w-full flex justify-between items-center mb-0 px-4">
-                <div className="bg-slate-100 px-6 py-2 rounded-full font-black text-slate-400 shadow-sm text-xs tracking-widest uppercase">
-                    Target: {foundWords.length} / {wordsOnly.length}
+        <div className="flex flex-col items-center p-6 space-y-8 max-w-2xl mx-auto font-sans animate-in fade-in duration-700">
+            {/* Header Area */}
+            <div className="w-full flex justify-between bg-white p-6 rounded-[2.5rem] shadow-sm border-2 border-indigo-50">
+                <div className="flex flex-col font-black">
+                    <span className="text-[9px] text-slate-400 uppercase tracking-widest">Ditemukan</span>
+                    <span className="text-indigo-600 italic text-xl">{foundWords.length} / {wordsToFind.length}</span>
                 </div>
-                <div className={`flex items-center gap-2 px-6 py-2 rounded-full font-black text-lg shadow-sm border-2 ${timeLeft <= 10 ? 'bg-rose-100 text-rose-600 border-rose-200 animate-pulse' : 'bg-white text-indigo-600 border-indigo-50'}`}>
-                    ⏱️ {Math.floor(timeLeft / 60).toString().padStart(2, '0')}:{(timeLeft % 60).toString().padStart(2, '0')}
+                <div className="flex flex-col items-end font-black text-right">
+                    <span className="text-[9px] text-slate-400 uppercase tracking-widest">Waktu</span>
+                    <span className="text-slate-700 text-xl">⏱️ {timeSpent}s</span>
                 </div>
             </div>
 
-            <div className="text-center mt-0">
-                <h2 className="text-4xl font-black text-slate-800 tracking-tighter italic">Find the Words 🔍</h2>
-                <p className="text-indigo-400 font-black uppercase tracking-[0.3em] text-[10px] mt-2 text-center">Cari kata-kata di bawah pada grid</p>
-            </div>
-
-            <div className="grid grid-cols-5 gap-3 bg-white p-8 rounded-[4rem] shadow-2xl border-[12px] border-indigo-50">
-                {Array.from({ length: 25 }).map((_, i) => (
-                    <div key={i} className="w-14 h-14 bg-slate-50 text-slate-300 font-black flex items-center justify-center rounded-2xl text-2xl hover:bg-indigo-600 hover:text-white hover:scale-110 transition-all cursor-pointer shadow-inner">
-                        {String.fromCharCode(65 + Math.floor(Math.random() * 26))}
-                    </div>
+            {/* Word Bank */}
+            <div className="flex flex-wrap gap-2 justify-center bg-slate-50 p-4 rounded-3xl w-full">
+                {wordsToFind.map((w: string) => (
+                    <span key={w} className={`px-4 py-2 rounded-xl font-black text-[10px] uppercase transition-all duration-500 ${foundWords.includes(w)
+                            ? 'bg-emerald-500 text-white line-through scale-90 opacity-50'
+                            : 'bg-white text-slate-400 border-2 border-slate-100'
+                        }`}>
+                        {w} {foundWords.includes(w) && "✅"}
+                    </span>
                 ))}
             </div>
 
-            <div className="w-full bg-slate-900 p-10 rounded-[4rem] shadow-xl relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-3xl"></div>
-                <p className="text-white/40 font-black text-[10px] uppercase mb-6 text-center tracking-[0.4em]">Daftar Target:</p>
-                <div className="flex flex-wrap justify-center gap-4">
-                    {wordsOnly.map((w: string, index: number) => {
-                        const isFound = foundWords.includes(w);
+            {/* 🎮 INTERACTIVE GRID */}
+            <div className="bg-indigo-600 p-4 rounded-[3.5rem] shadow-2xl border-[12px] border-indigo-500/20">
+                <div className={`grid gap-2`} style={{ gridTemplateColumns: `repeat(${size}, minmax(0, 1fr))` }}>
+                    {grid.map((row, r: number) => row.map((char: string, c: number) => {
+                        const isSelected = startCell?.[0] === r && startCell?.[1] === c;
                         return (
-                            <div
-                                key={w}
-                                onClick={async () => {
-                                    if (isFound) return;
-                                    
-                                    const newFound = [...foundWords, w];
-                                    setFoundWords(newFound);
-                                    
-                                    const points = 100 + (Math.floor(timeLeft / 5) * 10);
-                                    const newScore = score + points;
-                                    setScore(newScore);
-
-                                    // 💾 SIMPAN LANGSUNG KE SESSION
-                                    sessionStorage.setItem("lastScore", newScore.toString());
-                                    const runningAccuracy = Math.round((newFound.length / wordsOnly.length) * 100);
-                                    sessionStorage.setItem("lastAccuracy", runningAccuracy.toString());
-
-                                    // 📡 Emit live score
-                                    if (roomCode) {
-                                        socket.emit("updateScore", { code: roomCode, score: newScore });
-                                    }
-
-                                    // 💾 Simpan progres
-                                    if (gameId) {
-                                        submitAnswer(gameId, index, w, points).catch(e => console.error(e));
-                                    }
-
-                                    // Cek apakah game selesai
-                                    if (newFound.length === wordsOnly.length) {
-                                        handleFinish(newFound);
-                                    }
-                                }}
-                                className={`px-8 py-3 rounded-full font-black text-lg border-2 backdrop-blur-sm transition-all cursor-pointer ${
-                                    isFound 
-                                        ? "bg-emerald-500 text-white border-emerald-400 scale-105" 
-                                        : "bg-white/10 text-white border-white/10 hover:bg-white hover:text-slate-900 hover:-translate-y-1"
-                                }`}
+                            <button
+                                key={`${r}-${c}`}
+                                onClick={() => handleCellClick(r, c)}
+                                className={`w-8 h-8 md:w-11 md:h-11 rounded-xl font-black text-lg flex items-center justify-center transition-all active:scale-90 ${isSelected
+                                        ? 'bg-amber-400 text-white scale-110 shadow-lg rotate-6'
+                                        : 'bg-white text-indigo-900 hover:bg-indigo-50'
+                                    }`}
                             >
-                                {w} {isFound && "✅"}
-                            </div>
+                                {char}
+                            </button>
                         );
-                    })}
-                </div>
-                
-                {/* Tampilkan Skor */}
-                <div className="absolute top-6 right-8 bg-indigo-600 px-4 py-2 rounded-xl border-2 border-indigo-500 font-black text-white text-sm">
-                    Skor: {score}
+                    }))}
                 </div>
             </div>
+
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] animate-bounce bg-slate-100 px-6 py-2 rounded-full">
+                Klik huruf awal lalu klik huruf akhir kata 👆
+            </p>
         </div>
-    )
+    );
 }

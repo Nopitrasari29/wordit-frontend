@@ -77,6 +77,30 @@ export async function getUsers() {
 }
 
 /* ============================== */
+/* ADMIN APPROVE/REJECT USER (Sprint 2 - BE-NEW-02) */
+/* ============================== */
+export async function approveUser(id: string, action: "APPROVE" | "REJECT") {
+  const token = getToken()
+
+  const res = await fetch(`${API_URL}/users/${id}/approve`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify({ action }) // Mengirim action sesuai kontrak backend
+  })
+
+  const json = await res.json()
+
+  if (!res.ok) {
+    throw new Error(json.message || "Gagal memproses approval")
+  }
+
+  return json.data
+}
+
+/* ============================== */
 /* ADMIN UPDATE USER */
 /* ============================== */
 

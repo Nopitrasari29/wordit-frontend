@@ -1,5 +1,3 @@
-// src/types/game.ts
-
 export type Role = "STUDENT" | "TEACHER" | "ADMIN";
 
 export enum TemplateType {

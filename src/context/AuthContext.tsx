@@ -47,13 +47,16 @@ export function AuthProvider({ children }: any) {
     name: string,
     email: string,
     password: string,
-    role: string
+    role: string,
+    educationLevel?: string // Tambahkan parameter opsional ini [cite: 46, 154, 159]
   ) {
-    await authService.register({
+    // Kirim data ke authService [cite: 128, 159]
+    return await authService.register({
       name,
       email,
       password,
-      role
+      role,
+      educationLevel // Sertakan field ini dalam payload API [cite: 46, 128]
     })
   }
 
@@ -77,7 +80,7 @@ export function AuthProvider({ children }: any) {
         token,
         loading,
         login,
-        register,
+        register, // Fungsi register yang sudah diperbarui [cite: 159]
         logout
       }}
     >
