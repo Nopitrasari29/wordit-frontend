@@ -16,24 +16,24 @@ export const getGames = async (params?: {
 };
 
 /**
- * 🎯 GET GAME DETAIL (Dipakai di EditGamePage)
- * FIX: Nama diubah dari getGame -> getGameById agar sesuai dengan EditGamePage
+ * 🎯 GET GAME DETAIL
+ * Sinkron dengan response: { status: 'success', data: { ...game } }
  */
 export const getGameById = async (id: string): Promise<Game> => {
   const res = await api.get(`/games/${id}`);
-  return res.data.data;
+  return res.data.data || res.data;
 };
 
 /**
- * 🎯 GET GAME BY SHARE CODE (Untuk Student Join)
+ * 🎯 GET GAME BY SHARE CODE
  */
 export const getGameByCode = async (shareCode: string): Promise<Game> => {
   const res = await api.get(`/games/code/${shareCode}`);
-  return res.data.data;
+  return res.data.data || res.data;
 };
 
 /**
- * 🎯 GET MY GAMES (Teacher Dashboard)
+ * 🎯 GET MY GAMES
  */
 export const getMyGames = async (): Promise<Game[]> => {
   const res = await api.get("/games/user/my-games");
@@ -81,9 +81,11 @@ export const playGame = async (id: string) => {
 };
 
 /**
- * 🎯 SUBMIT ANSWER (Real-time: Update Redis + Socket saja, tidak simpan ke DB)
+ * 🎯 SUBMIT ANSWER
+ * Gunakan real Game ID (UUID), bukan share code
  */
 export const submitAnswer = async (id: string, questionIndex: number, selectedAnswer: string, earnedPoints?: number) => {
+  // Pastikan ID yang masuk ke sini adalah UUID kuis
   const res = await api.post(`/games/${id}/submit`, {
     questionIndex,
     selectedAnswer,
@@ -93,7 +95,7 @@ export const submitAnswer = async (id: string, questionIndex: number, selectedAn
 };
 
 /**
- * 🎯 FINISH GAME (Simpan SKOR FINAL ke PostgreSQL - dipanggil 1x saat game selesai!)
+ * 🎯 FINISH GAME
  */
 export const finishGame = async (
   id: string,
@@ -106,12 +108,11 @@ export const finishGame = async (
   }
 ) => {
   try {
+    // 🎯 FIX: Gunakan ID UUID untuk hit endpoint backend
     const res = await api.post(`/games/${id}/finish`, payload);
-    console.log("✅ Skor berhasil disimpan ke database:", res.data);
     return res.data.data;
-  } catch (err) {
-    // Jangan crash halaman result meskipun save gagal
-    console.error("⚠️ Gagal simpan skor ke DB (non-fatal):", err);
-    return null;
+  } catch (err: any) {
+    console.error("⚠️ Gagal simpan skor ke DB:", err?.response?.data || err.message);
+    throw err; // Lempar error agar ditangkap catch di handler
   }
 };

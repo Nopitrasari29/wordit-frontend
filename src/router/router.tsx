@@ -36,7 +36,7 @@ import PreviewGamePage from "../pages/teacher/create-game/PreviewGamePage";
 import AddQuestionsPage from "../pages/teacher/create-game/AddQuestionsPage";
 import ClassPage from "../pages/teacher/ClassPage";
 import AnalyticsClassPage from "../pages/teacher/analytics/AnalyticsClassPage";
-import HostSessionPage from "../pages/teacher/HostSessionPage"; // 🎯 FIX: Pastikan ini diimport!
+import HostSessionPage from "../pages/teacher/HostSessionPage";
 
 /* ADMIN PAGES */
 import AdminDashboard from "../pages/admin/AdminDashboard";
@@ -57,8 +57,8 @@ export default function Router() {
 
           {/* ================= GENERAL PROTECTED (Auth Only) ================= */}
           <Route element={<ProtectedRoute />}>
-            {/* 🎮 Rute Play ditaruh di sini agar Teacher bisa Preview & Student bisa Play */}
-            <Route path="/play/:gameId" element={<PlayGamePage />} /> 
+            {/* Rute Play agar Teacher bisa Preview & Student bisa Play */}
+            <Route path="/play/:gameId" element={<PlayGamePage />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/profile/edit" element={<EditProfilePage />} />
           </Route>
@@ -81,15 +81,16 @@ export default function Router() {
             <Route path="/teacher/projects" element={<MyProjectsPage />} />
             <Route path="/teacher/class" element={<ClassPage />} />
             <Route path="/teacher/analytics" element={<AnalyticsClassPage />} />
-            
-            {/* 🚀 FIX: Rute untuk Host Mode (Layar Proyektor Guru) */}
-            <Route path="/teacher/session/host/:gameId" element={<HostSessionPage />} /> 
 
-            {/* Pembuatan Game */}
+            <Route path="/teacher/session/host/:gameId" element={<HostSessionPage />} />
+
+            {/* Pembuatan & Editing Game */}
             <Route path="/teacher/create/level" element={<ChooseLevelPage />} />
             <Route path="/teacher/create/template" element={<ChooseTemplatePage />} />
             <Route path="/teacher/create/builder" element={<GameBuilderPage />} />
             <Route path="/teacher/create/questions" element={<AddQuestionsPage />} />
+
+            {/* Path Edit & Preview yang Sinkron dengan Navigation */}
             <Route path="/teacher/game/edit/:gameId" element={<EditGamePage />} />
             <Route path="/teacher/game/preview/:gameId" element={<PreviewGamePage />} />
           </Route>

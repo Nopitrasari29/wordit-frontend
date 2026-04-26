@@ -120,11 +120,11 @@ export default function TeacherDashboard() {
             >
               <div className="bg-slate-50 rounded-[2.5rem] h-44 mb-6 flex items-center justify-center text-6xl shadow-inner relative overflow-hidden">
                 <span className="group-hover:scale-125 transition-transform duration-500 z-10">
-                    {templateIcons[game.templateType] || "🧩"}
+                  {templateIcons[game.templateType] || "🧩"}
                 </span>
                 {/* Status Badge */}
                 <div className={`absolute top-4 right-4 px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest ${game.isPublished ? 'bg-emerald-100 text-emerald-600' : 'bg-amber-100 text-amber-600'}`}>
-                    {game.isPublished ? 'Published' : 'Draft'}
+                  {game.isPublished ? 'Published' : 'Draft'}
                 </div>
               </div>
 
@@ -159,7 +159,7 @@ export default function TeacherDashboard() {
                     Edit Draft
                   </Link>
                 )}
-                
+
                 {/* Tombol Preview Cepat */}
                 <Link
                   to={`/play/${game.id}`}

@@ -11,7 +11,7 @@ export default function HostSessionPage() {
   const [loading, setLoading] = useState(true);
 
   const [participants, setParticipants] = useState<any[]>([]);
-  // 🎯 STATE BARU: Untuk melacak status permainan (WAITING -> PLAYING -> ENDED)
+  // 🎯 STATE: WAITING -> PLAYING -> ENDED
   const [sessionState, setSessionState] = useState<'WAITING' | 'PLAYING' | 'ENDED'>('WAITING');
 
   useEffect(() => {
@@ -32,8 +32,9 @@ export default function HostSessionPage() {
   useEffect(() => {
     if (!game?.shareCode) return;
 
+    // 🎯 FIX: Pastikan Host join room dengan benar
     const joinAsHost = () => {
-      console.log(`📡 [SOCKET] Mencoba join room: ${game.shareCode}`);
+      console.log(`📡 [SOCKET] Host joining room: ${game.shareCode}`);
       socket.emit("hostJoin", game.shareCode);
     };
 
@@ -43,13 +44,25 @@ export default function HostSessionPage() {
       socket.on("connect", joinAsHost);
     }
 
-    socket.on("updatePlayerList", (newList: any[]) => {
-      setParticipants(newList);
-    });
+    // 🎯 BE-13: Sinkronisasi Skor Real-time
+    // Mendengarkan semua kemungkinan event update ranking dari backend
+    const handleRankingUpdate = (newList: any[]) => {
+      console.log("📊 [SOCKET] Data ranking diterima:", newList);
+      // Validasi data adalah array untuk mencegah crash
+      if (Array.isArray(newList)) {
+        setParticipants(newList);
+      }
+    };
+
+    socket.on("ranking_update", handleRankingUpdate);
+    socket.on("updatePlayerList", handleRankingUpdate);
+    socket.on("playerJoined", joinAsHost); // Re-join jika ada trigger pemain baru
 
     return () => {
       socket.off("connect", joinAsHost);
-      socket.off("updatePlayerList");
+      socket.off("ranking_update", handleRankingUpdate);
+      socket.off("updatePlayerList", handleRankingUpdate);
+      socket.off("playerJoined", joinAsHost);
     };
   }, [game?.shareCode]);
 
@@ -82,7 +95,7 @@ export default function HostSessionPage() {
   );
 
   return (
-    <div className="min-h-screen bg-slate-900 flex flex-col font-sans overflow-hidden relative">
+    <div className="min-h-screen bg-slate-900 flex flex-col font-sans overflow-hidden relative text-white">
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
         <div className="absolute -top-40 -left-40 w-[600px] h-[600px] bg-indigo-600/20 rounded-full blur-[120px]"></div>
         <div className="absolute -bottom-40 -right-40 w-[600px] h-[600px] bg-blue-600/10 rounded-full blur-[120px]"></div>
@@ -118,9 +131,9 @@ export default function HostSessionPage() {
 
       <div className="flex-1 flex flex-col items-center justify-center p-10 z-10 gap-12">
 
-        {/* 🎫 TAMPILAN BERUBAH TERGANTUNG STATE */}
+        {/* 🎫 TAMPILAN WAITING MODE */}
         {sessionState === 'WAITING' && (
-          <div className="bg-white p-12 rounded-[4rem] shadow-[0_0_100px_rgba(79,70,229,0.3)] text-center transform hover:scale-105 transition-all duration-500 border-[15px] border-indigo-50/50">
+          <div className="bg-white p-12 rounded-[4rem] shadow-[0_0_100px_rgba(79,70,229,0.3)] text-center border-[15px] border-indigo-50/50 transform hover:scale-105 transition-all duration-500">
             <p className="text-slate-400 font-black uppercase text-[10px] tracking-[0.3em] mb-4">Join at wordit.app with code:</p>
             <h2 className="text-9xl font-black text-slate-900 tracking-tighter leading-none italic uppercase">
               {game?.shareCode || "------"}
@@ -133,33 +146,24 @@ export default function HostSessionPage() {
           </div>
         )}
 
+        {/* 🎫 TAMPILAN LIVE/ENDED MODE */}
         {sessionState === 'PLAYING' && (
           <div className="text-center animate-fade-in">
             <div className="inline-block bg-rose-500 text-white px-8 py-3 rounded-full font-black text-2xl uppercase tracking-widest animate-pulse shadow-[0_0_50px_rgba(225,29,72,0.5)]">
               🔥 GAME IS LIVE 🔥
             </div>
-            <p className="text-indigo-300 mt-4 font-black uppercase tracking-widest text-sm">Students are currently playing</p>
           </div>
         )}
 
-        {sessionState === 'ENDED' && (
-          <div className="text-center animate-fade-in">
-            <div className="inline-block bg-slate-700 text-white px-8 py-3 rounded-full font-black text-2xl uppercase tracking-widest">
-              🏁 SESSION ENDED 🏁
-            </div>
-            <p className="text-indigo-300 mt-4 font-black uppercase tracking-widest text-sm">Game over. All players stopped.</p>
-          </div>
-        )}
-
-        {/* 🏆 LIVE RANKING */}
-        <div className="w-full max-w-2xl bg-white/5 backdrop-blur-xl rounded-[3.5rem] p-10 border border-white/10 shadow-2xl overflow-hidden relative">
+        {/* 🏆 LIVE RANKING (FE-16) */}
+        <div className="w-full max-w-2xl bg-white/5 backdrop-blur-xl rounded-[3.5rem] p-10 border border-white/10 shadow-2xl relative">
           <div className="flex items-center justify-between mb-10 relative z-10 px-2">
             <div>
               <h3 className="text-white font-black text-xl uppercase italic tracking-tighter underline decoration-indigo-500 underline-offset-8">Live Ranking</h3>
               <p className="text-indigo-400/50 text-[8px] font-black uppercase tracking-[0.3em] mt-4">Real-time participation status</p>
             </div>
             <div className="text-right">
-              <span className="bg-indigo-600 text-white px-5 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-indigo-900/50">
+              <span className="bg-indigo-600 text-white px-5 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest">
                 {participants.length} Participants
               </span>
             </div>
@@ -167,14 +171,10 @@ export default function HostSessionPage() {
 
           <div className="space-y-4 max-h-72 overflow-y-auto pr-2 custom-scrollbar relative z-10">
             {participants.length > 0 ? (
-              // Mengurutkan dari skor terbesar
               [...participants].sort((a, b) => b.score - a.score).map((player, index) => (
-                <div
-                  key={index}
-                  className="bg-white/5 hover:bg-white/10 p-6 rounded-[1.8rem] flex items-center justify-between transition-all border border-white/5 animate-fade-in group"
-                >
+                <div key={index} className="bg-white/5 p-6 rounded-[1.8rem] flex items-center justify-between border border-white/5 hover:bg-white/10 transition-all">
                   <div className="flex items-center gap-5">
-                    <span className={`w-10 h-10 flex items-center justify-center text-white font-black rounded-xl text-sm italic shadow-lg transition-transform ${index === 0 ? 'bg-amber-500 scale-125' : index === 1 ? 'bg-slate-400 scale-110' : index === 2 ? 'bg-amber-700 scale-105' : 'bg-indigo-600 group-hover:scale-110'}`}>
+                    <span className={`w-10 h-10 flex items-center justify-center text-white font-black rounded-xl text-sm italic ${index === 0 ? 'bg-amber-500' : 'bg-indigo-600'}`}>
                       #{index + 1}
                     </span>
                     <span className="text-white font-black text-xl tracking-tight uppercase italic">{player.name}</span>
@@ -186,36 +186,27 @@ export default function HostSessionPage() {
                 </div>
               ))
             ) : (
-              <div className="text-center py-20 opacity-20 italic text-white text-sm uppercase font-black tracking-[0.5em] animate-pulse">
+              <div className="text-center py-20 opacity-20 italic text-white uppercase font-black tracking-[0.5em]">
                 Searching for challengers...
               </div>
             )}
           </div>
 
-          {/* 🎯 TOMBOL START / STOP DINAMIS */}
+          {/* 🎯 TOMBOL DINAMIS */}
           {sessionState === 'WAITING' && (
-            <button
-              onClick={handleStartGame}
-              className="w-full mt-12 bg-white text-indigo-600 py-6 rounded-[2.5rem] font-black text-2xl shadow-2xl hover:bg-indigo-50 transition-all active:scale-95 uppercase italic tracking-tighter shadow-indigo-900/20"
-            >
+            <button onClick={handleStartGame} className="w-full mt-12 bg-white text-indigo-600 py-6 rounded-[2.5rem] font-black text-2xl shadow-2xl hover:bg-indigo-50 transition-all active:scale-95 uppercase italic tracking-tighter">
               Start Game ▶️
             </button>
           )}
 
           {sessionState === 'PLAYING' && (
-            <button
-              onClick={handleEndSession}
-              className="w-full mt-12 bg-rose-500 text-white py-6 rounded-[2.5rem] font-black text-2xl shadow-2xl hover:bg-rose-600 transition-all active:scale-95 uppercase italic tracking-tighter shadow-rose-900/20"
-            >
-              🛑 Stop Game (End Session)
+            <button onClick={handleEndSession} className="w-full mt-12 bg-rose-500 text-white py-6 rounded-[2.5rem] font-black text-2xl shadow-2xl hover:bg-rose-600 transition-all active:scale-95 uppercase italic tracking-tighter">
+              🛑 Stop Game
             </button>
           )}
 
           {sessionState === 'ENDED' && (
-            <button
-              onClick={() => navigate("/teacher/projects")}
-              className="w-full mt-12 bg-slate-700 text-white py-6 rounded-[2.5rem] font-black text-2xl shadow-2xl hover:bg-slate-600 transition-all active:scale-95 uppercase italic tracking-tighter"
-            >
+            <button onClick={() => navigate("/teacher/projects")} className="w-full mt-12 bg-slate-700 text-white py-6 rounded-[2.5rem] font-black text-2xl shadow-2xl hover:bg-slate-600 transition-all active:scale-95 uppercase italic tracking-tighter">
               Tutup Papan Peringkat
             </button>
           )}
