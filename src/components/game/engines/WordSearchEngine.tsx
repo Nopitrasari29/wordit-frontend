@@ -1,11 +1,13 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { submitAnswer, finishGame } from "../../../pages/services/game.service";
 import socket from "../../../hooks/useSocket";
-import { finishGame } from "../../../pages/services/game.service";
 import { toast } from "react-hot-toast";
 
-export default function WordSearchEngine({ data }: { data: any }) {
+export default function WordSearchEngine({ data, onGameOver }: { data: any, onGameOver?: any }) {
     const navigate = useNavigate();
+    const realGameId = data?.id || data?._id;
+    const roomCode = data?.shareCode || "";
 
     const gameConfig = useMemo(() => Array.isArray(data?.gameJson) ? data.gameJson[0] : data?.gameJson, [data]);
     const size = gameConfig?.gridSize || 8;
@@ -14,10 +16,15 @@ export default function WordSearchEngine({ data }: { data: any }) {
     const [grid, setGrid] = useState<string[][]>([]);
     const [foundWords, setFoundWords] = useState<string[]>([]);
     const [startCell, setStartCell] = useState<[number, number] | null>(null);
-    const [foundCells, setFoundCells] = useState<string[]>([]); // Menyimpan koordinat "r-c" yang sudah benar
+    const [foundCells, setFoundCells] = useState<string[]>([]);
     const [score, setScore] = useState(0);
-    const [timeSpent, setTimeSpent] = useState(0);
+    const [lives, setLives] = useState(3);
+    const [timeLeft, setTimeLeft] = useState(120);
     const [isFinished, setIsFinished] = useState(false);
+    const [history, setHistory] = useState<any[]>([]);
+
+    const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const isBusy = useRef(false);
 
     const generateGrid = useCallback(() => {
         if (wordsToFind.length === 0) return;
@@ -57,11 +64,22 @@ export default function WordSearchEngine({ data }: { data: any }) {
 
     useEffect(() => {
         generateGrid();
-        const timer = setInterval(() => setTimeSpent(p => p + 1), 1000);
-        return () => clearInterval(timer);
+        timerRef.current = setInterval(() => {
+            setTimeLeft((prev) => {
+                if (prev <= 1) {
+                    if (timerRef.current) clearInterval(timerRef.current);
+                    handleFinish(foundWords, score, [], true);
+                    return 0;
+                }
+                return prev - 1;
+            });
+        }, 1000);
+        return () => { if (timerRef.current) clearInterval(timerRef.current); };
     }, [generateGrid]);
 
     const handleCellClick = (r: number, c: number) => {
+        if (isFinished || isBusy.current || lives <= 0) return;
+
         if (!startCell) {
             setStartCell([r, c]);
         } else {
@@ -90,33 +108,66 @@ export default function WordSearchEngine({ data }: { data: any }) {
             const foundWord = wordsToFind.find((w: string) => (w === selectedStr || w === reversed) && !foundWords.includes(w));
 
             if (foundWord) {
-                setFoundWords(prev => [...prev, foundWord]);
-                setFoundCells(prev => [...prev, ...cellsInSelection]);
+                const newFound = [...foundWords, foundWord];
                 const newScore = score + 100;
+                const newHistory = [...history, { word: foundWord, isCorrect: true }];
+
+                // 🔄 UPDATE STATE LOKAL SEGERA
                 setScore(newScore);
+                setFoundWords(newFound);
+                setFoundCells(prev => [...prev, ...cellsInSelection]);
+                setHistory(newHistory);
+
                 toast.success(`Ditemukan: ${foundWord}! ✨`);
-                if (data.shareCode) socket.emit("updateScore", { code: data.shareCode, score: newScore });
-                if (foundWords.length + 1 === wordsToFind.length) handleFinish([...foundWords, foundWord], newScore);
+
+                // Update Teacher via Socket & DB
+                if (roomCode) socket.emit("updateScore", { code: roomCode, score: newScore });
+                submitAnswer(realGameId, wordsToFind.indexOf(foundWord), foundWord, newScore).catch(() => { });
+
+                if (newFound.length === wordsToFind.length) {
+                    handleFinish(newFound, newScore, newHistory);
+                }
             } else if (selectedStr !== "") {
-                toast.error("Salah arah atau bukan kata target! ❌");
+                const newLives = lives - 1;
+                setLives(newLives);
+                toast.error("Bukan itu katanya! ❌");
+
+                if (newLives <= 0) {
+                    handleFinish(foundWords, score, history);
+                }
             }
             setStartCell(null);
         }
     };
 
-    const handleFinish = async (finalFound: string[], finalScore: number) => {
+    const handleFinish = async (finalFound: string[], finalScore: number, finalHistory: any[], isTimeout = false) => {
+        if (isFinished) return;
         setIsFinished(true);
+        if (timerRef.current) clearInterval(timerRef.current);
+
+        const accuracy = Math.round((finalFound.length / wordsToFind.length) * 100);
         const payload = {
             scoreValue: finalScore,
             maxScore: wordsToFind.length * 100,
-            accuracy: 100,
-            timeSpent: timeSpent,
-            answersDetail: finalFound.map(w => ({ word: w, isCorrect: true })),
+            accuracy: accuracy,
+            timeSpent: 120 - timeLeft,
+            answersDetail: finalHistory.length > 0 ? finalHistory : finalFound.map(w => ({ word: w, isCorrect: true })),
         };
+
+        // 🎯 REDUNDANSI: Simpan skor ke storage agar Result Page tidak 0
+        sessionStorage.setItem("lastScore", finalScore.toString());
+        sessionStorage.setItem("lastAccuracy", accuracy.toString());
+        sessionStorage.setItem("lastBreakdown", JSON.stringify(payload.answersDetail));
+
         try {
-            await finishGame(data.id || data._id, payload);
-            navigate("/student/result", { state: payload });
+            await finishGame(realGameId, payload);
         } catch (e) {
+            console.error("Gagal simpan skor ke DB, menggunakan fallback navigasi.");
+        }
+
+        if (onGameOver) {
+            onGameOver(finalScore, accuracy, payload.answersDetail);
+        } else {
             navigate("/student/result", { state: payload });
         }
     };
@@ -124,21 +175,27 @@ export default function WordSearchEngine({ data }: { data: any }) {
     if (isFinished) return <div className="p-20 text-center font-black animate-pulse uppercase tracking-widest text-indigo-600">Menyimpan Skor... 🏆</div>;
 
     return (
-        <div className="flex flex-col items-center p-6 space-y-8 max-w-2xl mx-auto font-sans animate-in fade-in duration-700">
-            <div className="w-full flex justify-between bg-white p-6 rounded-[2.5rem] shadow-sm border-2 border-indigo-50">
+        <div className="flex flex-col items-center p-6 space-y-8 max-w-2xl mx-auto font-sans">
+            <div className="w-full flex justify-between bg-white p-6 rounded-[2.5rem] shadow-sm border-2 border-indigo-50 items-center">
                 <div className="flex flex-col font-black">
-                    <span className="text-[9px] text-slate-400 uppercase tracking-widest">Ditemukan</span>
-                    <span className="text-indigo-600 italic text-xl">{foundWords.length} / {wordsToFind.length}</span>
+                    <span className="text-[9px] text-slate-400 uppercase tracking-widest">Nyawa</span>
+                    <span className="text-xl">{"❤️".repeat(lives)}</span>
                 </div>
-                <div className="flex flex-col items-end font-black text-right">
-                    <span className="text-[9px] text-slate-400 uppercase tracking-widest">Waktu</span>
-                    <span className="text-slate-700 text-xl">⏱️ {timeSpent}s</span>
+                <div className="flex flex-col items-center">
+                    <span className="text-[9px] text-slate-400 uppercase tracking-widest">Sisa Waktu</span>
+                    <span className={`text-2xl font-black ${timeLeft <= 10 ? 'text-rose-500 animate-pulse' : 'text-slate-700'}`}>
+                        {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}
+                    </span>
+                </div>
+                <div className="text-right flex flex-col font-black">
+                    <span className="text-[9px] text-slate-400 uppercase tracking-widest">Skor</span>
+                    <span className="text-indigo-600 text-2xl">{score}</span>
                 </div>
             </div>
 
-            <div className="flex flex-wrap gap-2 justify-center bg-slate-50 p-4 rounded-3xl w-full">
+            <div className="flex flex-wrap gap-2 justify-center bg-slate-50 p-4 rounded-3xl w-full border-2 border-slate-100">
                 {wordsToFind.map((w: string) => (
-                    <span key={w} className={`px-4 py-2 rounded-xl font-black text-[10px] uppercase transition-all duration-500 ${foundWords.includes(w) ? 'bg-emerald-500 text-white line-through scale-90' : 'bg-white text-slate-400 border-2 border-slate-100'}`}>
+                    <span key={w} className={`px-4 py-2 rounded-xl font-black text-[10px] transition-all duration-500 ${foundWords.includes(w) ? 'bg-emerald-500 text-white line-through scale-90' : 'bg-white text-slate-400 border-2 border-slate-200'}`}>
                         {w} {foundWords.includes(w) && "✅"}
                     </span>
                 ))}

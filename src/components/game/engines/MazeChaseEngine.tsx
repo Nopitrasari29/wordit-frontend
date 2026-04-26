@@ -1,9 +1,14 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { submitAnswer } from "../../../pages/services/game.service";
+import { submitAnswer, finishGame } from "../../../pages/services/game.service";
+import socket from "../../../hooks/useSocket"; // 🎯 Tambahkan socket untuk sinkronisasi Teacher
 import { toast } from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
 
 export default function MazeChaseEngine({ data, onGameOver, onIntermission }: { data: any, onGameOver?: any, onIntermission?: any }) {
+    const navigate = useNavigate();
     const questions = data?.gameJson?.questions || [];
+    const realGameId = data?.id || data?._id;
+    const roomCode = data?.shareCode || ""; // 🎯 Ambil room code untuk socket
 
     const [currentIdx, setCurrentIdx] = useState(0);
     const [playerPos, setPlayerPos] = useState({ r: 2, c: 2 });
@@ -13,7 +18,6 @@ export default function MazeChaseEngine({ data, onGameOver, onIntermission }: { 
     const [history, setHistory] = useState<any[]>([]);
     const [timeLeft, setTimeLeft] = useState(15);
 
-    // 🎯 REFS UNTUK STABILITAS
     const isBusy = useRef(false);
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const currentQ = questions[currentIdx];
@@ -47,10 +51,8 @@ export default function MazeChaseEngine({ data, onGameOver, onIntermission }: { 
 
     useEffect(() => { initLevel(); }, [initLevel]);
 
-    // 🎯 TIMER LOGIC DENGAN AUTO-FINISH SOAL TERAKHIR
     useEffect(() => {
         if (timerRef.current) clearInterval(timerRef.current);
-
         timerRef.current = setInterval(() => {
             setTimeLeft((prev) => {
                 if (prev <= 1) {
@@ -61,77 +63,74 @@ export default function MazeChaseEngine({ data, onGameOver, onIntermission }: { 
                 return prev - 1;
             });
         }, 1000);
-
         return () => { if (timerRef.current) clearInterval(timerRef.current); };
     }, [currentIdx]);
 
-    // 🎯 CENTRAL ACTION (Portal & Timeout)
-    const handleAction = useCallback((type: "PORTAL" | "TIMEOUT", cell: any) => {
+    const handleAction = useCallback(async (type: "PORTAL" | "TIMEOUT", cell: any) => {
         if (isBusy.current) return;
-        isBusy.current = true; // Kunci permanen untuk aksi ini
+        isBusy.current = true;
 
         if (timerRef.current) clearInterval(timerRef.current);
 
-        let isCorrect = false;
-        let word = "TIMEOUT";
-        let newScore = score;
-        let newLives = lives;
+        let isCorrect = (type === "PORTAL" && cell) ? cell.isCorrect : false;
 
-        if (type === "PORTAL" && cell) {
-            isCorrect = cell.isCorrect;
-            word = cell.text;
-            if (isCorrect) {
-                newScore += 100;
-                setScore(newScore);
-                toast.success("Tepat Sekali! 🌟");
-                // Submit skor real-time
-                submitAnswer(data.id || data._id, currentIdx, word, newScore).catch(() => { });
-            } else {
-                newLives -= 1;
-                setLives(newLives);
-                toast.error("Salah Portal! 🐙");
-            }
+        // 🎯 HITUNG SKOR SECARA LOKAL UNTUK DIKIRIM SEGERA
+        let newScore = isCorrect ? score + 100 : score;
+        let newLives = isCorrect ? lives : lives - 1;
+
+        if (isCorrect) {
+            setScore(newScore);
+            toast.success("Tepat Sekali! 🌟");
+
+            // 📡 SINKRONISASI KE TEACHER (REAL-TIME)
+            if (roomCode) socket.emit("updateScore", { code: roomCode, score: newScore });
+            submitAnswer(realGameId, currentIdx, cell.text, newScore).catch(() => { });
         } else {
-            newLives -= 1;
             setLives(newLives);
-            toast.error("Waktu Habis! ⏰");
+            toast.error(type === "TIMEOUT" ? "Waktu Habis! ⏰" : "Portal Salah! 🐙");
+            submitAnswer(realGameId, currentIdx, type === "TIMEOUT" ? "TIMEOUT" : cell?.text, newScore).catch(() => { });
         }
 
-        const newHistory = [...history, { word, isCorrect, time: 15 - timeLeft }];
-        setHistory(newHistory);
+        const currentHistoryItem = { word: cell?.text || "TIMEOUT", isCorrect, time: 15 - timeLeft };
+        const updatedHistory = [...history, currentHistoryItem];
+        setHistory(updatedHistory);
 
-        // 🎯 LOGIKA PERPINDAHAN (Auto-Next atau Auto-Finish)
         setTimeout(() => {
             const isGameOver = newLives <= 0 || currentIdx + 1 >= questions.length;
-
             if (isGameOver) {
+                // 🎯 GUNAKAN VARIABEL LOKAL (newScore & updatedHistory) AGAR TIDAK 0
                 const accuracy = Math.round((newScore / (questions.length * 100)) * 100);
-                // Simpan ke storage untuk PlayGamePage
+                const payload = {
+                    scoreValue: newScore,
+                    maxScore: questions.length * 100,
+                    accuracy,
+                    timeSpent: 0,
+                    answersDetail: updatedHistory
+                };
+
+                // Redundansi simpan ke storage
                 sessionStorage.setItem("lastScore", newScore.toString());
                 sessionStorage.setItem("lastAccuracy", accuracy.toString());
-                sessionStorage.setItem("lastBreakdown", JSON.stringify(newHistory));
+                sessionStorage.setItem("lastBreakdown", JSON.stringify(updatedHistory));
 
-                if (onGameOver) onGameOver(newScore, accuracy, newHistory);
+                finishGame(realGameId, payload).catch(() => { });
+                if (onGameOver) onGameOver(newScore, accuracy, updatedHistory);
+                else navigate("/student/result", { state: payload });
             } else {
                 if (onIntermission) onIntermission();
                 setCurrentIdx(prev => prev + 1);
             }
         }, 800);
-    }, [score, lives, history, currentIdx, questions.length, data, onGameOver, onIntermission, timeLeft]);
+    }, [score, lives, history, currentIdx, questions.length, realGameId, navigate, onGameOver, onIntermission, timeLeft, roomCode]);
 
     const movePlayer = useCallback((dr: number, dc: number) => {
         if (isBusy.current || lives <= 0) return;
-
         setPlayerPos(prev => {
             const nr = Math.max(0, Math.min(4, prev.r + dr));
             const nc = Math.max(0, Math.min(4, prev.c + dc));
             if (nr === prev.r && nc === prev.c) return prev;
-
             const cell = grid[nr][nc];
-            if (cell) {
-                handleAction("PORTAL", cell);
-                return prev;
-            }
+            if (cell) { handleAction("PORTAL", cell); return prev; }
             return { r: nr, c: nc };
         });
     }, [grid, lives, handleAction]);
@@ -154,9 +153,10 @@ export default function MazeChaseEngine({ data, onGameOver, onIntermission }: { 
 
     return (
         <div className="flex flex-col items-center p-6 space-y-6 max-w-2xl mx-auto font-sans select-none">
+            {/* HUD HEADER */}
             <div className="w-full flex justify-between bg-white p-6 rounded-[2.5rem] shadow-sm border-2 border-indigo-50">
-                <div className="flex flex-col">
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-left">Nyawa</span>
+                <div className="flex flex-col text-center items-center">
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Nyawa</span>
                     <span className="text-xl">{"❤️".repeat(Math.max(0, lives))}</span>
                 </div>
                 <div className="flex flex-col items-center">
