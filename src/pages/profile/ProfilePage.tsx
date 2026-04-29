@@ -1,5 +1,6 @@
 import { useAuth } from "../../hooks/useAuth"
 import { Link } from "react-router-dom"
+import { getImageUrl } from "../../utils/assets"
 
 export default function ProfilePage() {
   const { user } = useAuth()
@@ -27,7 +28,7 @@ export default function ProfilePage() {
         <div className="flex flex-col items-center gap-6 mb-12">
           <div className="relative group">
             <img
-              src={user?.photoUrl || "/avatar.png"}
+              src={getImageUrl(user?.photoUrl)}
               alt="Profile Avatar"
               className="w-40 h-40 md:w-48 md:h-48 rounded-full object-cover border-8 border-white shadow-2xl bg-slate-50 transition-all group-hover:scale-105"
             />

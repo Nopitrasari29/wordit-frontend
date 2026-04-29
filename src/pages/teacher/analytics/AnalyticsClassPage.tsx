@@ -10,8 +10,9 @@ import {
 
 export default function AnalyticsClassPage({ games }: any) {
   const templateStats: Record<string, number> = {}
+  const gamesList = games || [];
 
-  games.forEach((g: any) => {
+  gamesList.forEach((g: any) => {
     if (!templateStats[g.templateType]) {
       templateStats[g.templateType] = 0
     }

@@ -4,7 +4,7 @@ import { submitAnswer, finishGame } from "../../../pages/services/game.service";
 import socket from "../../../hooks/useSocket";
 import { toast } from "react-hot-toast";
 
-export default function WordSearchEngine({ data, onGameOver }: { data: any, onGameOver?: any }) {
+export default function WordSearchEngine({ data, onGameOver, onIntermission }: { data: any, onGameOver?: any, onIntermission?: () => void }) {
     const navigate = useNavigate();
     const realGameId = data?.id || data?._id;
     const roomCode = data?.shareCode || "";
@@ -22,9 +22,10 @@ export default function WordSearchEngine({ data, onGameOver }: { data: any, onGa
     const [timeLeft, setTimeLeft] = useState(120);
     const [isFinished, setIsFinished] = useState(false);
     const [history, setHistory] = useState<any[]>([]);
+    const [selection, setSelection] = useState<string[]>([]);
+    const [isDragging, setIsDragging] = useState(false);
 
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-    const isBusy = useRef(false);
 
     const generateGrid = useCallback(() => {
         if (wordsToFind.length === 0) return;
@@ -68,7 +69,7 @@ export default function WordSearchEngine({ data, onGameOver }: { data: any, onGa
             setTimeLeft((prev) => {
                 if (prev <= 1) {
                     if (timerRef.current) clearInterval(timerRef.current);
-                    handleFinish(foundWords, score, [], true);
+                    handleFinish(foundWords, score, []);
                     return 0;
                 }
                 return prev - 1;
@@ -77,71 +78,84 @@ export default function WordSearchEngine({ data, onGameOver }: { data: any, onGa
         return () => { if (timerRef.current) clearInterval(timerRef.current); };
     }, [generateGrid]);
 
-    const handleCellClick = (r: number, c: number) => {
-        if (isFinished || isBusy.current || lives <= 0) return;
+    const getCellsBetween = (start: [number, number], end: [number, number]): string[] => {
+        const cells: string[] = [];
+        const [r1, c1] = start;
+        const [r2, c2] = end;
 
-        if (!startCell) {
-            setStartCell([r, c]);
-        } else {
-            const [r1, c1] = startCell;
-            const [r2, c2] = [r, c];
-            let selectedStr = "";
-            let cellsInSelection: string[] = [];
-
-            if (r1 === r2) { // Horizontal
-                const start = Math.min(c1, c2);
-                const end = Math.max(c1, c2);
-                for (let i = start; i <= end; i++) {
-                    selectedStr += grid[r1][i];
-                    cellsInSelection.push(`${r1}-${i}`);
-                }
-            } else if (c1 === c2) { // Vertical
-                const start = Math.min(r1, r2);
-                const end = Math.max(r1, r2);
-                for (let i = start; i <= end; i++) {
-                    selectedStr += grid[i][c1];
-                    cellsInSelection.push(`${i}-${c1}`);
-                }
-            }
-
-            const reversed = selectedStr.split('').reverse().join('');
-            const foundWord = wordsToFind.find((w: string) => (w === selectedStr || w === reversed) && !foundWords.includes(w));
-
-            if (foundWord) {
-                const newFound = [...foundWords, foundWord];
-                const newScore = score + 100;
-                const newHistory = [...history, { word: foundWord, isCorrect: true }];
-
-                // 🔄 UPDATE STATE LOKAL SEGERA
-                setScore(newScore);
-                setFoundWords(newFound);
-                setFoundCells(prev => [...prev, ...cellsInSelection]);
-                setHistory(newHistory);
-
-                toast.success(`Ditemukan: ${foundWord}! ✨`);
-
-                // Update Teacher via Socket & DB
-                if (roomCode) socket.emit("updateScore", { code: roomCode, score: newScore });
-                submitAnswer(realGameId, wordsToFind.indexOf(foundWord), foundWord, newScore).catch(() => { });
-
-                if (newFound.length === wordsToFind.length) {
-                    handleFinish(newFound, newScore, newHistory);
-                }
-            } else if (selectedStr !== "") {
-                const newLives = lives - 1;
-                setLives(newLives);
-                toast.error("Bukan itu katanya! ❌");
-
-                if (newLives <= 0) {
-                    handleFinish(foundWords, score, history);
-                }
-            }
-            setStartCell(null);
+        if (r1 === r2) { // Horizontal
+            const s = Math.min(c1, c2);
+            const e = Math.max(c1, c2);
+            for (let i = s; i <= e; i++) cells.push(`${r1}-${i}`);
+        } else if (c1 === c2) { // Vertical
+            const s = Math.min(r1, r2);
+            const e = Math.max(r1, r2);
+            for (let i = s; i <= e; i++) cells.push(`${i}-${c1}`);
         }
+        return cells;
     };
 
-    const handleFinish = async (finalFound: string[], finalScore: number, finalHistory: any[], isTimeout = false) => {
+    const handleMouseDown = (r: number, c: number) => {
+        if (isFinished || lives <= 0) return;
+        setIsDragging(true);
+        setStartCell([r, c]);
+        setSelection([`${r}-${c}`]);
+    };
+
+    const handleMouseEnter = (r: number, c: number) => {
+        if (!isDragging || !startCell) return;
+        const currentCells = getCellsBetween(startCell, [r, c]);
+        setSelection(currentCells);
+    };
+
+    const handleMouseUp = () => {
+        if (!isDragging || !startCell || selection.length === 0) {
+            setIsDragging(false);
+            setStartCell(null);
+            setSelection([]);
+            return;
+        }
+
+        let selectedStr = selection.map((id: string) => {
+            const [r, c] = id.split('-').map(Number);
+            return grid[r][c];
+        }).join('');
+
+        const reversed = selectedStr.split('').reverse().join('');
+        const foundWord = wordsToFind.find((w: string) => (w === selectedStr || w === reversed) && !foundWords.includes(w));
+
+        if (foundWord) {
+            const newFound = [...foundWords, foundWord];
+            const newScore = score + 100;
+            const newHistory = [...history, { word: foundWord, isCorrect: true }];
+
+            setScore(newScore);
+            setFoundWords(newFound);
+            setFoundCells(prev => [...prev, ...selection]);
+            setHistory(newHistory);
+            toast.success(`Ditemukan: ${foundWord}! ✨`);
+
+            if (roomCode) socket.emit("updateScore", { code: roomCode, score: newScore });
+            submitAnswer(realGameId, wordsToFind.indexOf(foundWord), foundWord, newScore).catch(() => { });
+
+            if (newFound.length === wordsToFind.length) {
+                handleFinish(newFound, newScore, newHistory);
+            }
+        } else if (selection.length > 1) {
+            const newLives = lives - 1;
+            setLives(newLives);
+            toast.error("Bukan itu katanya! ❌");
+            if (newLives <= 0) handleFinish(foundWords, score, history);
+        }
+
+        setIsDragging(false);
+        setStartCell(null);
+        setSelection([]);
+    };
+
+    const handleFinish = async (finalFound: string[], finalScore: number, finalHistory: any[]) => {
         if (isFinished) return;
+        if (onIntermission) onIntermission();
         setIsFinished(true);
         if (timerRef.current) clearInterval(timerRef.current);
 
@@ -154,7 +168,6 @@ export default function WordSearchEngine({ data, onGameOver }: { data: any, onGa
             answersDetail: finalHistory.length > 0 ? finalHistory : finalFound.map(w => ({ word: w, isCorrect: true })),
         };
 
-        // 🎯 REDUNDANSI: Simpan skor ke storage agar Result Page tidak 0
         sessionStorage.setItem("lastScore", finalScore.toString());
         sessionStorage.setItem("lastAccuracy", accuracy.toString());
         sessionStorage.setItem("lastBreakdown", JSON.stringify(payload.answersDetail));
@@ -201,19 +214,42 @@ export default function WordSearchEngine({ data, onGameOver }: { data: any, onGa
                 ))}
             </div>
 
-            <div className="bg-indigo-600 p-4 rounded-[3.5rem] shadow-2xl border-[12px] border-indigo-500/20">
-                <div className={`grid gap-2`} style={{ gridTemplateColumns: `repeat(${size}, minmax(0, 1fr))` }}>
+            <div 
+                className="bg-indigo-600 p-2 sm:p-4 rounded-[2rem] sm:rounded-[3.5rem] shadow-2xl border-[8px] sm:border-[12px] border-indigo-500/20 max-w-full overflow-hidden"
+                onMouseLeave={handleMouseUp}
+                onMouseUp={handleMouseUp}
+                onTouchEnd={handleMouseUp}
+            >
+                <div className={`grid gap-1 sm:gap-2`} style={{ gridTemplateColumns: `repeat(${size}, minmax(0, 1fr))` }}>
                     {grid.map((row, r: number) => row.map((char: string, c: number) => {
-                        const isSelected = startCell?.[0] === r && startCell?.[1] === c;
+                        const isSelected = selection.includes(`${r}-${c}`);
                         const isFound = foundCells.includes(`${r}-${c}`);
                         return (
-                            <button key={`${r}-${c}`} onClick={() => handleCellClick(r, c)} className={`w-8 h-8 md:w-11 md:h-11 rounded-xl font-black text-lg flex items-center justify-center transition-all ${isFound ? 'bg-emerald-400 text-white' : isSelected ? 'bg-amber-400 text-white scale-110 shadow-lg' : 'bg-white text-indigo-900 hover:bg-indigo-50'}`}>
+                            <button 
+                                key={`${r}-${c}`} 
+                                data-r={r}
+                                data-c={c}
+                                onMouseDown={() => handleMouseDown(r, c)}
+                                onMouseEnter={() => handleMouseEnter(r, c)}
+                                onTouchStart={() => handleMouseDown(r, c)}
+                                onTouchMove={(e) => {
+                                    const touch = e.touches[0];
+                                    const element = document.elementFromPoint(touch.clientX, touch.clientY);
+                                    if (element && element.hasAttribute('data-r')) {
+                                        const tr = parseInt(element.getAttribute('data-r')!);
+                                        const tc = parseInt(element.getAttribute('data-c')!);
+                                        handleMouseEnter(tr, tc);
+                                    }
+                                }}
+                                className={`w-7 h-7 sm:w-9 sm:h-9 md:w-12 md:h-12 rounded-lg sm:rounded-xl font-black text-sm sm:text-base md:text-lg flex items-center justify-center transition-all select-none touch-none ${isFound ? 'bg-emerald-400 text-white' : isSelected ? 'bg-amber-400 text-white scale-110 shadow-lg' : 'bg-white text-indigo-900 hover:bg-indigo-50'}`}
+                            >
                                 {char}
                             </button>
                         );
                     }))}
                 </div>
             </div>
+
         </div>
     );
 }

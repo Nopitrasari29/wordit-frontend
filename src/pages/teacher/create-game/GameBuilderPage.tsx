@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import GameBuilderRouter from "../../../components/game/GameBuilderRouter";
@@ -23,7 +23,8 @@ export default function GameBuilderPage() {
     title: "",
     words: [] as any[],     // Untuk Anagram, Hangman, WordSearch
     cards: [] as any[],     // Untuk Flashcard
-    questions: [] as any[], // Untuk Maze Chase & Spin Wheel
+    questions: [] as any[], // Untuk Maze Chase & Spin Wheel, Multiple Choice, True/False, Essay
+    pairs: [] as any[],     // Untuk Matching
     gridSize: 8
   });
 
@@ -32,7 +33,7 @@ export default function GameBuilderPage() {
   // 🔥 HANDLER 1: AI Generator Finished
   const handleAIFinished = (data: any) => {
     // Normalisasi data dari AI: ambil array dari property manapun yang tersedia
-    const items = Array.isArray(data) ? data : (data.questions || data.words || data.cards || []);
+    const items = Array.isArray(data) ? data : (data.questions || data.words || data.cards || data.pairs || []);
     const gSize = data.gridSize || 8;
 
     setQuestionsFromAI(items);
@@ -41,6 +42,7 @@ export default function GameBuilderPage() {
       words: items,
       cards: items,
       questions: items, // Isi semua agar builder mendeteksi data awal tanpa blank
+      pairs: items,     // Tambahkan pairs untuk Matching
       gridSize: gSize
     }));
 
@@ -58,6 +60,7 @@ export default function GameBuilderPage() {
       words: dataObj.words || prev.words,
       cards: dataObj.cards || prev.cards,
       questions: dataObj.questions || prev.questions,
+      pairs: dataObj.pairs || prev.pairs, // Tambahkan pairs
       gridSize: dataObj.gridSize || prev.gridSize
     }));
   };
@@ -66,12 +69,22 @@ export default function GameBuilderPage() {
   const handleSave = async (publishStatus: boolean) => {
     if (!gamePayload.title.trim()) return toast.error("Judul game wajib diisi! ✍️");
 
-    // Tentukan template mana yang butuh field 'questions'
+    // Tentukan kategori template
     const isQuestionBased = [TemplateType.MAZE_CHASE, TemplateType.SPIN_THE_WHEEL].includes(template);
+    const isPassThrough = [
+        TemplateType.MULTIPLE_CHOICE,
+        TemplateType.TRUE_FALSE,
+        TemplateType.MATCHING,
+        TemplateType.ESSAY
+    ].includes(template);
 
-    const currentItems = isQuestionBased ? gamePayload.questions :
-      template === TemplateType.FLASHCARD ? gamePayload.cards :
-        gamePayload.words;
+    const currentItems = isPassThrough 
+        ? (template === TemplateType.MATCHING ? gamePayload.pairs : gamePayload.questions)
+        : isQuestionBased 
+            ? gamePayload.questions 
+            : template === TemplateType.FLASHCARD 
+                ? gamePayload.cards 
+                : gamePayload.words;
 
     if (currentItems.length === 0) {
       return toast.error("Minimal harus ada 1 soal! 🧩");
@@ -82,7 +95,14 @@ export default function GameBuilderPage() {
       // 📦 Persiapan Object gameJson
       const quizContent: any = { template: template };
 
-      if (isQuestionBased) {
+      if (isPassThrough) {
+         if (template === TemplateType.MATCHING) {
+             quizContent.pairs = currentItems;
+         } else {
+             quizContent.questions = currentItems;
+         }
+      }
+      else if (isQuestionBased) {
         // Format untuk Spin the Wheel & Maze Chase
         quizContent.questions = currentItems.map((item: any) => ({
           question: String(item.question || item.hint || "").trim(),

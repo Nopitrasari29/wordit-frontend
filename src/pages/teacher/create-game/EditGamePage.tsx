@@ -46,8 +46,10 @@ export default function GameEditPage() {
                     initialJson.words = initialJson.words || [];
                 } else if (type.includes('FLASHCARD')) {
                     initialJson.cards = initialJson.cards || [];
-                } else if (['SPIN_THE_WHEEL', 'MAZE_CHASE'].includes(type)) {
+                } else if (['SPIN_THE_WHEEL', 'MAZE_CHASE', 'MULTIPLE_CHOICE', 'TRUE_FALSE', 'ESSAY'].includes(type)) {
                     initialJson.questions = initialJson.questions || [];
+                } else if (type === 'MATCHING') {
+                    initialJson.pairs = initialJson.pairs || [];
                 }
 
                 setGamePayload({ ...data, gameJson: initialJson });

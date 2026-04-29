@@ -4,6 +4,8 @@ import GameRenderer from "../../components/game/GameRenderer";
 import { getGameById, getGameByCode, finishGame } from "../services/game.service";
 import socket from "../../hooks/useSocket";
 import { toast } from "react-hot-toast";
+import RankingOverlay from "../../components/game/common/RankingOverlay";
+
 
 export default function PlayGamePage() {
   const { gameId } = useParams<{ gameId: string }>();
@@ -67,32 +69,48 @@ export default function PlayGamePage() {
     };
   }, [navigate, gameId, game]); // Menambahkan dependensi agar state terpantau
 
-  const handleGameOver = async () => {
-    // 🎯 FIX: Pastikan gunakan ID UUID database, bukan Share Code
-    const realGameId = game?.id || game?._id || gameId;
+    const handleGameOver = async () => {
+        const realGameId = game?.id || game?._id || gameId;
+        const score = parseInt(sessionStorage.getItem("lastScore") || "0");
+        const accuracyRaw = parseInt(sessionStorage.getItem("lastAccuracy") || "0");
+        const rawBreakdown = sessionStorage.getItem("lastBreakdown");
+        let breakdown = rawBreakdown ? JSON.parse(rawBreakdown) : [];
 
-    const score = parseInt(sessionStorage.getItem("lastScore") || "0");
-    const accuracy = parseInt(sessionStorage.getItem("lastAccuracy") || "0");
-    const rawBreakdown = sessionStorage.getItem("lastBreakdown");
-    const breakdown = rawBreakdown ? JSON.parse(rawBreakdown) : [];
+        // 🎯 REVISI QA: Auto-fill soal yang belum terjawab agar muncul di Result (Riwayat)
+        const totalQuestions = game?.gameJson?.questions?.length || game?.gameJson?.words?.length || game?.gameJson?.pairs?.length || 0;
+        
+        if (totalQuestions > breakdown.length) {
+            const remainingCount = totalQuestions - breakdown.length;
+            for (let i = 0; i < remainingCount; i++) {
+                breakdown.push({
+                    question: "Tidak terjawab (Waktu habis)",
+                    isCorrect: false,
+                    selectedAnswer: null,
+                    correctAnswer: "Waktu Habis"
+                });
+            }
+        }
 
-    try {
-      // 🎯 BE-12: Kirim Real ID agar backend tidak Error 500
-      await finishGame(realGameId!, {
-        scoreValue: score,
-        maxScore: (game?.gameJson?.questions?.length || 1) * 100,
-        accuracy: accuracy,
-        timeSpent: 0,
-        answersDetail: breakdown
-      });
-    } catch (e) {
-      console.warn("Autosave gagal, melanjutkan ke halaman hasil.");
-    }
+        // Hitung ulang akurasi berdasarkan total soal yang sebenarnya
+        const finalAccuracy = totalQuestions > 0 ? Math.round((breakdown.filter((b: any) => b.isCorrect).length / totalQuestions) * 100) : accuracyRaw;
 
-    navigate("/student/result", {
-      state: { score, accuracy, breakdown }
-    });
-  };
+        try {
+            await finishGame(realGameId!, {
+                scoreValue: score,
+                maxScore: totalQuestions * 100,
+                accuracy: finalAccuracy,
+                timeSpent: 0,
+                answersDetail: breakdown
+            });
+        } catch (e) {
+            console.warn("Autosave gagal, melanjutkan ke halaman hasil.");
+        }
+
+        navigate("/student/result", {
+            state: { score, accuracy: finalAccuracy, breakdown }
+        });
+    };
+
 
   const handleIntermission = () => {
     setShowOverlay(true);
@@ -121,27 +139,17 @@ export default function PlayGamePage() {
 
   // 🎯 FIX: Jika ranking dari socket belum update, paksa tampilkan skor dari sessionStorage 
   // agar pop-up ranking tidak menunjukkan 0 PTS saat intermission soal.
-  const currentLocalScore = parseInt(sessionStorage.getItem("lastScore") || "0");
-
-  const myScore = myRankIndex !== -1
-    ? Math.max(sortedLeaderboard[myRankIndex].score, currentLocalScore)
-    : currentLocalScore;
-
   const myRank = myRankIndex !== -1 ? myRankIndex + 1 : "-";
 
   return (
     <div className="min-h-screen bg-slate-900 flex flex-col font-sans relative overflow-hidden selection:bg-transparent">
       {showOverlay && (
-        <div className="fixed inset-0 bg-slate-900/95 z-50 flex flex-col items-center justify-center animate-in fade-in duration-300">
-          <h2 className="text-white font-black text-2xl uppercase tracking-widest mb-10 italic">Peringkat Sementara</h2>
-          <div className="bg-indigo-600 p-8 rounded-[2.5rem] shadow-2xl mb-10 flex items-center gap-6 border-4 border-indigo-400">
-            <div className="w-16 h-16 bg-white text-indigo-600 rounded-full flex items-center justify-center text-2xl font-black">#{myRank}</div>
-            <div>
-              <p className="text-white font-black text-xl uppercase">{playerName}</p>
-              <p className="text-indigo-200 font-bold">{myScore} PTS</p>
-            </div>
-          </div>
-          <div className="text-white font-black text-8xl opacity-20 animate-ping">{overlayCountdown}</div>
+        <RankingOverlay players={sortedLeaderboard.slice(0, 10)} currentPlayerName={playerName} />
+      )}
+
+      {showOverlay && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
+           <div className="text-white font-black text-9xl opacity-10 animate-ping">{overlayCountdown}</div>
         </div>
       )}
 

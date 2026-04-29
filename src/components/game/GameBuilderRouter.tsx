@@ -6,6 +6,14 @@ import MazeChaseBuilder from "./builders/MazeChaseBuilder";
 import SpinWheelBuilder from "./builders/SpinWheelBuilder";
 import WordSearchBuilder from "./builders/WordSearchBuilder";
 
+// ═══════════════ IMPORT NEW STANDARD ASSESSMENTS ═══════════════
+import MultipleChoiceBuilder from "./builders/MultipleChoiceBuilder";
+import TrueFalseBuilder from "./builders/TrueFalseBuilder";
+import MatchingBuilder from "./builders/MatchingBuilder";
+import EssayBuilder from "./builders/EssayBuilder";
+
+// 💡 TIPS: Jika editor masih merah (Cannot find module), coba tekan Ctrl+Shift+P > Restart TS Server.
+
 /**
  * 🎯 FIX UTAMA: Pindahkan BuilderWrapper ke LUAR fungsi GameBuilderRouter.
  * Ini mencegah React menghancurkan dan membuat ulang (remounting) editor 
@@ -114,6 +122,51 @@ export default function GameBuilderRouter({
       return (
         <BuilderWrapper>
           <WordSearchBuilder
+            value={value}
+            onChange={onChange}
+            initialData={initialQuestions}
+          />
+        </BuilderWrapper>
+      );
+
+    // ═══════════════ NEW STANDARD ASSESSMENTS ROUTING ═══════════════
+    case "MULTIPLE_CHOICE":
+      return (
+        <BuilderWrapper>
+          <MultipleChoiceBuilder
+            value={value}
+            onChange={onChange}
+            initialData={initialQuestions}
+          />
+        </BuilderWrapper>
+      );
+
+    case "TRUE_FALSE":
+      return (
+        <BuilderWrapper>
+          <TrueFalseBuilder
+            value={value}
+            onChange={onChange}
+            initialData={initialQuestions}
+          />
+        </BuilderWrapper>
+      );
+
+    case "MATCHING":
+      return (
+        <BuilderWrapper>
+          <MatchingBuilder
+            value={value}
+            onChange={onChange}
+            initialData={initialQuestions}
+          />
+        </BuilderWrapper>
+      );
+
+    case "ESSAY":
+      return (
+        <BuilderWrapper>
+          <EssayBuilder
             value={value}
             onChange={onChange}
             initialData={initialQuestions}

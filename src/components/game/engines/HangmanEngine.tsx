@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import socket from "../../../hooks/useSocket";
 import { submitAnswer, finishGame } from "../../../pages/services/game.service";
+import { toast } from "react-hot-toast";
 
 export default function HangmanEngine({ data, onIntermission }: { data: any, onIntermission?: () => void }) {
     const navigate = useNavigate();
@@ -134,7 +135,13 @@ export default function HangmanEngine({ data, onIntermission }: { data: any, onI
     const submitGuess = () => {
         if (feedback !== 'none' || isFinished || isBusy.current) return;
         const char = guess.trim().toUpperCase();
-        if (!char || used.includes(char)) return;
+        
+        if (!char) return;
+        if (used.includes(char)) {
+            toast.error(`Huruf "${char}" sudah dicoba! 😅`);
+            setGuess("");
+            return;
+        }
 
         const newUsed = [...used, char];
         setUsed(newUsed);
@@ -187,7 +194,7 @@ export default function HangmanEngine({ data, onIntermission }: { data: any, onI
                     const isRevealed = used.includes(l) || feedback === 'timeout' || feedback === 'lose';
                     return (
                         <div key={i} className={`w-12 h-14 border-b-8 flex items-center justify-center text-3xl font-black transition-all duration-500 ${used.includes(l) ? 'border-indigo-500 text-indigo-600' :
-                            (feedback === 'timeout' || feedback === 'lose') ? 'border-rose-300 text-rose-400' : 'border-slate-100 text-transparent'
+                            (feedback === 'timeout' || feedback === 'lose') ? 'border-rose-300 text-rose-400' : 'border-slate-300 text-transparent'
                             }`}>
                             {isRevealed ? l : ""}
                         </div>
@@ -195,8 +202,22 @@ export default function HangmanEngine({ data, onIntermission }: { data: any, onI
                 })}
             </div>
 
+            {/* GUESSED LETTERS HISTORY */}
+            <div className="flex flex-col items-center gap-3">
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Huruf yang sudah dicoba:</span>
+                <div className="flex flex-wrap justify-center gap-2">
+                    {used.length === 0 && <span className="text-slate-300 italic text-xs">Belum ada tebakan</span>}
+                    {used.map((char, i) => (
+                        <span key={i} className={`w-8 h-8 rounded-lg flex items-center justify-center font-black text-sm border-2 ${word.includes(char) ? 'bg-emerald-50 border-emerald-200 text-emerald-600' : 'bg-slate-50 border-slate-200 text-slate-400 line-through'}`}>
+                            {char}
+                        </span>
+                    ))}
+                </div>
+            </div>
+
             {/* INPUT AREA */}
             <div className="w-full max-w-xs space-y-4">
+
                 <input
                     className="w-full bg-slate-50 border-4 border-slate-100 p-6 rounded-[2.5rem] text-center text-4xl font-black focus:border-indigo-500 outline-none uppercase transition-all"
                     maxLength={1}

@@ -1,8 +1,10 @@
 import { useState } from "react"
 import { useAuth } from "../../hooks/useAuth"
+import { getImageUrl } from "../../utils/assets"
+import Input from "../../components/ui/Input"
 
 export default function EditProfilePage() {
-  const { user } = useAuth()
+  const { user, updateUser } = useAuth()
 
   const [name, setName] = useState(user?.name || "")
   const [email, setEmail] = useState(user?.email || "")
@@ -10,7 +12,7 @@ export default function EditProfilePage() {
   const [newPassword, setNewPassword] = useState("")
   const [photo, setPhoto] = useState<File | null>(null)
 
-  const [preview, setPreview] = useState(user?.photoUrl || "")
+  const [preview, setPreview] = useState(getImageUrl(user?.photoUrl))
   const [saving, setSaving] = useState(false)
 
   function handlePhoto(e: any) {
@@ -43,6 +45,9 @@ export default function EditProfilePage() {
       const json = await res.json()
       if (!res.ok) throw new Error(json.message || "Failed to update profile")
 
+      // ✅ Update data user di Context (agar foto profil langsung berubah)
+      updateUser(json.data)
+
       alert("Profile updated successfully!")
       window.location.href = "/profile"
     } catch (err: any) {
@@ -69,7 +74,7 @@ export default function EditProfilePage() {
           <div className="flex flex-col items-center gap-4 mb-8">
             <div className="relative group cursor-pointer">
               <img
-                src={preview || "/avatar.png"}
+                src={preview}
                 className="w-32 h-32 md:w-40 md:h-40 rounded-full object-cover border-4 border-indigo-50 shadow-md group-hover:opacity-80 transition-all bg-slate-50"
                 alt="Preview"
               />
@@ -87,42 +92,34 @@ export default function EditProfilePage() {
           </div>
 
           <div className="space-y-4">
-            <div>
-              <label className="text-sm font-bold text-slate-700 ml-4 mb-1 block">Full Name</label>
-              <input
-                className="w-full bg-slate-50 border-2 border-slate-100 px-6 py-3.5 rounded-full focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/20 outline-none transition-all font-semibold"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Name"
-                required
-              />
-            </div>
+            <Input
+              label="Full Name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Name"
+              required
+            />
 
-            <div>
-              <label className="text-sm font-bold text-slate-700 ml-4 mb-1 block">Email Address</label>
-              <input
-                type="email"
-                className="w-full bg-slate-50 border-2 border-slate-100 px-6 py-3.5 rounded-full focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/20 outline-none transition-all font-semibold"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Email"
-                required
-              />
-            </div>
+            <Input
+              label="Email Address"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Email"
+              required
+            />
 
             <div className="pt-4 border-t border-slate-100 mt-6">
               <p className="text-xs font-black text-indigo-400 uppercase tracking-[0.2em] mb-4">Ubah Password</p>
               <div className="space-y-4">
-                <input
+                <Input
                   type="password"
-                  className="w-full bg-slate-50 border-2 border-slate-100 px-6 py-3.5 rounded-full focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/20 outline-none transition-all font-semibold"
                   value={currentPassword}
                   onChange={(e) => setCurrentPassword(e.target.value)}
                   placeholder="Current Password (Optional)"
                 />
-                <input
+                <Input
                   type="password"
-                  className="w-full bg-slate-50 border-2 border-slate-100 px-6 py-3.5 rounded-full focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/20 outline-none transition-all font-semibold"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   placeholder="New Password (Optional)"
@@ -131,10 +128,11 @@ export default function EditProfilePage() {
             </div>
           </div>
 
+
           <button
             type="submit"
             disabled={saving}
-            className="w-full bg-indigo-600 text-white font-black text-lg py-4 rounded-full shadow-lg shadow-indigo-200 hover:bg-indigo-700 hover:-translate-y-1 transition-all disabled:opacity-50 disabled:translate-y-0 mt-6 shadow-indigo-200 active:scale-95"
+            className="w-full bg-indigo-600 text-white font-black text-lg py-4 rounded-full shadow-lg shadow-indigo-200 hover:bg-indigo-700 hover:-translate-y-1 transition-all disabled:opacity-50 disabled:translate-y-0 mt-6 active:scale-95"
           >
             {saving ? "Saving Changes..." : "Save Changes"}
           </button>

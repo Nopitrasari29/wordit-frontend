@@ -45,56 +45,48 @@
 - [x] **FE-11**: Game Builder Anagram.
 - [x] **FE-12**: Game Builder Maze Chase.
 - [x] **FE-13**: Game Builder Spin the Wheel.
-- [ ] **FE-NEW-01**: Fitur **Edit sebelum Publish** — feedback Bu Rizka.
-  - [ ] Tambahkan tombol "Edit" di `PreviewGamePage.tsx` yang mengarah ke `EditGamePage`.
-  - [ ] Alur yang benar: Buat Game → Preview → **Edit (revisi)** → Publish.
+- [x] **FE-NEW-01**: Fitur **Edit sebelum Publish** — feedback Bu Rizka.
+  - [x] Tombol "Edit" tersedia di `PreviewGamePage.tsx` dan `EditGamePage.tsx` fungsional.
+  - [x] Alur: Buat Game → Preview → Edit (revisi) → Publish. ✅
 
 ### Frontend (FE) - Student Arena
 > Kerjakan satu per satu. Selesaikan SD dulu sebelum lanjut SMP/SMA.
 
 - [x] **FE-14-Anagram**: Fully functional ✅ (benchmark untuk engine lain)
-- [ ] **FE-14-Flashcard**: Upgrade ke "Active Recall".
-  - [ ] Hapus auto-advance timer.
-  - [ ] Setelah kartu dibalik → munculkan 2 tombol: **"Hafal ✅"** (poin penuh) & **"Lupa ❌"** (0 poin).
-  - [ ] `finishGame()` sudah ada, pastikan dipanggil dengan data `breakdown` yang benar.
-- [ ] **FE-14-Hangman**: Upgrade dengan sistem nyawa.
-  - [ ] Maks 6 kesalahan per kata — tampilkan indikator ♥️♥️♥️♥️♥️♥️.
-  - [ ] Nyawa habis → reveal jawaban → lanjut soal berikutnya (0 poin).
-  - [ ] `finishGame()` sudah ada.
-- [ ] **FE-14-WordSearch**: Upgrade dari grid statis ke interaktif.
-  - [ ] Algoritma Grid Generator 8x8: sembunyikan kata horizontal/vertikal, isi ruang kosong dengan huruf acak.
-  - [ ] Interaksi drag/klik: pilih huruf pertama & terakhir → highlight hijau jika benar.
-  - [ ] Tambahkan `finishGame()` di akhir game.
-- [ ] **FE-14-MazeChase**: Upgrade dari dummy ke labirin interaktif.
-  - [ ] Grid 5x5, karakter 🏃 digerakkan via tombol panah keyboard + D-Pad on-screen (mobile).
-  - [ ] Jawaban (1 benar + 3 salah) ditempatkan di tepi grid sebagai "portal tujuan".
-  - [ ] Nabrak jawaban benar → poin. Nabrak salah → nyawa berkurang.
-  - [ ] Tambahkan `finishGame()` di akhir game.
-- [ ] **FE-14-SpinWheel**: Upgrade agar siswa input jawaban manual.
-  - [ ] Setelah roda berhenti → jawaban disembunyikan → muncul input teks.
-  - [ ] Validasi case-insensitive → benar = poin, salah = 0.
-  - [ ] Tambahkan `finishGame()` di akhir semua soal.
+- [x] **FE-14-Flashcard**: Upgrade ke "Active Recall".
+  - [x] Tombol "Hafal ✅" & "Lupa ❌" fungsional.
+  - [x] `finishGame()` dipanggil di akhir game.
+- [x] **FE-14-Hangman**: Upgrade dengan sistem nyawa.
+  - [x] Maks 6 kesalahan per kata.
+  - [x] `finishGame()` dipanggil di akhir game.
+- [x] **FE-14-WordSearch**: Upgrade dari grid statis ke interaktif.
+  - [x] Algoritma Grid Generator & highlight interaktif fungsional.
+  - [x] `finishGame()` dipanggil di akhir game.
+- [x] **FE-14-MazeChase**: Upgrade dari dummy ke labirin interaktif.
+  - [x] Pergerakan karakter & portal jawaban fungsional.
+  - [x] `finishGame()` dipanggil di akhir game.
+- [x] **FE-14-SpinWheel**: Upgrade agar siswa input jawaban manual.
+  - [x] Input teks setelah roda berhenti & validasi fungsional.
+  - [x] `finishGame()` dipanggil di akhir game.
 - [x] **FE-15**: Result Page (skor total, akurasi, breakdown, rating bintang).
 - [x] **FE-16**: Overlay ranking muncul tiap akhir soal.
 
 ### Frontend (FE) - Admin Dashboard
-- [ ] **FE-NEW-02**: Halaman Admin Dashboard.
-  - [ ] List semua user (Student, Teacher) + status approval.
-  - [ ] Tombol **Approve / Reject** untuk Teacher berstatus PENDING.
-  - [ ] Tombol ganti role & hapus user.
+- [x] **FE-NEW-02**: Halaman Admin Dashboard.
+  - [x] List semua user + status approval di `UserManagementPage.tsx`.
+  - [x] Tombol **Approve / Reject** fungsional tersambung ke API.
+  - [x] Fitur ganti role & hapus user fungsional.
 
 ### Frontend (FE) - Auth & UX
-- [ ] **FE-NEW-03**: Update halaman Register — Teacher harus pilih 1 jenjang (radio button).
-  - [ ] Ganti multi-select/checkbox menjadi radio button untuk educationLevel.
-- [ ] **FE-NEW-04**: Panduan format username siswa di EnterPlayerPage.
-  - [ ] Tambah placeholder/hint: *"Contoh: 3A_Nayla (format: Kelas_Nama)"*
-- [ ] **FE-NEW-05**: Disclaimer AI di halaman AI Generator — feedback Bu Rizka.
-  - [ ] Banner: *"Hasil AI tidak selalu 100% akurat. Verifikasi manual sebelum dipublikasikan."*
+- [x] **FE-NEW-03**: Update halaman Register — Teacher harus pilih 1 jenjang (radio button). ✅
+- [x] **FE-NEW-04**: Panduan format username siswa di EnterPlayerPage. ✅
+  - [x] Tambah placeholder/hint: *"Contoh: 3A_Nayla (format: Kelas_Nama)"*
+- [x] **FE-NEW-05**: Disclaimer AI di halaman AI Generator — feedback Bu Rizka. ✅
+  - [x] Banner: *"Hasil AI tidak selalu 100% akurat. Verifikasi manual sebelum dipublikasikan."*
 
 ### AI
-- [ ] **AI-NEW-01**: Dynamic prompt length — jumlah soal mengikuti input user, bukan hardcode 5.
-- [ ] **AI-NEW-02**: Rekomendasi panjang kata Anagram per jenjang di prompt & hint builder.
-  - [ ] SD ≤5 huruf | SMP ≤7 huruf | SMA ≤10 huruf | Kuliah bebas.
+- [x] **AI-NEW-01**: Dynamic prompt length — jumlah soal mengikuti input user. ✅
+- [x] **AI-NEW-02**: Rekomendasi panjang kata Anagram per jenjang di prompt. ✅
 
 ### QA & Testing
 - [ ] **QA-04**: Menguji semua 6 template gameplay Sprint 2.
@@ -103,34 +95,98 @@
 
 ---
 
-## 🤖 Sprint 3: AI-Quiz, Smart Grading & Analytics (To Do)
+## 🤖 Sprint 3: AI, Smart Grading & Analytics (To Do)
+*(Fokus: AI Integration, Telegram Bot Automation, & Dashboard Real-Data)*
 
-### AI & Engine
-- [ ] **AI-05**: Generate soal otomatis dari topik materi.
-  - [ ] Perbaikan prompt: hindari halusinasi, paksa 1 kata tanpa spasi untuk Anagram/Hangman.
-  - [ ] Dynamic prompt length (jumlah soal sesuai request).
-  - [ ] Prompt Maze Chase: AI wajib generate field `wrongAnswers`.
-  - [ ] Prompt Anagram: sertakan rekomendasi panjang kata sesuai jenjang.
-- [ ] **AI-06**: Feedback AI untuk jawaban salah (< 100 kata).
-- [ ] **AI-07**: Sistem penilai jawaban essay otomatis.
-- [ ] **AI-08**: Prompt engineering & tuning untuk akurasi >85%.
-- [ ] **AI-09**: Monitor usage quota Groq & Gemini.
-- [ ] **AI-10**: Adaptive Difficulty — soal menyesuaikan performa siswa.
+### I. AI Integration (The Brain)
+- [x] **AI-05**: Auto-quiz Generation (Topic to Quiz)
+  - [x] Input topik + level → Groq generate soal dalam < 8 detik.
+  - [x] Validasi JSON mutlak agar tidak ada halusinasi (khusus Anagram/Hangman).
+  - [ ] **NOTED**: Pastikan jumlah soal akurat sesuai input user (tambahkan looping/retry jika AI memberikan soal kurang dari jumlah request). ✅
+- [x] **AI-06**: AI Feedback Per Soal
+  - [x] Penjelasan edukatif < 100 kata untuk jawaban salah dalam < 5 detik via Groq/Gemini.
+- [x] **AI-07**: Smart Grading (Essay)
+  - [x] AI menilai jawaban essay, return skor 0-100 + justifikasi. Target akurasi > 85%.
+- [ ] **AI-08**: Prompt Engineering & Tuning
+  - [ ] Optimasi prompt agar respons konsisten dan minimalisir halusinasi data.
+  - [ ] **NOTED**: Perbaiki mapping prompt khusus untuk format template MATCHING agar sesuai struktur `pairs` (kiri-kanan).
+- [ ] **AI-09**: AI Quota Monitoring
+  - [ ] Logging penggunaan API & sistem alert jika mendekati limit harian.
+- [x] **AI-10**: Adaptive Difficulty (Dynamic Gameplay)
+  - [x] Sistem otomatis: Naik ke Hard jika accuracy > 80%, turun ke Easy jika < 50%.
 
-### Backend (BE)
-- [ ] **BE-15**: Analytics performa student (history skor, total play).
-- [ ] **BE-16**: Statistik kelas (rata-rata skor, distribusi nilai).
-- [ ] **BE-17**: Smart grading API — terima jawaban, return skor & justifikasi AI.
-- [ ] **BE-18**: API Adaptive difficulty.
+### II. Backend (BE) - Machine & Automation
+- [x] **BE-15**: Analytics Performa Student (Real Data Aggregation)
+  - [x] Hapus hardcoded stats; gunakan Prisma Aggregation (GroupBy & Avg).
+  - [x] Kalkulasi history skor dan akurasi dinamis dari tabel Result.
+- [x] **BE-16**: Auto-Group Analytics (Creator View)
+  - [x] Logika parsing awalan nama (regex: `Kelas_`) untuk pengelompokan otomatis.
+  - [x] Endpoint `GET /api/analytics/game/:id` (distribusi nilai per kelompok & topik sulit).
+- [x] **BE-17**: Smart Grading API
+  - [x] Endpoint `POST /api/ai/grade` terintegrasi dengan logika penilaian AI.
+- [x] **BE-18**: Adaptive Difficulty Logic
+  - [x] Integrasi ke game session untuk pemilihan bank soal sesuai performa pemain.
+- [x] **BE-19**: Telegram Approval Bot System 🚀 [REVISED]
+  - [x] Setup `telegraf` atau `node-telegram-bot-api` & Token @BotFather di `.env`.
+  - [x] Fungsi `sendApprovalRequestToTele` dengan Inline Buttons (Approve ✅ / Reject ❌).
+  - [x] Implementasi Callback Query Listener untuk update `approvalStatus` di DB via Prisma langsung dari chat Telegram.
+- [x] **BE-20**: Admin Notification Dispatcher
+  - [x] Logika Socket.io untuk emit notifikasi ke room admin saat ada pendaftar baru.
+- [x] **BE-NEW-05**: Standard Assessment Engine (Files & Logic)
+  - [x] **`prisma/schema.prisma`**: Tambah `MULTIPLE_CHOICE`, `TRUE_FALSE`, `MATCHING`, `ESSAY` di enum `TemplateType`. Jalankan `prisma migrate dev`.
+  - [x] **`src/modules/game/game.schema.ts`**: Update skema Zod. Tentukan struktur JSON valid untuk masing-masing 4 tipe game ini.
+  - [x] **`src/modules/game/game.service.ts`**: Pastikan 4 game ini bisa dibuat untuk semua jenjang (`educationLevel`). Update fungsi kalkulasi di dalam `finishGame` untuk menilai Multiple Choice, True/False, dan Matching secara otomatis.
+  - [x] **`src/modules/ai/ai.service.ts`**: Buat fungsi generator baru (contoh: `generateMultipleChoice`) dengan prompt yang menghasilkan struktur JSON persis sesuai `game.schema.ts`.
+  - [x] **`src/modules/ai/smart-grading.service.ts` [NEW FILE]**: File khusus menangani logika AI Smart Grading untuk tipe Essay.
 
-### Frontend (FE)
-- [ ] **FE-17**: Halaman AI Quiz Generator (input topik → generate → preview + disclaimer).
-- [ ] **FE-18**: Feedback AI di Result Page per soal yang salah.
-- [ ] **FE-19**: Analytics Dashboard — grafik performa student.
-- [ ] **FE-20**: Analytics Dashboard — statistik kelas untuk guru/creator.
+### III. Frontend (FE) - UI, UX & Alerts
+- [ ] **FE-17**: Halaman AI Quiz Generator (Full Flow)
+  - [x] UI Input topik, preview hasil AI, edit konten, & banner disclaimer AI.
+  - [ ] **NOTED**: AI masih belum mematuhi strict count soal (misal minta 10 keluar 5).
+- [ ] **FE-18**: Feedback AI di Result Page
+  - [ ] Komponen penjelasan AI yang muncul di breakdown kuis untuk tiap soal salah (Saat ini masih pakai teks dummy simulasi).
+- [ ] **FE-19**: Analytics Dashboard Siswa (Personal Growth & Gamification)
+  - [ ] **Konsep**: Fokus memotivasi siswa secara individu dengan melihat progres mereka.
+  - [ ] **Statistik Utama**: Hubungkan `AnalyticsStudentPage.tsx` dengan database untuk menampilkan *Total Kuis Dimainkan*, *Rata-Rata Akurasi*, dan *Total Waktu Belajar*.
+  - [ ] **Riwayat (History)**: Buat daftar/tabel riwayat kuis terakhir yang dimainkan lengkap dengan skor dan tanggal.
+  - [ ] **Badges (Gamification)**: Siswa bisa mendapat medali otomatis (misal: Emas untuk skor 100, Kilat untuk waktu < 1 menit, Rajin untuk > 5 game).
+- [ ] **FE-20**: Analytics Dashboard Guru (Zero Setup Auto-Grouping)
+  - [x] **Bug Fix**: Memperbaiki masalah blank page saat menekan tombol "Lihat Detail" pada daftar kelas atau saat menekan tombol "Kembali".
+  - [ ] **Bug Fix**: Pastikan hanya data siswa (role STUDENT) yang dimasukkan ke dalam daftar, jangan sertakan akun Guru yang ikut mencoba kuis.
+  - [ ] **Konsep Auto-Grouping**: Guru tidak perlu repot membuat kelas dan menginput siswa manual. Sistem memotong teks sebelum garis bawah `_` pada nama pemain (Contoh: input `3A_Budi` otomatis membuat grup `3A`).
+  - [ ] **Halaman Daftar Kelas (`ClassPage.tsx`)**: Tampilkan kartu kelompok (misal: Card Kelas 3A, Kelas 3B) yang berisi Total Siswa dan Rata-rata Skor per kelompok.
+  - [ ] **Halaman Detail Kelas (`AnalyticsClassPage.tsx`)**: Menampilkan grafik performa kuis yang dimainkan oleh kelas spesifik tersebut, serta list "Siswa Perlu Perhatian Khusus" (skor < 60) lengkap dengan tombol tindak lanjut.
+- [x] **FE-21**: Standard Assessment - Multiple Choice (Semua Jenjang)
+  - [x] **[NEW FILE] `src/components/game/builder/MultipleChoiceBuilder.tsx`**: Form pembuat soal, 4 opsi jawaban, penentu kunci jawaban.
+  - [x] **[NEW FILE] `src/components/game/engines/MultipleChoiceEngine.tsx`**: UI kuis bergaya modern saat dimainkan (timer, highlight klik).
+- [x] **FE-22**: Standard Assessment - True/False (Semua Jenjang)
+  - [x] **[NEW FILE] `src/components/game/builder/TrueFalseBuilder.tsx`**: Form pembuat pernyataan & Set Benar/Salah.
+  - [x] **[NEW FILE] `src/components/game/engines/TrueFalseEngine.tsx`**: Mekanisme UI Swipe Kiri/Kanan ala Tinder.
+- [x] **FE-23**: Standard Assessment - Drag & Drop / Matching (Semua Jenjang)
+  - [x] **[NEW FILE] `src/components/game/builder/MatchingBuilder.tsx`**: Form pasangan jawaban (Kiri dan Kanan).
+  - [x] **[NEW FILE] `src/components/game/engines/MatchingEngine.tsx`**: Implementasi library `@dnd-kit` untuk fitur tarik-pasang.
+  - [ ] **NOTED**: AI Generator untuk Matching masih gagal mapping format `pairs` kiri/kanan.
+- [x] **FE-24**: Standard Assessment - Smart Essay (Semua Jenjang)
+  - [x] **[NEW FILE] `src/components/game/builder/EssayBuilder.tsx`**: Form soal & Kata Kunci untuk patokan nilai AI.
+  - [x] **[NEW FILE] `src/components/game/engines/EssayEngine.tsx`**: Textarea jawaban siswa & trigger AI Grading di akhir soal.
+  - [ ] **NOTED**: AI Grading di Essay Engine belum konek ke API real backend, masih pakai mock function lokal.
+- [x] **FE-NEW-06**: Update Main Components & Routing
+  - [x] **`src/pages/creator/CreateGamePage.tsx`**: Tambah 4 opsi template baru ke menu pemilihan guru.
+  - [x] **`src/components/game/GameEngineSelector.tsx`**: Arahkan routing player agar memuat *Engine* yang tepat sesuai tipe kuis.
+  - [x] **Bug Fix**: Sinkronisasi module router dan renderer (termasuk prop `onIntermission`).
+- [ ] **FE-NEW-06**: Admin Navigation Handling
+  - [ ] Memastikan Dashboard Admin otomatis terupdate (refetch data) saat status user berubah via Telegram.
+- [ ] **FE-NEW-07**: Real-time Admin Alerts (Badge & Toast)
+  - [ ] **Badge Count**: Angka merah pada menu "Users" untuk jumlah status PENDING.
+  - [ ] **Live Toast**: Notifikasi pop-up instan via `react-hot-toast` saat ada guru daftar.
 
-### QA
-- [ ] **QA-06**: Menguji fitur AI Sprint 3.
+### IV. QA & Validation
+- [ ] **QA-06**: Stress Test AI Generator
+  - [ ] Menguji 10 topik berbeda secara simultan untuk memastikan JSON tidak break.
+- [ ] **QA-07**: End-to-End Telegram Approval Flow 📱 [REVISED]
+  - [ ] Uji coba: Guru Register -> Bot kirim pesan ke Admin -> Admin klik Approve di HP -> Status di DB & Web berubah otomatis.
+- [ ] **QA-08**: Validation Analytics Accuracy
+  - [ ] Memastikan hitungan rata-rata di dashboard FE sesuai dengan data asli di PostgreSQL.
 
 ---
 

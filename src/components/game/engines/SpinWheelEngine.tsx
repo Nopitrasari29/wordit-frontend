@@ -1,13 +1,13 @@
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { submitAnswer, finishGame } from "../../../pages/services/game.service";
-import socket from "../../../hooks/useSocket"; // 🎯 Import socket untuk sinkronisasi Teacher
+import socket from "../../../hooks/useSocket";
 import { toast } from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 
 export default function SpinWheelEngine({ data, onIntermission, onGameOver }: { data: any, onIntermission?: any, onGameOver?: any }) {
     const questions = data?.gameJson?.questions || [];
     const realGameId = data?.id || data?._id;
-    const roomCode = data?.shareCode || ""; // 🎯 Ambil kode ruangan
+    const roomCode = data?.shareCode || "";
     const navigate = useNavigate();
 
     const [spinning, setSpinning] = useState(false);
@@ -66,15 +66,12 @@ export default function SpinWheelEngine({ data, onIntermission, onGameOver }: { 
         isBusy.current = true;
         setIsAnswered(true);
 
-        // 🎯 HITUNG SKOR BARU SECARA LOKAL AGAR PENGIRIMAN TIDAK DELAY
         const newScore = isCorrect ? score + 100 : score;
         const newLives = isCorrect ? lives : lives - 1;
 
         if (isCorrect) {
             setScore(newScore);
             toast.success("BENAR! +100 Skor 🌟");
-
-            // 📡 SINKRONISASI KE TEACHER (REAL-TIME)
             if (roomCode) socket.emit("updateScore", { code: roomCode, score: newScore });
         } else {
             setLives(newLives);
@@ -85,7 +82,6 @@ export default function SpinWheelEngine({ data, onIntermission, onGameOver }: { 
         const updatedHistory = [...history, currentHistoryItem];
         setHistory(updatedHistory);
 
-        // Kirim ke backend (Hanya 4 argumen)
         submitAnswer(realGameId, questions.indexOf(selectedQuestion), finalInput, newScore).catch(() => { });
 
         setTimeout(() => {
@@ -100,7 +96,6 @@ export default function SpinWheelEngine({ data, onIntermission, onGameOver }: { 
                     answersDetail: updatedHistory
                 };
 
-                // 🎯 SIMPAN KE STORAGE UNTUK REDUNDANSI
                 sessionStorage.setItem("lastScore", newScore.toString());
                 sessionStorage.setItem("lastAccuracy", accuracy.toString());
                 sessionStorage.setItem("lastBreakdown", JSON.stringify(updatedHistory));
@@ -118,15 +113,35 @@ export default function SpinWheelEngine({ data, onIntermission, onGameOver }: { 
         }, 2000);
     };
 
-    // Cleanup timer on unmount
     useEffect(() => {
         return () => { if (timerRef.current) clearInterval(timerRef.current); };
     }, []);
+
+    // 🎨 DINAMIS: Membuat warna roda berdasarkan jumlah soal & status selesai
+    const wheelStyle = useMemo(() => {
+        if (questions.length === 0) return {};
+        const degreePerItem = 360 / questions.length;
+        const colors = ["#6366f1", "#10b981", "#f59e0b", "#f43f5e", "#06b6d4", "#8b5cf6"];
+        
+        const gradientParts = questions.map((_: any, i: number) => {
+            const start = i * degreePerItem;
+            const end = (i + 1) * degreePerItem;
+            // Jika soal ini sudah dijawab, buat jadi abu-abu
+            const color = i < completedCount ? "#e2e8f0" : colors[i % colors.length];
+            return `${color} ${start}deg ${end}deg`;
+        });
+
+        return {
+            transform: `rotate(${rotation}deg)`,
+            background: `conic-gradient(${gradientParts.join(", ")})`
+        };
+    }, [questions.length, rotation, completedCount]);
 
     if (questions.length === 0) return null;
 
     return (
         <div className="flex flex-col items-center p-6 space-y-10 max-w-xl mx-auto font-sans select-none">
+            {/* HUD */}
             <div className="w-full flex justify-between bg-white p-6 rounded-[2.5rem] shadow-sm border-2 border-indigo-50">
                 <div className="flex flex-col text-center items-center">
                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Nyawa</span>
@@ -144,13 +159,11 @@ export default function SpinWheelEngine({ data, onIntermission, onGameOver }: { 
                 </div>
             </div>
 
+            {/* WHEEL AREA */}
             <div className="relative">
                 <div
                     className="w-64 h-64 md:w-80 md:h-80 rounded-full border-[12px] border-slate-900 shadow-2xl transition-transform duration-[3000ms] cubic-bezier(0.15, 0, 0.15, 1)"
-                    style={{
-                        transform: `rotate(${rotation}deg)`,
-                        background: 'conic-gradient(#6366f1 0deg 72deg, #818cf8 72deg 144deg, #6366f1 144deg 216deg, #818cf8 216deg 288deg, #6366f1 288deg 360deg)'
-                    }}
+                    style={wheelStyle}
                 />
                 <div className="absolute -top-4 left-1/2 -translate-x-1/2 text-4xl animate-bounce">👇</div>
             </div>
@@ -159,7 +172,7 @@ export default function SpinWheelEngine({ data, onIntermission, onGameOver }: { 
                 <button
                     onClick={spinWheel}
                     disabled={spinning || lives <= 0}
-                    className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-200 text-white py-6 rounded-[2.5rem] font-black text-xl uppercase shadow-xl transition-all active:scale-95"
+                    className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-300 disabled:text-slate-500 disabled:cursor-not-allowed disabled:shadow-none text-white py-6 rounded-[2.5rem] font-black text-xl uppercase shadow-xl transition-all active:scale-95"
                 >
                     {spinning ? "BERPUTAR..." : "PUTAR RODA! 🚀"}
                 </button>

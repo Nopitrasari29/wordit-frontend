@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { useAuth } from "../../context/AuthContext"
+import Input from "../../components/ui/Input"
 
 export default function LoginPage() {
   const { login } = useAuth()
@@ -50,23 +51,19 @@ export default function LoginPage() {
         )}
 
         <form onSubmit={submit} className="space-y-6">
-          <div>
-            <label className="block text-sm font-bold text-slate-700 mb-2 ml-2">Email</label>
-            <input
-              type="email"
-              className="w-full bg-slate-50 text-slate-800 px-6 py-4 rounded-full border-2 border-slate-100 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/20 outline-none transition-all font-semibold"
-              placeholder="guru@sekolah.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-          </div>
+          <Input
+            label="Email"
+            type="email"
+            placeholder="guru@sekolah.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
 
           <div>
-            <label className="block text-sm font-bold text-slate-700 mb-2 ml-2">Password</label>
-            <input
+            <Input
+              label="Password"
               type="password"
-              className="w-full bg-slate-50 text-slate-800 px-6 py-4 rounded-full border-2 border-slate-100 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/20 outline-none transition-all font-semibold"
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}

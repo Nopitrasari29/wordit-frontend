@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import socket from "../../../hooks/useSocket";
 import { submitAnswer, finishGame } from "../../../pages/services/game.service";
 
-export default function FlashcardEngine({ data, onGameOver }: { data: any, onGameOver?: any }) {
+export default function FlashcardEngine({ data, onGameOver, onIntermission }: { data: any, onGameOver?: any, onIntermission?: () => void }) {
     const navigate = useNavigate();
     const realGameId = data?.id || data?._id;
 

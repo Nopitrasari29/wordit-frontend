@@ -35,11 +35,21 @@ export default function GameLobbyPage() {
           navigate(`/play/${gameId}`); 
         });
 
+        // 🕒 5. LATE JOINER: Cek jika game sudah berjalan saat masuk lobby (Revisi BE-13)
+        socket.on("lobbyInfo", ({ status, gameId }: { status: string, gameId: string }) => {
+          if (status === "playing" && gameId) {
+            toast.success("Game sedang berlangsung! Langsung terjun...");
+            navigate(`/play/${gameId}`);
+          }
+        });
+
         // Cleanup agar tidak ada memory leak
         return () => {
           socket.off("updatePlayerList");
           socket.off("gameStarted");
+          socket.off("lobbyInfo");
         };
+
     }, [sessionId, navigate]);
 
     return (

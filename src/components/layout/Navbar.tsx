@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom"
 import { useAuth } from "../../context/AuthContext"
 import { useState, useRef, useEffect } from "react"
+import { getImageUrl } from "../../utils/assets"
 
 export default function Navbar() {
     const { user, logout } = useAuth()
@@ -78,7 +79,7 @@ export default function Navbar() {
                                 className="flex items-center gap-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 px-2 py-1.5 pr-4 rounded-full transition-colors"
                             >
                                 <img
-                                    src={user.photoUrl || "/avatar.png"}
+                                    src={getImageUrl(user.photoUrl) || "/avatar.png"}
                                     className="w-8 h-8 rounded-full object-cover border-2 border-white shadow-sm bg-indigo-100"
                                     alt="Avatar"
                                 />

@@ -3,7 +3,7 @@ interface Player {
     score: number
 }
 
-export default function RankingOverlay({ players }: { players: Player[] }) {
+export default function RankingOverlay({ players, currentPlayerName }: { players: Player[], currentPlayerName?: string }) {
     // Logic sorting asli kamu
     const sorted = [...players].sort((a, b) => b.score - a.score)
 
@@ -24,7 +24,7 @@ export default function RankingOverlay({ players }: { players: Player[] }) {
                             key={i}
                             className={`
                                 flex items-center justify-between p-4 rounded-2xl transition-all
-                                ${i === 0 ? 'bg-amber-50 border-2 border-amber-200 scale-105' : 'bg-slate-50 border-2 border-transparent'}
+                                ${p.name === currentPlayerName ? 'bg-indigo-50 border-2 border-indigo-300 shadow-md scale-105' : i === 0 ? 'bg-amber-50 border-2 border-amber-200 scale-105' : 'bg-slate-50 border-2 border-transparent'}
                             `}
                         >
                             <div className="flex items-center gap-4">

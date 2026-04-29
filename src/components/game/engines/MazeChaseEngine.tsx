@@ -174,11 +174,11 @@ export default function MazeChaseEngine({ data, onGameOver, onIntermission }: { 
                 <h2 className="text-2xl font-black text-slate-800 tracking-tight">{currentQ.question}</h2>
             </div>
 
-            <div className="bg-slate-900 p-4 rounded-[3rem] shadow-2xl border-[10px] border-slate-800">
-                <div className="grid grid-cols-5 gap-2">
+            <div className="bg-slate-900 p-2 sm:p-4 rounded-[2rem] sm:rounded-[3rem] shadow-2xl border-[8px] sm:border-[10px] border-slate-800 w-full max-w-[500px] mx-auto">
+                <div className="grid grid-cols-5 gap-1 sm:gap-2">
                     {grid.map((row, r) => row.map((cell, c) => (
-                        <div key={`${r}-${c}`} className={`w-14 h-14 md:w-20 md:h-20 rounded-2xl flex items-center justify-center transition-all duration-150 ${playerPos.r === r && playerPos.c === c ? 'bg-indigo-500 scale-110 z-10' : 'bg-slate-800/30'}`}>
-                            {playerPos.r === r && playerPos.c === c ? <span className="text-4xl animate-bounce">🏃</span> : cell ? <div className="bg-white p-1 rounded-lg text-center leading-tight shadow-sm w-full h-full flex items-center justify-center overflow-hidden"><span className="font-black text-[9px] uppercase break-words px-1">{cell.text}</span></div> : null}
+                        <div key={`${r}-${c}`} className={`aspect-square w-full rounded-xl sm:rounded-2xl flex items-center justify-center transition-all duration-150 ${playerPos.r === r && playerPos.c === c ? 'bg-indigo-500 scale-110 z-10' : 'bg-slate-800/30'}`}>
+                            {playerPos.r === r && playerPos.c === c ? <span className="text-2xl sm:text-4xl animate-bounce">🏃</span> : cell ? <div className="bg-white p-0.5 sm:p-1 rounded-md sm:rounded-lg text-center leading-tight shadow-sm w-[90%] h-[90%] flex items-center justify-center overflow-hidden"><span className="font-black text-[7px] sm:text-[9px] uppercase break-words px-0.5 line-clamp-3">{cell.text}</span></div> : null}
                         </div>
                     )))}
                 </div>

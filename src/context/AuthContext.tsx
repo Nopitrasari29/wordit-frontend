@@ -73,6 +73,11 @@ export function AuthProvider({ children }: any) {
     }
   }
 
+  function updateUser(newUser: any) {
+    localStorage.setItem("user", JSON.stringify(newUser));
+    setUser(newUser);
+  }
+
   return (
     <AuthContext.Provider
       value={{
@@ -80,13 +85,14 @@ export function AuthProvider({ children }: any) {
         token,
         loading,
         login,
-        register, // Fungsi register yang sudah diperbarui [cite: 159]
+        register,
+        updateUser, // ✅ Tambahkan ini
         logout
       }}
     >
       {children}
     </AuthContext.Provider>
-  )
+  );
 }
 
 export function useAuth() {
