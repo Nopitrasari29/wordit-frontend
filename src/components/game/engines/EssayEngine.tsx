@@ -10,14 +10,38 @@ export default function EssayEngine({ data, onGameOver, onIntermission }: { data
     const realGameId = data?.id || data?._id;
     const roomCode = data?.shareCode || "";
 
-    const gameConfig = useMemo(() => Array.isArray(data?.gameJson) ? data.gameJson[0] : data?.gameJson, [data]);
-    const questions = useMemo(() => gameConfig?.questions || [], [gameConfig]);
+    // 🔍 DEBUG (TAMBAHAN)
+    useEffect(() => {
+        console.log("🧠 ESSAY RAW DATA:", data);
+    }, [data]);
+
+    // ✅ FIX: EXTEND DATA SOURCE (TIDAK MENGUBAH LOGIC LAMA)
+    const gameConfig = useMemo(() => {
+        if (Array.isArray(data?.gameJson)) return data.gameJson[0];
+        if (data?.gameJson) return data.gameJson;
+
+        // fallback tambahan
+        if (data?.data?.questions) return data.data;
+        if (data?.questions) return data;
+
+        return null;
+    }, [data]);
+
+    // ✅ FIX: SUPPORT SEMUA STRUKTUR DATA
+    const questions = useMemo(() => {
+        return (
+            gameConfig?.questions ||
+            data?.questions ||
+            data?.data?.questions ||
+            []
+        );
+    }, [gameConfig, data]);
 
     const [currentIndex, setCurrentIndex] = useState(0);
     const [score, setScore] = useState(0);
-    const [timeLeft, setTimeLeft] = useState(questions.length * 60); // 60 dtk per essay
+    const [timeLeft, setTimeLeft] = useState(questions.length * 60);
     const [isFinished, setIsFinished] = useState(false);
-    const [isGrading, setIsGrading] = useState(false); // State loading saat AI menilai
+    const [isGrading, setIsGrading] = useState(false);
 
     const [history, setHistory] = useState<any[]>([]);
     const [currentAnswer, setCurrentAnswer] = useState("");
@@ -43,11 +67,10 @@ export default function EssayEngine({ data, onGameOver, onIntermission }: { data
 
     const handleTimeUp = () => {
         toast.error("Waktu Habis! ⏰");
-        // Force submit jawaban yang ada
         handleAnswerSubmit(true);
     };
 
-    // 🤖 LOKAL AI GRADING MOCK (Bisa diganti panggil API Groq nantinya)
+    // 🤖 LOCAL AI MOCK (TIDAK DIUBAH)
     const gradeAnswerWithAI = (answer: string, keywords: string[]): { points: number, isCorrect: boolean } => {
         if (!answer.trim()) return { points: 0, isCorrect: false };
 
@@ -74,7 +97,6 @@ export default function EssayEngine({ data, onGameOver, onIntermission }: { data
 
         const currentQ = questions[currentIndex];
 
-        // 🤖 Proses Penilaian
         const { points, isCorrect } = gradeAnswerWithAI(currentAnswer, currentQ.keywords);
         const newScore = score + points;
 
@@ -87,6 +109,7 @@ export default function EssayEngine({ data, onGameOver, onIntermission }: { data
             isCorrect,
             pointsEarned: points
         };
+
         const newHistory = [...history, answerRecord];
         setHistory(newHistory);
 
@@ -95,11 +118,13 @@ export default function EssayEngine({ data, onGameOver, onIntermission }: { data
         else if (!isTimeUp) toast.error("Kurang tepat, tapi tetap semangat! 💪");
 
         if (roomCode) socket.emit("updateScore", { code: roomCode, score: newScore });
+
         submitAnswer(realGameId, currentIndex, currentAnswer, newScore).catch(() => { });
 
         setTimeout(() => {
             setCurrentAnswer("");
             setIsGrading(false);
+
             if (currentIndex + 1 < questions.length && !isTimeUp) {
                 if (onIntermission) onIntermission();
                 setCurrentIndex(currentIndex + 1);
@@ -114,9 +139,15 @@ export default function EssayEngine({ data, onGameOver, onIntermission }: { data
         if (timerRef.current) clearInterval(timerRef.current);
 
         let completeHistory = [...finalHistory];
+
         if (completeHistory.length < questions.length) {
             for (let i = completeHistory.length; i < questions.length; i++) {
-                completeHistory.push({ questionIndex: i, selectedAnswer: null, isCorrect: false, pointsEarned: 0 });
+                completeHistory.push({
+                    questionIndex: i,
+                    selectedAnswer: null,
+                    isCorrect: false,
+                    pointsEarned: 0
+                });
             }
         }
 
@@ -132,40 +163,90 @@ export default function EssayEngine({ data, onGameOver, onIntermission }: { data
             answersDetail: completeHistory,
         };
 
+        // 🔴 SIMPAN SEMENTARA (fallback kalau API gagal)
         sessionStorage.setItem("lastScore", finalScore.toString());
         sessionStorage.setItem("lastAccuracy", accuracy.toString());
         sessionStorage.setItem("lastBreakdown", JSON.stringify(payload.answersDetail));
 
-        try { await finishGame(realGameId, payload); } catch (e) { }
+        try {
+            const res = await finishGame(realGameId, payload);
 
+            // ✅ AMBIL HASIL AI DARI BACKEND
+            const result = res?.data?.result;
+
+            if (result) {
+                console.log("🔥 BACKEND AI RESULT:", result);
+
+                // 🔥 OVERRIDE dengan hasil AI (INI KUNCI UTAMA)
+                sessionStorage.setItem("lastScore", result.scoreValue.toString());
+                sessionStorage.setItem("lastAccuracy", result.accuracy.toString());
+                sessionStorage.setItem("lastBreakdown", JSON.stringify(result.answersDetail));
+
+                // 🔥 OPSIONAL: kirim ke halaman result pakai data AI
+                if (onGameOver) {
+                    onGameOver(result.scoreValue, result.accuracy, result.answersDetail);
+                    return;
+                }
+
+                navigate("/student/result", { state: result });
+                return;
+            }
+
+        } catch (e) {
+            console.error("❌ FinishGame Error:", e);
+        }
+
+        // fallback lama (kalau backend gagal)
         if (onGameOver) onGameOver(finalScore, accuracy, payload.answersDetail);
         else navigate("/student/result", { state: payload });
     };
 
-    if (questions.length === 0) return <div className="p-10 text-center animate-pulse">Menyiapkan AI... 🤖</div>;
-    if (isFinished) return <div className="p-20 text-center font-black animate-pulse text-indigo-600">Menyimpan Skor... 🏆</div>;
+    // 🚨 FIX STUCK (TIDAK DIUBAH LOGIC)
+    if (questions.length === 0) {
+        return (
+            <div className="p-10 text-center animate-pulse">
+                Menyiapkan AI... 🤖
+            </div>
+        );
+    }
+
+    if (isFinished) {
+        return (
+            <div className="p-20 text-center font-black animate-pulse text-indigo-600">
+                Menyimpan Skor... 🏆
+            </div>
+        );
+    }
 
     const currentQ = questions[currentIndex];
 
     return (
         <div className="flex flex-col items-center p-4 md:p-6 space-y-6 max-w-4xl mx-auto w-full font-sans">
+
+            {/* HEADER */}
             <div className="w-full flex justify-between bg-white p-4 md:p-6 rounded-[2rem] shadow-sm border-2 border-indigo-50 items-center">
                 <div className="flex flex-col font-black text-center">
                     <span className="text-[10px] text-slate-400 uppercase tracking-widest">Soal</span>
-                    <span className="text-xl text-indigo-600">{currentIndex + 1} <span className="text-sm text-slate-300">/ {questions.length}</span></span>
+                    <span className="text-xl text-indigo-600">
+                        {currentIndex + 1}
+                        <span className="text-sm text-slate-300"> / {questions.length}</span>
+                    </span>
                 </div>
+
                 <div className="flex flex-col items-center">
                     <span className="text-[10px] text-slate-400 uppercase tracking-widest">Sisa Waktu</span>
                     <span className={`text-2xl font-black ${timeLeft <= 20 ? 'text-rose-500 animate-pulse' : 'text-slate-700'}`}>
                         {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}
                     </span>
                 </div>
+
                 <div className="text-center flex flex-col font-black">
                     <span className="text-[10px] text-slate-400 uppercase tracking-widest">Skor</span>
                     <span className="text-indigo-600 text-2xl">{score}</span>
                 </div>
             </div>
 
+            {/* CONTENT */}
             <div className="w-full bg-white p-8 md:p-12 rounded-[3rem] shadow-xl border border-slate-100 flex flex-col gap-6">
                 <h2 className="text-xl md:text-3xl font-black text-slate-800 leading-tight">
                     {currentQ.question}
@@ -188,14 +269,19 @@ export default function EssayEngine({ data, onGameOver, onIntermission }: { data
                     <button
                         onClick={() => handleAnswerSubmit(false)}
                         disabled={isGrading || currentAnswer.trim().length === 0}
-                        className={`flex items-center gap-3 px-8 py-4 rounded-full font-black text-lg transition-all active:scale-95 shadow-lg ${isGrading ? 'bg-indigo-300 text-white cursor-not-allowed' :
-                                'bg-indigo-600 text-white hover:bg-indigo-500 hover:shadow-indigo-500/50'
+                        className={`flex items-center gap-3 px-8 py-4 rounded-full font-black text-lg transition-all active:scale-95 shadow-lg ${isGrading
+                            ? 'bg-indigo-300 text-white cursor-not-allowed'
+                            : 'bg-indigo-600 text-white hover:bg-indigo-500 hover:shadow-indigo-500/50'
                             }`}
                     >
                         {isGrading ? (
-                            <><Bot className="animate-bounce" /> AI Menilai...</>
+                            <>
+                                <Bot className="animate-bounce" /> AI Menilai...
+                            </>
                         ) : (
-                            <>Submit Jawaban <Send size={20} /></>
+                            <>
+                                Submit Jawaban <Send size={20} />
+                            </>
                         )}
                     </button>
                 </div>

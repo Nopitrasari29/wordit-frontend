@@ -21,9 +21,17 @@ export default function ResultPage() {
     setPlayerName(savedName)
 
     // 🎯 FE-15: Ambil data dari state navigasi (prioritas) atau session storage (fallback)
-    const finalScore = location.state?.score ?? parseInt(sessionStorage.getItem("lastScore") || "0")
-    const finalAccuracy = location.state?.accuracy ?? parseInt(sessionStorage.getItem("lastAccuracy") || "0")
-    const finalBreakdown = location.state?.breakdown ?? []
+    const finalScore =
+      location.state?.scoreValue ??
+      parseInt(sessionStorage.getItem("lastScore") || "0")
+
+    const finalAccuracy =
+      location.state?.accuracy ??
+      parseInt(sessionStorage.getItem("lastAccuracy") || "0")
+
+    const finalBreakdown =
+      location.state?.answersDetail ??
+      JSON.parse(sessionStorage.getItem("lastBreakdown") || "[]")
 
     setScore(finalScore)
     setAccuracy(finalAccuracy)
@@ -139,7 +147,7 @@ export default function ResultPage() {
 
                       <div className="flex flex-col items-end shrink-0 gap-2">
                         <span className={`font-black text-lg ${item.isCorrect ? 'text-emerald-500' : 'text-rose-500'}`}>
-                          {item.isCorrect ? '+ Poin' : '0 Poin'}
+                          {item.pointsEarned > 0 ? `+${item.pointsEarned}` : '0 Poin'}
                         </span>
 
                         {/* 🤖 Tombol Tanya AI (Hanya muncul jika Salah) */}
@@ -162,17 +170,35 @@ export default function ResultPage() {
 
                         <div className="flex items-start gap-3 relative z-10">
                           <div className="bg-indigo-600 text-white p-2 rounded-xl shrink-0">
-                            {isAILoading && !aiExplanations[idx] ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
+                            {isAILoading && !aiExplanations[idx]
+                              ? <Loader2 size={16} className="animate-spin" />
+                              : <Sparkles size={16} />
+                            }
                           </div>
+
                           <div>
-                            <h4 className="font-black text-indigo-800 text-xs uppercase tracking-widest mb-1">AI Teacher Feedback</h4>
+                            <h4 className="font-black text-indigo-800 text-xs uppercase tracking-widest mb-1">
+                              AI Teacher Feedback
+                            </h4>
+
+                            {/* 🔥 FEEDBACK */}
                             <p className="text-sm font-bold text-indigo-900/80 leading-relaxed">
                               {isAILoading && !aiExplanations[idx] ? (
-                                <span className="animate-pulse">Sedang menganalisis jawabanmu...</span>
+                                <span className="animate-pulse">
+                                  Sedang menganalisis jawabanmu...
+                                </span>
                               ) : (
-                                aiExplanations[idx]
+                                item.justification || aiExplanations[idx]
                               )}
                             </p>
+
+                            {/* 🔥 JAWABAN BENAR (INI YANG KAMU TANYA) */}
+                            {item.correctAnswer && (
+                              <p className="text-xs font-bold text-emerald-600 mt-2">
+                                Jawaban benar: {item.correctAnswer}
+                              </p>
+                            )}
+
                           </div>
                         </div>
                       </div>
