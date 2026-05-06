@@ -84,7 +84,7 @@ export const playGame = async (id: string) => {
  * 🎯 SUBMIT ANSWER
  * Gunakan real Game ID (UUID), bukan share code
  */
-export const submitAnswer = async (id: string, questionIndex: number, selectedAnswer: string, earnedPoints?: number) => {
+export const submitAnswer = async (id: string, questionIndex: number, selectedAnswer: any, earnedPoints?: number) => {
   // Pastikan ID yang masuk ke sini adalah UUID kuis
   const res = await api.post(`/games/${id}/submit`, {
     questionIndex,
