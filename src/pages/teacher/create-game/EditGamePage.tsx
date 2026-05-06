@@ -73,20 +73,10 @@ export default function GameEditPage() {
         try {
             const content = { ...gamePayload.gameJson };
 
-            // Sanitisasi data agar sesuai dengan Zod schema backend
-            if (content.words) {
-                content.words = content.words.map((w: any) => ({
-                    word: String(w.word || w.front || "").toUpperCase().replace(/[^A-Z]/g, ""),
-                    hint: String(w.hint || w.back || "Petunjuk").trim()
-                })).filter((w: any) => w.word !== "");
-            }
-
-            if (content.questions) {
-                content.questions = content.questions.map((q: any) => ({
-                    question: String(q.question || q.hint || "").trim(),
-                    answer: String(q.answer || q.word || q.correctAnswer || "").trim()
-                })).filter((q: any) => q.answer !== "");
-            }
+            // Data gameJson dari masing-masing Builder sudah divalidasi dan berbentuk 
+            // format yang tepat sesuai template-nya, sehingga kita tidak perlu lagi
+            // memotong paksa atau membersihkan struktur datanya (menghindari hilangnya
+            // opsi Pilihan Ganda / Kata Kunci Essay).
 
             const updateData = {
                 title: gamePayload.title.trim(),
