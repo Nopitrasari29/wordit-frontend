@@ -45,24 +45,69 @@ export default function ResultPage() {
       setActiveFeedbackIndex(null);
       return;
     }
+
     setActiveFeedbackIndex(index);
+
+    // ✅ Jika sudah pernah dibuka, tidak usah generate lagi
     if (aiExplanations[index]) return;
 
     setIsAILoading(true);
-    try {
-      // Mocking AI explanation
-      const explanation = await new Promise<string>((resolve) => {
-        // 🛠️ Penyesuaian label agar AI Feedback lebih akurat membacanya
-        const userLabel = item.displaySelected || (item.selectedAnswer === true ? "Benar" : item.selectedAnswer === false ? "Salah" : "Kosong");
-        const correctLabel = item.correctAnswer === true ? "Benar" : item.correctAnswer === false ? "Salah" : item.correctAnswer;
 
-        setTimeout(() => {
-          resolve(`Untuk soal "${item.question || 'ini'}", jawaban "${userLabel}" kurang tepat. Jawaban yang benar adalah "${correctLabel}". Pastikan untuk mempelajari topik ini kembali agar lebih paham!`);
-        }, 1000);
-      });
-      setAiExplanations(prev => ({ ...prev, [index]: explanation }));
+    try {
+      // =========================================================
+      // ✅ PRIORITAS 1: Ambil hasil AI asli dari backend
+      // =========================================================
+
+      const justification =
+        item.justification ||
+        item.feedback ||
+        "AI belum memberikan penjelasan.";
+
+      const correctAnswer =
+        item.correctAnswer ||
+        "Tidak ada jawaban referensi.";
+
+      const matched =
+        item.keywordsMatched?.length > 0
+          ? item.keywordsMatched.map((k: string) => `• ${k}`).join("\n")
+          : "Tidak ada keyword yang cocok.";
+
+      const missing =
+        item.keywordsMissing?.length > 0
+          ? item.keywordsMissing.map((k: string) => `• ${k}`).join("\n")
+          : "Tidak ada keyword yang kurang.";
+
+      // =========================================================
+      // ✅ FORMAT FINAL AI TEACHER
+      // =========================================================
+
+      const explanation = `
+🤖 AI Teacher Feedback
+
+${justification}
+
+✅ Jawaban Ideal:
+${correctAnswer}
+
+🟢 Keyword Yang Sudah Benar:
+${matched}
+
+🔴 Keyword Yang Masih Kurang:
+${missing}
+`;
+
+      setAiExplanations((prev) => ({
+        ...prev,
+        [index]: explanation,
+      }));
     } catch (error) {
-      setAiExplanations(prev => ({ ...prev, [index]: "Waduh, AI sedang sibuk. Coba tanya lagi nanti ya!" }));
+      console.error("❌ AI Feedback Error:", error);
+
+      setAiExplanations((prev) => ({
+        ...prev,
+        [index]:
+          "Waduh, AI sedang sibuk. Coba lagi beberapa saat lagi ya!",
+      }));
     } finally {
       setIsAILoading(false);
     }
