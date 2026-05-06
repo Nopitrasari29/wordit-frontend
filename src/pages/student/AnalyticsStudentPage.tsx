@@ -3,15 +3,11 @@ import { useAuth } from "../../context/AuthContext"
 import ScoreChart from "../../components/analytics/ScoreChart"
 import { toast } from "react-hot-toast"
 import { Loader2 } from "lucide-react"
-
-// Asumsikan kamu punya service ini, sesuaikan import-nya jika berbeda
-// import { getStudentAnalytics } from "../../pages/services/score.service"
 import api from "../../pages/services/api"
 
 export default function AnalyticsStudentPage() {
     const { user } = useAuth()
 
-    // 🧠 State Dinamis untuk Real Data
     const [isLoading, setIsLoading] = useState(true)
     const [stats, setStats] = useState({
         gamesCompleted: 0,
@@ -21,28 +17,31 @@ export default function AnalyticsStudentPage() {
     const [performanceData, setPerformanceData] = useState<{ game: string, score: number }[]>([])
     const [badges, setBadges] = useState<{ name: string, icon: string, color: string, isUnlocked: boolean }[]>([])
 
-    // 🚀 Fetch Real Data dari Backend
     useEffect(() => {
         const fetchAnalytics = async () => {
             setIsLoading(true)
             try {
-                // TODO: Ganti dengan pemanggilan service yang tepat jika sudah dibuat
+                // 🚀 Memanggil endpoint real data
                 const response = await api.get('/scores/analytics/student');
                 const data = response.data;
 
-                // Set Data Statistik
+                // ✅ SINKRONISASI: Petakan data overview dari Backend
                 setStats({
-                    gamesCompleted: data.gamesCompleted || 0,
-                    overallAccuracy: data.overallAccuracy || 0,
-                    totalXp: data.totalXp || 0
+                    gamesCompleted: data.overview.totalGamesPlayed || 0,
+                    overallAccuracy: data.overview.averageAccuracy || 0,
+                    totalXp: data.overview.totalXp || 0 // Diambil dari hasil _sum di Backend
                 });
 
-                // Set Data Grafik
-                if (data.performanceData && data.performanceData.length > 0) {
-                    setPerformanceData(data.performanceData);
+                // ✅ SINKRONISASI: Petakan data riwayat terbaru ke grafik
+                if (data.recentHistory && data.recentHistory.length > 0) {
+                    const formattedForChart = data.recentHistory.map((item: any) => ({
+                        game: item.gameTitle,
+                        score: item.score
+                    }));
+                    setPerformanceData(formattedForChart);
                 }
 
-                // Set Badges (Filter yang unlocked saja jika dari API bawaan)
+                // Tetap filter unlocked badges jika ada data badges dari API
                 if (data.badges) {
                     setBadges(data.badges);
                 }
@@ -51,7 +50,7 @@ export default function AnalyticsStudentPage() {
                 console.error("Gagal menarik data analytics:", error)
                 toast.error("Gagal memuat data analitik terbaru.")
 
-                // --- FALLBACK JIKA API BELUM SIAP (Anti-Crash) ---
+                // FALLBACK agar UI tidak kosong jika API gagal
                 setPerformanceData([
                     { game: "Multiple Choice", score: 85 },
                     { game: "True/False", score: 90 },
@@ -83,8 +82,6 @@ export default function AnalyticsStudentPage() {
 
     return (
         <div className="space-y-10 font-sans pb-12 pt-6 animate-fade-in">
-
-            {/* ================= HEADER BANNER ================= */}
             <div className="bg-gradient-to-r from-indigo-600 to-blue-500 rounded-[2.5rem] p-8 md:p-12 text-white shadow-xl shadow-indigo-200 relative overflow-hidden">
                 <div className="absolute -right-10 -top-10 w-64 h-64 bg-white opacity-10 rounded-full blur-3xl"></div>
                 <div className="relative z-10">
@@ -97,7 +94,6 @@ export default function AnalyticsStudentPage() {
                 </div>
             </div>
 
-            {/* ================= STATS CARDS ================= */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-50 flex items-center gap-5 hover:-translate-y-1 transition-all duration-300 group">
                     <div className="w-16 h-16 shrink-0 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center text-3xl group-hover:bg-indigo-600 group-hover:text-white transition-colors">🎮</div>
@@ -124,7 +120,6 @@ export default function AnalyticsStudentPage() {
                 </div>
             </div>
 
-            {/* ================= DETAILED SCORE CHART ================= */}
             <div className="bg-white rounded-[2.5rem] p-6 md:p-10 shadow-sm border border-slate-50">
                 <div className="mb-8 px-2">
                     <h2 className="text-2xl font-black text-slate-800 italic underline decoration-indigo-200 underline-offset-8">
@@ -139,7 +134,7 @@ export default function AnalyticsStudentPage() {
                         </div>
                         <div>
                             <h3 className="text-xl font-black text-slate-800 tracking-tight">Score Analytics</h3>
-                            <p className="text-sm font-bold text-slate-500">Rata-rata nilai berdasarkan tipe permainan</p>
+                            <p className="text-sm font-bold text-slate-500">Nilai dari sesi permainan terbaru</p>
                         </div>
                     </div>
 
@@ -155,7 +150,6 @@ export default function AnalyticsStudentPage() {
                 </div>
             </div>
 
-            {/* ================= BADGES COLLECTION ================= */}
             <div>
                 <h2 className="text-2xl font-black text-slate-800 mb-8 px-4">
                     Koleksi Badges 🎖️
@@ -182,7 +176,6 @@ export default function AnalyticsStudentPage() {
                     </div>
                 )}
             </div>
-
         </div>
     )
 }
