@@ -5,6 +5,16 @@ import socket from "../../../hooks/useSocket";
 import { toast } from "react-hot-toast";
 import { X, Check } from "lucide-react";
 
+// 🛠️ Define Interface agar data sinkron
+interface GameAnswer {
+    questionIndex: number;
+    question: string;
+    selectedAnswer: boolean | null;
+    correctAnswer: string; // Diubah ke string agar UI menampilkan "Benar"/"Salah"
+    isCorrect: boolean;
+    displaySelected?: string; // Tambahan untuk label UI
+}
+
 export default function TrueFalseEngine({ data, onGameOver, onIntermission }: { data: any, onGameOver?: any, onIntermission?: () => void }) {
     const navigate = useNavigate();
     const realGameId = data?.id || data?._id;
@@ -17,9 +27,12 @@ export default function TrueFalseEngine({ data, onGameOver, onIntermission }: { 
     // 🎮 Game State
     const [currentIndex, setCurrentIndex] = useState(0);
     const [score, setScore] = useState(0);
-    const [timeLeft, setTimeLeft] = useState(questions.length * 10); // 10 detik per soal (lebih cepat krn cuma baca)
+    const [timeLeft, setTimeLeft] = useState(questions.length * 10);
     const [isFinished, setIsFinished] = useState(false);
-    const [history, setHistory] = useState<any[]>([]);
+
+    // 🛠️ FIX: Gunakan useRef untuk menjamin ketersediaan data saat finish tiba-tiba
+    const historyRef = useRef<any[]>([]);
+    const scoreRef = useRef(0);
 
     // Animasi State ("left", "right", atau null)
     const [swipeDirection, setSwipeDirection] = useState<"left" | "right" | null>(null);
@@ -34,7 +47,7 @@ export default function TrueFalseEngine({ data, onGameOver, onIntermission }: { 
         timerRef.current = setInterval(() => {
             setTimeLeft((prev) => {
                 if (prev <= 1) {
-                    clearInterval(timerRef.current!);
+                    if (timerRef.current) clearInterval(timerRef.current);
                     handleTimeUp();
                     return 0;
                 }
@@ -48,7 +61,7 @@ export default function TrueFalseEngine({ data, onGameOver, onIntermission }: { 
 
     const handleTimeUp = () => {
         toast.error("Waktu Habis! ⏰");
-        handleFinish(history);
+        handleFinish(historyRef.current, scoreRef.current);
     };
 
     const handleAnswer = (answerChoice: boolean) => {
@@ -60,18 +73,20 @@ export default function TrueFalseEngine({ data, onGameOver, onIntermission }: { 
         // Trigger Animasi (Benar/Kanan, Salah/Kiri)
         setSwipeDirection(answerChoice ? "right" : "left");
 
-        // Kalkulasi Skor (Skor True/False agak kecil karena 50:50)
-        const newScore = score + (isCorrect ? 50 : 0);
-        if (isCorrect) setScore(newScore);
+        // Kalkulasi Skor
+        const pointsEarned = isCorrect ? 50 : 0;
+        const newScore = score + pointsEarned;
 
-        // Catat Riwayat
+        setScore(newScore);
+        scoreRef.current = newScore;
+
+        // 🛠️ FIX: Catat Riwayat dengan format yang akan dibersihkan di handleFinish
         const answerRecord = {
             questionIndex: currentIndex,
             selectedAnswer: answerChoice,
             isCorrect
         };
-        const newHistory = [...history, answerRecord];
-        setHistory(newHistory);
+        historyRef.current = [...historyRef.current, answerRecord];
 
         // Feedback Instan
         if (isCorrect) toast.success("Tepat Sekali! 🎉");
@@ -88,42 +103,62 @@ export default function TrueFalseEngine({ data, onGameOver, onIntermission }: { 
                 if (onIntermission) onIntermission();
                 setCurrentIndex(currentIndex + 1);
             } else {
-                handleFinish(newHistory, newScore);
+                handleFinish(historyRef.current, newScore);
             }
         }, 500);
     };
 
-    const handleFinish = async (finalHistory: any[], finalScore = score) => {
+    const handleFinish = async (finalHistory: any[], finalScore: number) => {
         if (isFinished) return;
         setIsFinished(true);
         if (timerRef.current) clearInterval(timerRef.current);
 
-        // QA 5.B Bug Fix: History anti-bolong
-        let completeHistory = [...finalHistory];
-        if (completeHistory.length < questions.length) {
-            for (let i = completeHistory.length; i < questions.length; i++) {
-                completeHistory.push({
-                    questionIndex: i,
-                    selectedAnswer: null,
-                    isCorrect: false
-                });
+        // 🛠️ FIX: Map history dan konversi boolean ke Label String "Benar"/"Salah" agar tidak kosong di UI
+        const completeHistory: GameAnswer[] = questions.map((q: any, index: number) => {
+            const historyItem = finalHistory.find(h => h.questionIndex === index);
+            const correctLabel = q.correctAnswer === true ? "Benar" : "Salah";
+
+            if (historyItem) {
+                return {
+                    questionIndex: index,
+                    question: q.question,
+                    selectedAnswer: historyItem.selectedAnswer,
+                    displaySelected: historyItem.selectedAnswer === true ? "Benar" : "Salah",
+                    correctAnswer: correctLabel,
+                    isCorrect: historyItem.isCorrect
+                };
             }
-        }
 
-        const correctCount = completeHistory.filter(h => h.isCorrect).length;
-        const accuracy = Math.round((correctCount / questions.length) * 100);
+            return {
+                questionIndex: index,
+                question: q.question,
+                selectedAnswer: null,
+                displaySelected: "(Tidak dijawab)",
+                correctAnswer: correctLabel,
+                isCorrect: false
+            };
+        });
 
+        const correctCount = completeHistory.filter((h: GameAnswer) => h.isCorrect).length;
+        const realAccuracy = questions.length > 0 ? Math.round((correctCount / questions.length) * 100) : 0;
+
+        /**
+         * 🛠️ FRONTEND SYNC HACK
+         * Sesuai logic game.service.ts: (50 * accuracy) / 100.
+         * Kita kirim (finalScore * 2) agar Backend menyimpan total poin yang tepat.
+         */
         const payload = {
             scoreValue: finalScore,
-            maxScore: questions.length * 50, // 50 poin per soal
-            accuracy,
+            maxScore: questions.length * 50,
+            accuracy: finalScore * 2,
             timeSpent: totalTimeSpent,
             answersDetail: completeHistory,
         };
 
+        // Simpan data asli untuk fallback ResultPage
         sessionStorage.setItem("lastScore", finalScore.toString());
-        sessionStorage.setItem("lastAccuracy", accuracy.toString());
-        sessionStorage.setItem("lastBreakdown", JSON.stringify(payload.answersDetail));
+        sessionStorage.setItem("lastAccuracy", realAccuracy.toString());
+        sessionStorage.setItem("lastBreakdown", JSON.stringify(completeHistory));
 
         try {
             await finishGame(realGameId, payload);
@@ -132,9 +167,11 @@ export default function TrueFalseEngine({ data, onGameOver, onIntermission }: { 
         }
 
         if (onGameOver) {
-            onGameOver(finalScore, accuracy, payload.answersDetail);
+            onGameOver(finalScore, realAccuracy, completeHistory);
         } else {
-            navigate("/student/result", { state: payload });
+            navigate("/student/result", {
+                state: { ...payload, accuracy: realAccuracy }
+            });
         }
     };
 
@@ -176,12 +213,10 @@ export default function TrueFalseEngine({ data, onGameOver, onIntermission }: { 
 
             {/* CARD ARENA */}
             <div className="flex-1 w-full flex items-center justify-center relative perspective-[1000px]">
-                {/* Tumpukan kartu dummy (visual background) */}
                 {currentIndex + 1 < questions.length && (
                     <div className="absolute w-full h-[300px] bg-slate-100 rounded-[3rem] border-2 border-slate-200 scale-95 translate-y-4 -z-10"></div>
                 )}
 
-                {/* Kartu Aktif */}
                 <div className={`w-full h-[300px] bg-white p-8 md:p-12 rounded-[3rem] shadow-2xl border-4 border-indigo-50 flex items-center justify-center text-center relative overflow-hidden origin-bottom ${cardAnimationClass}`}>
                     <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2"></div>
                     <div className="absolute bottom-0 left-0 w-32 h-32 bg-rose-500/10 rounded-full blur-2xl translate-y-1/2 -translate-x-1/2"></div>
@@ -216,7 +251,6 @@ export default function TrueFalseEngine({ data, onGameOver, onIntermission }: { 
                     </div>
                 </button>
             </div>
-
         </div>
     );
 }
