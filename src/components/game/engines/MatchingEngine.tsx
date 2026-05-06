@@ -5,7 +5,7 @@ import socket from "../../../hooks/useSocket";
 import { toast } from "react-hot-toast";
 import { Link2, CheckCircle2 } from "lucide-react";
 
-export default function MatchingEngine({ data, onGameOver, onIntermission }: { data: any, onGameOver?: any, onIntermission?: () => void }) {
+export default function MatchingEngine({ data, onGameOver }: { data: any, onGameOver?: any, onIntermission?: () => void }) {
     const navigate = useNavigate();
     const realGameId = data?.id || data?._id;
     const roomCode = data?.shareCode || "";
@@ -146,7 +146,7 @@ export default function MatchingEngine({ data, onGameOver, onIntermission }: { d
         const payload = {
             scoreValue: finalScore,
             maxScore: pairs.length * 100,
-            accuracy: finalScore, // Sync Hack
+            accuracy: realAccuracy,
             timeSpent: totalTimeSpent,
             answersDetail: completeHistory,
         };
@@ -195,8 +195,8 @@ export default function MatchingEngine({ data, onGameOver, onIntermission }: { d
                                 disabled={isMatched}
                                 onClick={() => setSelectedLeft(isSelected ? null : item)}
                                 className={`p-4 md:p-6 rounded-2xl font-bold text-lg transition-all border-b-4 text-left flex justify-between items-center ${isMatched ? 'bg-emerald-50 text-emerald-400 border-transparent opacity-50 cursor-not-allowed' :
-                                        isSelected ? 'bg-indigo-500 text-white border-indigo-700 scale-105 shadow-lg' :
-                                            'bg-slate-100 text-slate-700 hover:bg-slate-200 border-slate-300'
+                                    isSelected ? 'bg-indigo-500 text-white border-indigo-700 scale-105 shadow-lg' :
+                                        'bg-slate-100 text-slate-700 hover:bg-slate-200 border-slate-300'
                                     }`}
                             >
                                 <span>{item.text}</span>
@@ -221,8 +221,8 @@ export default function MatchingEngine({ data, onGameOver, onIntermission }: { d
                                 disabled={isMatched}
                                 onClick={() => setSelectedRight(isSelected ? null : item)}
                                 className={`p-4 md:p-6 rounded-2xl font-bold text-lg transition-all border-b-4 text-left flex justify-between items-center ${isMatched ? 'bg-emerald-50 text-emerald-400 border-transparent opacity-50 cursor-not-allowed' :
-                                        isSelected ? 'bg-amber-500 text-white border-amber-700 scale-105 shadow-lg' :
-                                            'bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border-indigo-200'
+                                    isSelected ? 'bg-amber-500 text-white border-amber-700 scale-105 shadow-lg' :
+                                        'bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border-indigo-200'
                                     }`}
                             >
                                 <span>{item.text}</span>
