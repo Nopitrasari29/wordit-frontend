@@ -4,6 +4,14 @@ import { submitAnswer, finishGame } from "../../../pages/services/game.service";
 import socket from "../../../hooks/useSocket";
 import { toast } from "react-hot-toast";
 
+interface GameAnswer {
+    questionIndex: number;
+    question: string;
+    selectedAnswer: string | null;
+    correctAnswer: string;
+    isCorrect: boolean;
+}
+
 export default function MultipleChoiceEngine({ data, onGameOver, onIntermission }: { data: any, onGameOver?: any, onIntermission?: () => void }) {
     const navigate = useNavigate();
     const realGameId = data?.id || data?._id;
@@ -19,7 +27,11 @@ export default function MultipleChoiceEngine({ data, onGameOver, onIntermission 
     // Waktu dinamis: 15 detik per soal
     const [timeLeft, setTimeLeft] = useState(questions.length * 15);
     const [isFinished, setIsFinished] = useState(false);
-    const [history, setHistory] = useState<any[]>([]);
+
+    // 🛠️ FIX: Gunakan useRef untuk history agar sinkron saat dipanggil di handleFinish
+    const historyRef = useRef<GameAnswer[]>([]);
+    // Tambahkan scoreRef agar nilai skor terbaru selalu tersedia secara sinkron
+    const scoreRef = useRef(0);
     const [selectedOption, setSelectedOption] = useState<string | null>(null);
 
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -32,7 +44,7 @@ export default function MultipleChoiceEngine({ data, onGameOver, onIntermission 
         timerRef.current = setInterval(() => {
             setTimeLeft((prev) => {
                 if (prev <= 1) {
-                    clearInterval(timerRef.current!);
+                    if (timerRef.current) clearInterval(timerRef.current);
                     handleTimeUp();
                     return 0;
                 }
@@ -46,7 +58,8 @@ export default function MultipleChoiceEngine({ data, onGameOver, onIntermission 
 
     const handleTimeUp = () => {
         toast.error("Waktu Habis! ⏰");
-        handleFinish(history);
+        // Gunakan historyRef terbaru dan scoreRef saat ini
+        handleFinish(historyRef.current, scoreRef.current);
     };
 
     const handleAnswer = (option: string) => {
@@ -58,17 +71,21 @@ export default function MultipleChoiceEngine({ data, onGameOver, onIntermission 
         const isCorrect = option === currentQ.correctAnswer;
 
         // Kalkulasi Skor
-        const newScore = score + (isCorrect ? 100 : 0);
-        if (isCorrect) setScore(newScore);
+        const pointsEarned = isCorrect ? 100 : 0;
+        const newScore = score + pointsEarned;
 
-        // Catat Riwayat Jawaban
-        const answerRecord = {
+        setScore(newScore);
+        scoreRef.current = newScore; // Update Ref agar sinkron
+
+        // 🛠️ FIX: Catat Riwayat Jawaban ke Ref (Sinkron) dengan detail lengkap untuk Backend
+        const answerRecord: GameAnswer = {
             questionIndex: currentIndex,
+            question: currentQ.question, // Ditambahkan agar muncul di ResultPage
             selectedAnswer: option,
+            correctAnswer: currentQ.correctAnswer, // Ditambahkan untuk validasi Backend
             isCorrect
         };
-        const newHistory = [...history, answerRecord];
-        setHistory(newHistory);
+        historyRef.current = [...historyRef.current, answerRecord];
 
         // Feedback Instan
         if (isCorrect) toast.success("Benar! 🎉");
@@ -85,53 +102,69 @@ export default function MultipleChoiceEngine({ data, onGameOver, onIntermission 
                 if (onIntermission) onIntermission();
                 setCurrentIndex(currentIndex + 1);
             } else {
-                handleFinish(newHistory, newScore);
+                handleFinish(historyRef.current, newScore);
             }
         }, 1200);
     };
 
-    const handleFinish = async (finalHistory: any[], finalScore = score) => {
+    const handleFinish = async (finalHistory: GameAnswer[], finalScore: number) => {
         if (isFinished) return;
         setIsFinished(true);
         if (timerRef.current) clearInterval(timerRef.current);
 
-        // Isi jawaban kosong jika waktu keburu habis (Menjawab Bug QA 5.B)
-        let completeHistory = [...finalHistory];
-        if (completeHistory.length < questions.length) {
-            for (let i = completeHistory.length; i < questions.length; i++) {
-                completeHistory.push({
-                    questionIndex: i,
-                    selectedAnswer: null,
-                    isCorrect: false
-                });
-            }
-        }
+        // 🛠️ FIX: Map history berdasarkan daftar pertanyaan asli agar urut dan lengkap
+        const completeHistory: GameAnswer[] = questions.map((q: any, index: number) => {
+            const historyItem = finalHistory.find(h => h.questionIndex === index);
+            if (historyItem) return historyItem;
 
-        const correctCount = completeHistory.filter(h => h.isCorrect).length;
-        const accuracy = Math.round((correctCount / questions.length) * 100);
+            return {
+                questionIndex: index,
+                question: q.question,
+                selectedAnswer: null,
+                correctAnswer: q.correctAnswer,
+                isCorrect: false
+            };
+        });
 
+        const correctCount = completeHistory.filter((h: GameAnswer) => h.isCorrect).length;
+        const realAccuracy = questions.length > 0 ? Math.round((correctCount / questions.length) * 100) : 0;
+
+        /**
+         * 🛠️ FRONTEND SYNC HACK (Penyesuaian terhadap game.service.ts baris 263)
+         * Backend menghitung skor akhir berdasarkan rumus: (accuracy * 100) / 100.
+         * Dengan mengirim 'finalScore' ke field 'accuracy', hasil kalkulasi ulang Backend 
+         * akan tetap sama dengan angka di Leaderboard (misal: 300).
+         */
         const payload = {
             scoreValue: finalScore,
             maxScore: questions.length * 100,
-            accuracy,
+            accuracy: finalScore, // Dikirim skor agar kalkulasi backend menghasilkan angka yang identik
             timeSpent: totalTimeSpent,
             answersDetail: completeHistory,
         };
 
+        // Simpan ke storage data asli untuk tampilan ResultPage UI
         sessionStorage.setItem("lastScore", finalScore.toString());
-        sessionStorage.setItem("lastAccuracy", accuracy.toString());
-        sessionStorage.setItem("lastBreakdown", JSON.stringify(payload.answersDetail));
+        sessionStorage.setItem("lastAccuracy", realAccuracy.toString());
+        sessionStorage.setItem("lastBreakdown", JSON.stringify(completeHistory));
 
         try {
+            // 🚀 Kirim payload yang sudah disinkronkan agar Backend menyimpan skor dengan benar
             await finishGame(realGameId, payload);
         } catch (e) {
             console.error("Gagal simpan skor ke DB");
         }
 
         if (onGameOver) {
-            onGameOver(finalScore, accuracy, payload.answersDetail);
+            onGameOver(finalScore, realAccuracy, completeHistory);
         } else {
-            navigate("/student/result", { state: payload });
+            // Navigasi dengan membawa data tampilan yang benar (realAccuracy dalam %)
+            navigate("/student/result", {
+                state: {
+                    ...payload,
+                    accuracy: realAccuracy
+                }
+            });
         }
     };
 
@@ -141,7 +174,6 @@ export default function MultipleChoiceEngine({ data, onGameOver, onIntermission 
 
     const currentQ = questions[currentIndex];
 
-    // Warna khas ala Kahoot untuk 4 opsi
     const optionColors = [
         "bg-rose-500 hover:bg-rose-600 border-rose-600",
         "bg-blue-500 hover:bg-blue-600 border-blue-600",
@@ -183,14 +215,13 @@ export default function MultipleChoiceEngine({ data, onGameOver, onIntermission 
                 {currentQ.options.map((opt: string, i: number) => {
                     let btnStyle = optionColors[i % optionColors.length];
 
-                    // Animasi saat opsi dipilih
                     if (selectedOption) {
                         if (opt === currentQ.correctAnswer) {
-                            btnStyle = "bg-emerald-500 border-emerald-600 scale-105 z-10 shadow-2xl shadow-emerald-500/50"; // Yang benar membesar hijau
+                            btnStyle = "bg-emerald-500 border-emerald-600 scale-105 z-10 shadow-2xl shadow-emerald-500/50";
                         } else if (opt === selectedOption && opt !== currentQ.correctAnswer) {
-                            btnStyle = "bg-rose-500 border-rose-600 opacity-80 scale-95"; // Yang salah mengecil merah
+                            btnStyle = "bg-rose-500 border-rose-600 opacity-80 scale-95";
                         } else {
-                            btnStyle = "bg-slate-200 border-slate-300 text-slate-400 opacity-50 grayscale"; // Sisanya redup
+                            btnStyle = "bg-slate-200 border-slate-300 text-slate-400 opacity-50 grayscale";
                         }
                     }
 
