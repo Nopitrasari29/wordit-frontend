@@ -202,30 +202,49 @@ export default function EssayEngine({ data, onGameOver, onIntermission }: { data
         sessionStorage.setItem("lastBreakdown", JSON.stringify(completeHistory));
 
         try {
-            const res = await finishGame(realGameId, payload);
-            const result = res?.data?.result;
+            // ✅ Ambil response terbaru dari backend AI
+            const finishResponse = await finishGame(realGameId, payload);
 
-            if (result) {
-                console.log("🔥 BACKEND AI RESULT:", result);
-                sessionStorage.setItem("lastScore", result.scoreValue.toString());
-                sessionStorage.setItem("lastAccuracy", result.accuracy.toString());
-                sessionStorage.setItem("lastBreakdown", JSON.stringify(result.answersDetail));
+            console.log("🔥 FINISH RESPONSE:", finishResponse);
 
+            // ✅ Ambil data result dari backend
+            const finalResult = finishResponse?.result;
+
+            // ✅ Simpan ulang ke session storage pakai data backend
+            if (finalResult) {
+                sessionStorage.setItem("lastScore", String(finalResult.scoreValue || 0));
+                sessionStorage.setItem("lastAccuracy", String(finalResult.accuracy || 0));
+                sessionStorage.setItem(
+                    "lastBreakdown",
+                    JSON.stringify(finalResult.answersDetail || [])
+                );
+
+                // ✅ Navigate pakai hasil AI backend
                 if (onGameOver) {
-                    onGameOver(result.scoreValue, result.accuracy, result.answersDetail);
-                    return;
+                    onGameOver(
+                        finalResult.scoreValue || 0,
+                        finalResult.accuracy || 0,
+                        finalResult.answersDetail || []
+                    );
+                } else {
+                    navigate("/student/result", {
+                        state: {
+                            scoreValue: finalResult.scoreValue || 0,
+                            accuracy: finalResult.accuracy || 0,
+                            answersDetail: finalResult.answersDetail || [],
+                        }
+                    });
                 }
 
-                navigate("/student/result", { state: result });
                 return;
             }
+
         } catch (e) {
-            console.error("❌ FinishGame Error:", e);
-            toast.error("Gagal menyimpan skor. Menggunakan data lokal.");
+            console.error("❌ FINISH GAME ERROR:", e);
         }
 
-        setIsSavingFinal(false);
-        if (onGameOver) onGameOver(finalScore, tempAccuracy, completeHistory);
+        // fallback lama
+        if (onGameOver) onGameOver(finalScore, tempAccuracy, payload.answersDetail);
         else navigate("/student/result", { state: payload });
     };
 
