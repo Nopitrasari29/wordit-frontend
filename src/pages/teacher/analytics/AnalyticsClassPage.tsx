@@ -7,39 +7,160 @@ import {
   ResponsiveContainer,
   CartesianGrid,
   Cell,
-  Legend
-} from "recharts"
+  Legend,
+} from "recharts";
+import { useSearchParams, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { ArrowLeft, Loader2 } from "lucide-react";
+import api from "../../services/api";
 
 /**
  * Komponen ini menerima data analytics dari backend yang mencakup
  * distribusi kelas dan statistik template kuis.
+ * Bisa dipakai standalone (route /teacher/analytics?group=3A)
+ * atau di-embed di TeacherDashboard (prop games).
  */
-export default function AnalyticsClassPage({ data }: { data: any }) {
+export default function AnalyticsClassPage({
+  data,
+  games,
+}: {
+  data?: any;
+  games?: any[];
+}) {
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const groupFilter = searchParams.get("group"); // ✅ FIX: baca query param group
+
+  const [analyticsData, setAnalyticsData] = useState<any>(data || null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Jika standalone (tidak ada prop data), fetch dari API berdasarkan game pertama guru
+  useEffect(() => {
+    if (data) {
+      setAnalyticsData(data);
+      return;
+    }
+    if (games && games.length > 0) {
+      // Jika ada prop games (dari TeacherDashboard), ambil analytics game pertama
+      const fetchFromGames = async () => {
+        setIsLoading(true);
+        try {
+          const firstGame = games[0];
+          const res = await api.get(`/analytics/game/${firstGame.id}`);
+          if (res.data.status === "success") {
+            setAnalyticsData(res.data.data);
+          }
+        } catch (e) {
+          console.error("Gagal memuat analytics:", e);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      fetchFromGames();
+      return;
+    }
+    // ✅ FIX: Standalone tanpa prop — fetch data kelas dari /analytics/teacher/classes
+    const fetchStandalone = async () => {
+      setIsLoading(true);
+      try {
+        const res = await api.get("/analytics/teacher/classes");
+        if (res.data.status === "success") {
+          // Konversi format classes ke format classDistribution agar chart bisa jalan
+          const classes = res.data.data.classes || [];
+          const filtered = groupFilter
+            ? classes.filter((c: any) => c.name === groupFilter)
+            : classes;
+
+          setAnalyticsData({
+            classDistribution: filtered.map((c: any) => ({
+              groupName: c.name,
+              averageScore: c.averageScore,
+              studentCount: c.students,
+            })),
+            summary: {
+              totalParticipants: filtered.reduce(
+                (acc: number, c: any) => acc + c.students,
+                0,
+              ),
+              averageAccuracy:
+                filtered.length > 0
+                  ? Math.round(
+                      filtered.reduce(
+                        (acc: number, c: any) => acc + (c.averageAccuracy || 0),
+                        0,
+                      ) / filtered.length,
+                    )
+                  : 0,
+            },
+            groupName: groupFilter,
+          });
+        }
+      } catch (e) {
+        console.error("Gagal memuat analytics kelas:", e);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchStandalone();
+  }, [data, games, groupFilter]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-[40vh] flex flex-col items-center justify-center gap-4">
+        <Loader2 size={40} className="text-indigo-500 animate-spin" />
+        <p className="font-black text-slate-400 text-sm uppercase tracking-widest">
+          Memuat Analitik...
+        </p>
+      </div>
+    );
+  }
+
   // 🛠️ SINKRONISASI DATA: Ambil distribusi kelas dari hasil Backend (BE-16)
   // Backend mengirimkan: classDistribution: [{ groupName: "3A", averageScore: 85, studentCount: 10 }]
-  const classData = data?.classDistribution || [];
+  const classData = analyticsData?.classDistribution || [];
 
   // Ambil data summary untuk info tambahan
-  const summary = data?.summary || { totalParticipants: 0, averageAccuracy: 0 };
+  const summary = analyticsData?.summary || {
+    totalParticipants: 0,
+    averageAccuracy: 0,
+  };
 
   // Warna-warna ceria untuk Bar Chart agar sesuai dengan tema WordIT
-  const COLORS = ['#4f46e5', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981'];
+  const COLORS = ["#4f46e5", "#8b5cf6", "#ec4899", "#f59e0b", "#10b981"];
 
   return (
     <div className="space-y-8 font-sans">
+      {/* ✅ FIX: Tombol Kembali hanya muncul jika standalone (ada groupFilter atau tidak ada prop data/games) */}
+      {groupFilter && (
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => navigate(-1)}
+            className="flex items-center gap-2 text-slate-500 hover:text-indigo-600 font-black text-sm transition-colors"
+          >
+            <ArrowLeft size={18} /> Kembali ke Daftar Kelas
+          </button>
+          <h2 className="text-2xl font-black text-slate-800">
+            Detail Kelas <span className="text-indigo-600">{groupFilter}</span>
+          </h2>
+        </div>
+      )}
 
       {/* ================= SUMMARY CARDS ================= */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="bg-indigo-600 p-6 rounded-[2rem] text-white shadow-lg shadow-indigo-100 flex items-center justify-between">
           <div>
-            <p className="text-indigo-100 font-bold text-xs uppercase tracking-widest mb-1">Total Peserta</p>
+            <p className="text-indigo-100 font-bold text-xs uppercase tracking-widest mb-1">
+              Total Peserta
+            </p>
             <h2 className="text-4xl font-black">{summary.totalParticipants}</h2>
           </div>
           <div className="text-4xl opacity-50">👥</div>
         </div>
         <div className="bg-emerald-500 p-6 rounded-[2rem] text-white shadow-lg shadow-emerald-100 flex items-center justify-between">
           <div>
-            <p className="text-emerald-50 font-bold text-xs uppercase tracking-widest mb-1">Rata-Rata Akurasi</p>
+            <p className="text-emerald-50 font-bold text-xs uppercase tracking-widest mb-1">
+              Rata-Rata Akurasi
+            </p>
             <h2 className="text-4xl font-black">{summary.averageAccuracy}%</h2>
           </div>
           <div className="text-4xl opacity-50">🎯</div>
@@ -48,7 +169,6 @@ export default function AnalyticsClassPage({ data }: { data: any }) {
 
       {/* ================= SCORE DISTRIBUTION CHART ================= */}
       <div className="bg-white p-6 md:p-10 rounded-[3rem] shadow-sm border border-slate-100">
-
         {/* Header Analitik */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10">
           <div className="flex items-center gap-4">
@@ -80,13 +200,17 @@ export default function AnalyticsClassPage({ data }: { data: any }) {
                 data={classData}
                 margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
               >
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  vertical={false}
+                  stroke="#f1f5f9"
+                />
 
                 <XAxis
                   dataKey="groupName"
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fill: '#64748b', fontWeight: 800, fontSize: 12 }}
+                  tick={{ fill: "#64748b", fontWeight: 800, fontSize: 12 }}
                   dy={10}
                 />
 
@@ -94,26 +218,30 @@ export default function AnalyticsClassPage({ data }: { data: any }) {
                   domain={[0, 100]}
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fill: '#64748b', fontWeight: 800, fontSize: 12 }}
+                  tick={{ fill: "#64748b", fontWeight: 800, fontSize: 12 }}
                 />
 
                 <Tooltip
-                  cursor={{ fill: '#f8fafc' }}
+                  cursor={{ fill: "#f8fafc" }}
                   contentStyle={{
-                    borderRadius: '1.5rem',
-                    border: 'none',
-                    boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)',
-                    fontWeight: 'bold',
-                    padding: '1rem'
+                    borderRadius: "1.5rem",
+                    border: "none",
+                    boxShadow: "0 20px 25px -5px rgb(0 0 0 / 0.1)",
+                    fontWeight: "bold",
+                    padding: "1rem",
                   }}
-                  itemStyle={{ color: '#4f46e5' }}
+                  itemStyle={{ color: "#4f46e5" }}
                 />
 
                 <Legend
                   verticalAlign="top"
                   align="right"
                   iconType="circle"
-                  wrapperStyle={{ paddingBottom: '20px', fontSize: '12px', fontWeight: 'bold' }}
+                  wrapperStyle={{
+                    paddingBottom: "20px",
+                    fontSize: "12px",
+                    fontWeight: "bold",
+                  }}
                 />
 
                 <Bar
@@ -123,7 +251,10 @@ export default function AnalyticsClassPage({ data }: { data: any }) {
                   barSize={50}
                 >
                   {classData.map((_entry: any, index: number) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={COLORS[index % COLORS.length]}
+                    />
                   ))}
                 </Bar>
               </BarChart>
@@ -131,23 +262,32 @@ export default function AnalyticsClassPage({ data }: { data: any }) {
           ) : (
             <div className="h-full flex flex-col items-center justify-center border-2 border-dashed border-slate-100 rounded-[2rem] bg-slate-50/50">
               <span className="text-4xl mb-3">🔍</span>
-              <p className="text-slate-400 font-bold">Belum ada data kelompok terdeteksi.</p>
-              <p className="text-[10px] text-slate-300 uppercase tracking-widest mt-1">Gunakan format "Kelas_Nama" pada nama pemain</p>
+              <p className="text-slate-400 font-bold">
+                Belum ada data kelompok terdeteksi.
+              </p>
+              <p className="text-[10px] text-slate-300 uppercase tracking-widest mt-1">
+                Gunakan format "NamaKelas_NamaSiswa" pada nama pemain
+              </p>
             </div>
           )}
         </div>
       </div>
 
       {/* ================= TOP 5 DIFFICULT QUESTIONS ================= */}
-      {data?.difficultQuestions?.length > 0 && (
+      {analyticsData?.difficultQuestions?.length > 0 && (
         <div className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm">
           <h3 className="text-lg font-black text-slate-800 uppercase tracking-tight mb-6 flex items-center gap-2">
             <span className="text-rose-500">⚠️</span> Soal Paling Sulit (Top 5)
           </h3>
           <div className="space-y-3">
-            {data.difficultQuestions.map((q: any, i: number) => (
-              <div key={i} className="flex items-center justify-between p-4 bg-rose-50 rounded-2xl border border-rose-100">
-                <span className="font-bold text-slate-700">Pertanyaan #{q.questionIndex + 1}</span>
+            {analyticsData.difficultQuestions.map((q: any, i: number) => (
+              <div
+                key={i}
+                className="flex items-center justify-between p-4 bg-rose-50 rounded-2xl border border-rose-100"
+              >
+                <span className="font-bold text-slate-700">
+                  Pertanyaan #{q.questionIndex + 1}
+                </span>
                 <span className="bg-rose-500 text-white text-[10px] font-black px-3 py-1 rounded-full uppercase">
                   {q.mistakeCount} Siswa Salah
                 </span>
@@ -157,5 +297,5 @@ export default function AnalyticsClassPage({ data }: { data: any }) {
         </div>
       )}
     </div>
-  )
+  );
 }

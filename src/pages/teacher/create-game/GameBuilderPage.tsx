@@ -7,25 +7,34 @@ import AIQuizGenerator from "../../../components/ai/AIQuizGenerator";
 // 🚀 IMPORT UI COMPONENTS & SERVICES
 import Button from "../../../components/ui/Button";
 import { createGame } from "../../services/game.service";
-import { TemplateType, EducationLevel, DifficultyLevel } from "../../../types/game";
+import {
+  TemplateType,
+  EducationLevel,
+  DifficultyLevel,
+} from "../../../types/game";
 
 export default function GameBuilderPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
-  const template = (searchParams.get("template") as TemplateType) || TemplateType.ANAGRAM;
-  const level = (searchParams.get("level") as EducationLevel) || EducationLevel.SD;
+  const template =
+    (searchParams.get("template") as TemplateType) || TemplateType.ANAGRAM;
+  const level =
+    (searchParams.get("level") as EducationLevel) || EducationLevel.SD;
 
   const [step, setStep] = useState(1);
   const [questionsFromAI, setQuestionsFromAI] = useState<any[]>([]);
 
+  // 🔢 AI-05: State jumlah soal yang diminta user (strict count)
+  const [questionCount, setQuestionCount] = useState(5);
+
   const [gamePayload, setGamePayload] = useState({
     title: "",
-    words: [] as any[],     // Untuk Anagram, Hangman, WordSearch
-    cards: [] as any[],     // Untuk Flashcard
+    words: [] as any[], // Untuk Anagram, Hangman, WordSearch
+    cards: [] as any[], // Untuk Flashcard
     questions: [] as any[], // Untuk Maze Chase & Spin Wheel, Multiple Choice, True/False, Essay
-    pairs: [] as any[],     // Untuk Matching
-    gridSize: 8
+    pairs: [] as any[], // Untuk Matching
+    gridSize: 8,
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -33,17 +42,19 @@ export default function GameBuilderPage() {
   // 🔥 HANDLER 1: AI Generator Finished
   const handleAIFinished = (data: any) => {
     // Normalisasi data dari AI: ambil array dari property manapun yang tersedia
-    const items = Array.isArray(data) ? data : (data.questions || data.words || data.cards || data.pairs || []);
+    const items = Array.isArray(data)
+      ? data
+      : data.questions || data.words || data.cards || data.pairs || [];
     const gSize = data.gridSize || 8;
 
     setQuestionsFromAI(items);
-    setGamePayload(prev => ({
+    setGamePayload((prev) => ({
       ...prev,
       words: items,
       cards: items,
       questions: items, // Isi semua agar builder mendeteksi data awal tanpa blank
-      pairs: items,     // Tambahkan pairs untuk Matching
-      gridSize: gSize
+      pairs: items, // Tambahkan pairs untuk Matching
+      gridSize: gSize,
     }));
 
     setStep(2);
@@ -61,30 +72,36 @@ export default function GameBuilderPage() {
       cards: dataObj.cards || prev.cards,
       questions: dataObj.questions || prev.questions,
       pairs: dataObj.pairs || prev.pairs, // Tambahkan pairs
-      gridSize: dataObj.gridSize || prev.gridSize
+      gridSize: dataObj.gridSize || prev.gridSize,
     }));
   };
 
   // 🔥 HANDLER 3: Save to Backend
   const handleSave = async (publishStatus: boolean) => {
-    if (!gamePayload.title.trim()) return toast.error("Judul game wajib diisi! ✍️");
+    if (!gamePayload.title.trim())
+      return toast.error("Judul game wajib diisi! ✍️");
 
     // Tentukan kategori template
-    const isQuestionBased = [TemplateType.MAZE_CHASE, TemplateType.SPIN_THE_WHEEL].includes(template);
+    const isQuestionBased = [
+      TemplateType.MAZE_CHASE,
+      TemplateType.SPIN_THE_WHEEL,
+    ].includes(template);
     const isPassThrough = [
-        TemplateType.MULTIPLE_CHOICE,
-        TemplateType.TRUE_FALSE,
-        TemplateType.MATCHING,
-        TemplateType.ESSAY
+      TemplateType.MULTIPLE_CHOICE,
+      TemplateType.TRUE_FALSE,
+      TemplateType.MATCHING,
+      TemplateType.ESSAY,
     ].includes(template);
 
-    const currentItems = isPassThrough 
-        ? (template === TemplateType.MATCHING ? gamePayload.pairs : gamePayload.questions)
-        : isQuestionBased 
-            ? gamePayload.questions 
-            : template === TemplateType.FLASHCARD 
-                ? gamePayload.cards 
-                : gamePayload.words;
+    const currentItems = isPassThrough
+      ? template === TemplateType.MATCHING
+        ? gamePayload.pairs
+        : gamePayload.questions
+      : isQuestionBased
+        ? gamePayload.questions
+        : template === TemplateType.FLASHCARD
+          ? gamePayload.cards
+          : gamePayload.words;
 
     if (currentItems.length === 0) {
       return toast.error("Minimal harus ada 1 soal! 🧩");
@@ -96,32 +113,39 @@ export default function GameBuilderPage() {
       const quizContent: any = { template: template };
 
       if (isPassThrough) {
-         if (template === TemplateType.MATCHING) {
-             quizContent.pairs = currentItems;
-         } else {
-             quizContent.questions = currentItems;
-         }
-      }
-      else if (isQuestionBased) {
+        if (template === TemplateType.MATCHING) {
+          quizContent.pairs = currentItems;
+        } else {
+          quizContent.questions = currentItems;
+        }
+      } else if (isQuestionBased) {
         // Format untuk Spin the Wheel & Maze Chase
-        quizContent.questions = currentItems.map((item: any) => ({
-          question: String(item.question || item.hint || "").trim(),
-          answer: String(item.answer || item.word || item.correctAnswer || "").trim()
-        })).filter(q => q.question !== "" && q.answer !== "");
-      }
-      else if (template === TemplateType.FLASHCARD) {
+        quizContent.questions = currentItems
+          .map((item: any) => ({
+            question: String(item.question || item.hint || "").trim(),
+            answer: String(
+              item.answer || item.word || item.correctAnswer || "",
+            ).trim(),
+          }))
+          .filter((q) => q.question !== "" && q.answer !== "");
+      } else if (template === TemplateType.FLASHCARD) {
         // Format untuk Flashcard
-        quizContent.cards = currentItems.map((item: any) => ({
-          front: String(item.front || item.word || "").trim(),
-          back: String(item.back || item.hint || "").trim()
-        })).filter(c => c.front !== "");
-      }
-      else {
+        quizContent.cards = currentItems
+          .map((item: any) => ({
+            front: String(item.front || item.word || "").trim(),
+            back: String(item.back || item.hint || "").trim(),
+          }))
+          .filter((c) => c.front !== "");
+      } else {
         // Format untuk Word Search, Anagram, Hangman
-        quizContent.words = currentItems.map((item: any) => ({
-          word: String(item.word || item.front || "").toUpperCase().replace(/[^A-Z]/g, ""),
-          hint: String(item.hint || item.back || "Cari kata ini").trim()
-        })).filter(w => w.word !== "");
+        quizContent.words = currentItems
+          .map((item: any) => ({
+            word: String(item.word || item.front || "")
+              .toUpperCase()
+              .replace(/[^A-Z]/g, ""),
+            hint: String(item.hint || item.back || "Cari kata ini").trim(),
+          }))
+          .filter((w) => w.word !== "");
 
         if (template === TemplateType.WORD_SEARCH) {
           quizContent.gridSize = Number(gamePayload.gridSize || 8);
@@ -135,18 +159,22 @@ export default function GameBuilderPage() {
         educationLevel: level,
         difficulty: DifficultyLevel.MEDIUM,
         isPublished: publishStatus,
-        gameJson: quizContent
+        gameJson: quizContent,
       };
 
       console.log("📤 SENDING PAYLOAD:", finalPayload);
 
       await createGame(finalPayload);
 
-      toast.success(publishStatus ? "Game Berhasil Terbit! 🚀" : "Draft Disimpan! 💾");
+      toast.success(
+        publishStatus ? "Game Berhasil Terbit! 🚀" : "Draft Disimpan! 💾",
+      );
       navigate("/teacher/dashboard");
     } catch (err: any) {
       console.error("❌ BACKEND ERROR:", err.response?.data);
-      const msg = err.response?.data?.errors?.gameJson?.[0] || err.response?.data?.message;
+      const msg =
+        err.response?.data?.errors?.gameJson?.[0] ||
+        err.response?.data?.message;
       toast.error(msg || "Gagal menyimpan. Cek format data.");
     } finally {
       setIsSubmitting(false);
@@ -158,9 +186,13 @@ export default function GameBuilderPage() {
       <div className="max-w-7xl mx-auto px-6 mb-10">
         <div className="bg-white p-8 rounded-[3rem] shadow-sm border border-slate-100 flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="flex items-center gap-5">
-            <div className="w-16 h-16 bg-indigo-600 text-white rounded-[1.8rem] flex items-center justify-center text-3xl shadow-lg">🛠️</div>
+            <div className="w-16 h-16 bg-indigo-600 text-white rounded-[1.8rem] flex items-center justify-center text-3xl shadow-lg">
+              🛠️
+            </div>
             <div>
-              <h1 className="text-3xl font-black text-slate-800 tracking-tight italic">Game Builder</h1>
+              <h1 className="text-3xl font-black text-slate-800 tracking-tight italic">
+                Game Builder
+              </h1>
               <div className="flex items-center gap-2 mt-1">
                 <span className="bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border border-indigo-100">
                   {template.replace("_", " ")}
@@ -173,7 +205,10 @@ export default function GameBuilderPage() {
             </div>
           </div>
           {step === 2 && (
-            <button onClick={() => setStep(1)} className="text-indigo-600 font-black text-sm hover:underline transition-all">
+            <button
+              onClick={() => setStep(1)}
+              className="text-indigo-600 font-black text-sm hover:underline transition-all"
+            >
               ← Kembali ke AI Generator
             </button>
           )}
@@ -183,18 +218,51 @@ export default function GameBuilderPage() {
       <div className="max-w-5xl mx-auto px-6 space-y-8">
         {step === 1 ? (
           <div className="animate-in fade-in duration-500">
-            <AIQuizGenerator level={level} template={template} onFinish={handleAIFinished} />
+            {/* 🔢 AI-05: Input jumlah soal sebelum generate — wire requestedCount ke AIQuizGenerator */}
+            <div className="space-y-4">
+              <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 flex items-center gap-5">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] whitespace-nowrap">
+                  Jumlah Soal
+                </label>
+                <input
+                  type="number"
+                  min={1}
+                  max={20}
+                  value={questionCount}
+                  onChange={(e) =>
+                    setQuestionCount(
+                      Math.max(1, Math.min(20, Number(e.target.value))),
+                    )
+                  }
+                  className="w-24 bg-slate-50 border-2 border-transparent px-4 py-2 rounded-full focus:bg-white focus:border-indigo-500 outline-none font-black text-xl text-slate-800 text-center transition-all"
+                />
+                <span className="text-slate-400 text-sm font-bold">
+                  soal (maks. 20)
+                </span>
+              </div>
+              <AIQuizGenerator
+                level={level}
+                template={template}
+                onFinish={handleAIFinished}
+                requestedCount={questionCount}
+              />
+            </div>
           </div>
         ) : (
           <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 space-y-8">
             <div className="bg-white p-8 rounded-[3rem] shadow-xl border border-slate-100">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-6 mb-2 block"> Judul Aktivitas </label>
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-6 mb-2 block">
+                {" "}
+                Judul Aktivitas{" "}
+              </label>
               <input
                 type="text"
                 placeholder="Misal: Kuis Spin Wheel Seru..."
                 className="w-full bg-slate-50 border-2 border-transparent px-8 py-5 rounded-full focus:bg-white focus:border-indigo-500 outline-none font-black text-2xl text-slate-800 transition-all"
                 value={gamePayload.title}
-                onChange={(e) => setGamePayload({ ...gamePayload, title: e.target.value })}
+                onChange={(e) =>
+                  setGamePayload({ ...gamePayload, title: e.target.value })
+                }
               />
             </div>
 
@@ -207,7 +275,9 @@ export default function GameBuilderPage() {
             </div>
 
             <div className="sticky bottom-8 left-0 right-0 z-50 flex flex-col md:flex-row gap-4 justify-between items-center bg-slate-900 p-6 md:p-8 rounded-[3rem] border border-slate-800 shadow-2xl mt-12">
-              <p className="text-slate-400 font-bold ml-4 hidden md:block italic text-sm">✨ Tips: Spin Wheel sangat seru untuk menebak kata/istilah.</p>
+              <p className="text-slate-400 font-bold ml-4 hidden md:block italic text-sm">
+                ✨ Tips: Spin Wheel sangat seru untuk menebak kata/istilah.
+              </p>
 
               <div className="flex items-center gap-4 w-full md:w-auto">
                 <Button

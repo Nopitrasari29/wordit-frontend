@@ -1,34 +1,55 @@
-import { useEffect, useState } from "react"
-import { useNavigate, useLocation } from "react-router-dom"
-import { Bot, Sparkles, Loader2 } from "lucide-react"
+import { useEffect, useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { Bot, Sparkles, Loader2, ChevronDown, ChevronUp } from "lucide-react";
+import { getFeedbackForQuestion } from "../services/ai.service";
 
 export default function ResultPage() {
-  const navigate = useNavigate()
-  const location = useLocation()
+  const navigate = useNavigate();
+  const location = useLocation();
 
-  const [score, setScore] = useState(0)
-  const [accuracy, setAccuracy] = useState(0)
-  const [playerName, setPlayerName] = useState("Guest")
-  const [breakdown, setBreakdown] = useState<any[]>([])
+  const [score, setScore] = useState(0);
+  const [accuracy, setAccuracy] = useState(0);
+  const [playerName, setPlayerName] = useState("Guest");
+  const [breakdown, setBreakdown] = useState<any[]>([]);
 
-  const [activeFeedbackIndex, setActiveFeedbackIndex] = useState<number | null>(null)
-  const [isAILoading, setIsAILoading] = useState(false)
-  const [aiExplanations, setAiExplanations] = useState<{ [key: number]: string }>({})
+  const [activeFeedbackIndex, setActiveFeedbackIndex] = useState<number | null>(
+    null,
+  );
+  const [isAILoading, setIsAILoading] = useState(false);
+  const [aiExplanations, setAiExplanations] = useState<{
+    [key: number]: string;
+  }>({});
+
+  // Deteksi apakah ini sesi essay (berdasarkan struktur breakdown)
+  const isEssaySession =
+    breakdown.length > 0 &&
+    breakdown.some(
+      (item) =>
+        typeof item.isCorrect === "undefined" ||
+        (item.pointsEarned !== undefined &&
+          item.pointsEarned > 0 &&
+          item.pointsEarned < 100 &&
+          typeof item.isCorrect === "undefined"),
+    );
 
   useEffect(() => {
-    const savedName = sessionStorage.getItem("playerName") || "Player"
-    setPlayerName(savedName)
+    const savedName = sessionStorage.getItem("playerName") || "Player";
+    setPlayerName(savedName);
 
-    const finalScore = location.state?.scoreValue ?? parseInt(sessionStorage.getItem("lastScore") || "0")
-    const finalAccuracy = location.state?.accuracy ?? parseInt(sessionStorage.getItem("lastAccuracy") || "0")
+    const finalScore =
+      location.state?.scoreValue ??
+      parseInt(sessionStorage.getItem("lastScore") || "0");
+    const finalAccuracy =
+      location.state?.accuracy ??
+      parseInt(sessionStorage.getItem("lastAccuracy") || "0");
+    const finalBreakdown =
+      location.state?.answersDetail ||
+      JSON.parse(sessionStorage.getItem("lastBreakdown") || "[]");
 
-    // Prioritaskan state navigasi untuk breakdown agar data terbaru dari Engine langsung muncul
-    const finalBreakdown = location.state?.answersDetail || JSON.parse(sessionStorage.getItem("lastBreakdown") || "[]")
-
-    setScore(finalScore)
-    setAccuracy(finalAccuracy)
-    setBreakdown(finalBreakdown)
-  }, [location])
+    setScore(finalScore);
+    setAccuracy(finalAccuracy);
+    setBreakdown(finalBreakdown);
+  }, [location]);
 
   const getStars = (acc: number) => {
     if (acc >= 90) return 5;
@@ -36,9 +57,48 @@ export default function ResultPage() {
     if (acc >= 50) return 3;
     if (acc >= 30) return 2;
     return acc > 0 ? 1 : 0;
-  }
+  };
 
   const starsCount = getStars(accuracy);
+
+  // Helper: warna dan label untuk skor essay
+  const getScoreStyle = (pts: number, maxPts = 100) => {
+    const pct = (pts / maxPts) * 100;
+    if (pct >= 85)
+      return {
+        color: "text-emerald-600",
+        bg: "bg-emerald-50",
+        border: "border-emerald-200",
+        label: "Sangat Baik",
+      };
+    if (pct >= 70)
+      return {
+        color: "text-blue-600",
+        bg: "bg-blue-50",
+        border: "border-blue-200",
+        label: "Baik",
+      };
+    if (pct >= 50)
+      return {
+        color: "text-amber-600",
+        bg: "bg-amber-50",
+        border: "border-amber-200",
+        label: "Cukup",
+      };
+    if (pct >= 25)
+      return {
+        color: "text-orange-600",
+        bg: "bg-orange-50",
+        border: "border-orange-200",
+        label: "Kurang",
+      };
+    return {
+      color: "text-rose-600",
+      bg: "bg-rose-50",
+      border: "border-rose-200",
+      label: "Perlu Belajar Lagi",
+    };
+  };
 
   const handleAskAI = async (item: any, index: number) => {
     if (activeFeedbackIndex === index) {
@@ -48,69 +108,285 @@ export default function ResultPage() {
 
     setActiveFeedbackIndex(index);
 
-    // ✅ Jika sudah pernah dibuka, tidak usah generate lagi
+    // Jika sudah pernah dibuka, tidak usah generate lagi
     if (aiExplanations[index]) return;
 
     setIsAILoading(true);
 
     try {
-      // =========================================================
-      // ✅ PRIORITAS 1: Ambil hasil AI asli dari backend
-      // =========================================================
+      const isEssayItem = typeof item.isCorrect === "undefined";
 
-      const justification =
-        item.justification ||
-        item.feedback ||
-        "AI belum memberikan penjelasan.";
+      if (isEssayItem) {
+        // ✅ Essay: gunakan data justification yang sudah ada dari hasil grading backend
+        // Tidak perlu call API lagi karena essay sudah di-grade saat finishGame
+        const justification =
+          item.justification ||
+          item.feedback ||
+          "AI belum memberikan penjelasan untuk soal ini.";
 
-      const correctAnswer =
-        item.correctAnswer ||
-        "Tidak ada jawaban referensi.";
+        const correctAnswer =
+          item.correctAnswer || "Tidak ada jawaban referensi.";
 
-      const matched =
-        item.keywordsMatched?.length > 0
-          ? item.keywordsMatched.map((k: string) => `• ${k}`).join("\n")
-          : "Tidak ada keyword yang cocok.";
+        const matched: string[] = item.keywordsMatched || [];
+        const missing: string[] = item.keywordsMissing || [];
 
-      const missing =
-        item.keywordsMissing?.length > 0
-          ? item.keywordsMissing.map((k: string) => `• ${k}`).join("\n")
-          : "Tidak ada keyword yang kurang.";
+        let explanation = `📝 Feedback AI untuk jawabanmu:\n\n${justification}`;
 
-      // =========================================================
-      // ✅ FORMAT FINAL AI TEACHER
-      // =========================================================
+        if (correctAnswer && correctAnswer !== "Tidak ada jawaban referensi.") {
+          explanation += `\n\n✨ Contoh Jawaban Ideal:\n${correctAnswer}`;
+        }
 
-      const explanation = `
-🤖 AI Teacher Feedback
+        if (matched.length > 0) {
+          explanation += `\n\n✅ Konsep yang sudah kamu bahas:\n${matched.map((k) => `• ${k}`).join("\n")}`;
+        }
 
-${justification}
+        if (missing.length > 0) {
+          explanation += `\n\n📌 Konsep yang masih kurang:\n${missing.map((k) => `• ${k}`).join("\n")}`;
+        }
 
-✅ Jawaban Ideal:
-${correctAnswer}
+        setAiExplanations((prev) => ({ ...prev, [index]: explanation }));
+      } else {
+        // ✅ FE-18: Non-essay (Pilihan Ganda, True/False, Matching) — call API real /ai/get-feedback
+        const questionText = item.question || `Soal ${index + 1}`;
+        const correctAnswer =
+          item.correctAnswer === true
+            ? "Benar"
+            : item.correctAnswer === false
+              ? "Salah"
+              : item.correctAnswer || "Tidak tersedia";
 
-🟢 Keyword Yang Sudah Benar:
-${matched}
+        const feedbackText = await getFeedbackForQuestion(
+          questionText,
+          correctAnswer,
+        );
 
-🔴 Keyword Yang Masih Kurang:
-${missing}
-`;
+        const explanation = `🤖 AI Teacher Feedback\n\n${feedbackText}`;
 
-      setAiExplanations((prev) => ({
-        ...prev,
-        [index]: explanation,
-      }));
+        setAiExplanations((prev) => ({ ...prev, [index]: explanation }));
+      }
     } catch (error) {
       console.error("❌ AI Feedback Error:", error);
-
       setAiExplanations((prev) => ({
         ...prev,
-        [index]:
-          "Waduh, AI sedang sibuk. Coba lagi beberapa saat lagi ya!",
+        [index]: "Waduh, AI sedang sibuk. Coba lagi beberapa saat lagi ya!",
       }));
     } finally {
       setIsAILoading(false);
     }
+  };
+
+  // Render satu item breakdown — auto-detect essay vs pilihan ganda
+  const renderBreakdownItem = (item: any, idx: number) => {
+    const isEssayItem =
+      typeof item.isCorrect === "undefined" ||
+      (item.selectedAnswer !== true &&
+        item.selectedAnswer !== false &&
+        item.pointsEarned !== 0 &&
+        item.pointsEarned !== 100);
+    const pts = item.pointsEarned ?? (item.isCorrect ? 100 : 0);
+    const scoreStyle = getScoreStyle(pts);
+
+    if (isEssayItem) {
+      // ======================================================
+      // TAMPILAN ESSAY — skor gradasi, tanpa ✅/❌
+      // ======================================================
+      return (
+        <div key={idx} className="flex flex-col gap-2 animate-fade-in">
+          <div
+            className={`p-4 rounded-2xl border-2 transition-all ${scoreStyle.bg} ${scoreStyle.border}`}
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex-1">
+                {/* Label soal */}
+                <div className="flex items-center gap-2 mb-2">
+                  <span
+                    className={`text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-lg border ${scoreStyle.bg} ${scoreStyle.color} ${scoreStyle.border}`}
+                  >
+                    Essay #{idx + 1} — {scoreStyle.label}
+                  </span>
+                </div>
+
+                <p className="font-black text-slate-700 leading-tight line-clamp-2 text-sm pr-2">
+                  {item.question || `Soal ${idx + 1}`}
+                </p>
+
+                <div className="mt-2 bg-white/60 rounded-xl px-3 py-2 border border-white">
+                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">
+                    Jawabanmu:
+                  </p>
+                  <p className="text-sm font-bold text-slate-700 line-clamp-3">
+                    {item.selectedAnswer || (
+                      <span className="italic text-slate-400">
+                        (Tidak dijawab)
+                      </span>
+                    )}
+                  </p>
+                </div>
+              </div>
+
+              {/* Skor gradasi */}
+              <div className="flex flex-col items-center shrink-0 gap-1">
+                <div
+                  className={`w-14 h-14 rounded-2xl flex items-center justify-center font-black text-xl border-2 ${scoreStyle.bg} ${scoreStyle.color} ${scoreStyle.border}`}
+                >
+                  {pts}
+                </div>
+                <span
+                  className={`text-[9px] font-black uppercase tracking-wider ${scoreStyle.color}`}
+                >
+                  poin
+                </span>
+              </div>
+            </div>
+
+            {/* Tombol AI feedback untuk essay */}
+            <div className="mt-3 pt-3 border-t border-white/50 flex justify-end">
+              <button
+                onClick={() => handleAskAI(item, idx)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 ${
+                  activeFeedbackIndex === idx
+                    ? "bg-indigo-600 text-white"
+                    : "bg-white text-indigo-600 hover:bg-indigo-50 border border-indigo-200"
+                }`}
+              >
+                {activeFeedbackIndex === idx ? (
+                  <>
+                    <ChevronUp size={12} /> Tutup Feedback
+                  </>
+                ) : (
+                  <>
+                    <Bot size={12} /> Lihat Feedback AI
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+
+          {/* Panel feedback AI untuk essay */}
+          {activeFeedbackIndex === idx && (
+            <div className="bg-indigo-50 border-2 border-indigo-100 p-5 rounded-2xl ml-4 relative animate-fade-in">
+              <div className="absolute -top-2 left-8 w-4 h-4 bg-indigo-50 rotate-45 border-l-2 border-t-2 border-indigo-100"></div>
+              <div className="flex items-start gap-3 relative z-10">
+                <div className="bg-indigo-600 text-white p-2 rounded-xl shrink-0 mt-0.5">
+                  {isAILoading && !aiExplanations[idx] ? (
+                    <Loader2 size={16} className="animate-spin" />
+                  ) : (
+                    <Sparkles size={16} />
+                  )}
+                </div>
+                <div className="flex-1">
+                  <h4 className="font-black text-indigo-800 text-xs uppercase tracking-widest mb-2">
+                    Feedback dari AI Teacher
+                  </h4>
+                  {isAILoading && !aiExplanations[idx] ? (
+                    <p className="text-sm font-bold text-indigo-600 animate-pulse">
+                      AI sedang menganalisis jawabanmu...
+                    </p>
+                  ) : (
+                    <p className="text-sm font-bold text-indigo-900/80 leading-relaxed whitespace-pre-line">
+                      {aiExplanations[idx]}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // ======================================================
+    // TAMPILAN NON-ESSAY (Pilihan Ganda, True/False, dll)
+    // ======================================================
+    return (
+      <div key={idx} className="flex flex-col gap-2 animate-fade-in">
+        <div
+          className={`p-4 rounded-2xl flex items-center justify-between border-2 transition-all ${item.isCorrect ? "bg-emerald-50 border-emerald-100" : "bg-rose-50 border-rose-100"}`}
+        >
+          <div className="flex items-center gap-4 flex-1">
+            <span className="text-2xl shrink-0">
+              {item.isCorrect ? "✅" : "❌"}
+            </span>
+            <div className="flex-1">
+              <p className="font-black text-slate-700 uppercase leading-tight line-clamp-2 pr-2">
+                {item.question || `Soal ${idx + 1}`}
+              </p>
+              <p className="text-[10px] font-bold text-slate-400 mt-1">
+                Jawabanmu:{" "}
+                <span
+                  className={
+                    item.isCorrect ? "text-emerald-600" : "text-rose-500"
+                  }
+                >
+                  {item.displaySelected ||
+                    (item.selectedAnswer === true
+                      ? "Benar"
+                      : item.selectedAnswer === false
+                        ? "Salah"
+                        : item.selectedAnswer || "(Tidak dijawab)")}
+                </span>
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-col items-end shrink-0 gap-2">
+            <span
+              className={`font-black text-lg ${item.isCorrect ? "text-emerald-500" : "text-rose-500"}`}
+            >
+              {item.isCorrect ? `+${item.pointsEarned || 100}` : "0 Poin"}
+            </span>
+            {!item.isCorrect && (
+              <button
+                onClick={() => handleAskAI(item, idx)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 ${activeFeedbackIndex === idx ? "bg-indigo-600 text-white" : "bg-indigo-100 text-indigo-600 hover:bg-indigo-200"}`}
+              >
+                <Bot size={14} />{" "}
+                {activeFeedbackIndex === idx ? "Tutup" : "Tanya AI"}
+              </button>
+            )}
+          </div>
+        </div>
+
+        {!item.isCorrect && activeFeedbackIndex === idx && (
+          <div className="bg-indigo-50 border-2 border-indigo-100 p-5 rounded-2xl ml-4 sm:ml-12 relative animate-fade-in">
+            <div className="absolute -top-2 left-6 w-4 h-4 bg-indigo-50 rotate-45 border-l-2 border-t-2 border-indigo-100"></div>
+            <div className="flex items-start gap-3 relative z-10">
+              <div className="bg-indigo-600 text-white p-2 rounded-xl shrink-0">
+                {isAILoading && !aiExplanations[idx] ? (
+                  <Loader2 size={16} className="animate-spin" />
+                ) : (
+                  <Sparkles size={16} />
+                )}
+              </div>
+              <div>
+                <h4 className="font-black text-indigo-800 text-xs uppercase tracking-widest mb-1">
+                  AI Teacher Feedback
+                </h4>
+                <p className="text-sm font-bold text-indigo-900/80 leading-relaxed whitespace-pre-line">
+                  {isAILoading && !aiExplanations[idx] ? (
+                    <span className="animate-pulse">
+                      Sedang menganalisis...
+                    </span>
+                  ) : (
+                    aiExplanations[idx]
+                  )}
+                </p>
+                {item.correctAnswer !== undefined && (
+                  <p className="text-xs font-black text-emerald-600 mt-2 italic">
+                    Jawaban Benar:{" "}
+                    {item.correctAnswer === true
+                      ? "Benar"
+                      : item.correctAnswer === false
+                        ? "Salah"
+                        : item.correctAnswer}
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
   };
 
   return (
@@ -119,100 +395,89 @@ ${missing}
 
       <div className="relative z-10 w-full max-w-2xl flex flex-col gap-8">
         <div className="text-center">
-          <div className="text-6xl md:text-8xl mb-4 drop-shadow-2xl animate-bounce">🏆</div>
+          <div className="text-6xl md:text-8xl mb-4 drop-shadow-2xl animate-bounce">
+            🏆
+          </div>
           <h1 className="text-4xl md:text-5xl font-black text-white tracking-tight drop-shadow-md italic uppercase">
             Mantap, {playerName}!
           </h1>
-          <p className="text-indigo-300 font-black uppercase tracking-[0.3em] text-xs mt-2">Permainan Telah Berakhir</p>
+          <p className="text-indigo-300 font-black uppercase tracking-[0.3em] text-xs mt-2">
+            Permainan Telah Berakhir
+          </p>
         </div>
 
         <div className="bg-white p-8 md:p-10 rounded-[3.5rem] shadow-2xl relative border-[12px] border-white/10 text-center">
           <div className="flex justify-center gap-2 mb-6">
             {[...Array(5)].map((_, i) => (
-              <span key={i} className={`text-4xl transition-all duration-500 ${i < starsCount ? 'text-amber-400 drop-shadow-[0_0_15px_rgba(251,191,36,0.8)] scale-110' : 'text-slate-200 grayscale opacity-50'}`}>⭐</span>
+              <span
+                key={i}
+                className={`text-4xl transition-all duration-500 ${i < starsCount ? "text-amber-400 drop-shadow-[0_0_15px_rgba(251,191,36,0.8)] scale-110" : "text-slate-200 grayscale opacity-50"}`}
+              >
+                ⭐
+              </span>
             ))}
           </div>
 
-          <h2 className="text-slate-400 font-black uppercase tracking-widest text-xs mb-2">Total Score</h2>
-          <h1 className="text-8xl font-black text-indigo-600 mb-6 drop-shadow-sm tracking-tighter">{score}</h1>
+          <h2 className="text-slate-400 font-black uppercase tracking-widest text-xs mb-2">
+            Total Score
+          </h2>
+          <h1 className="text-8xl font-black text-indigo-600 mb-6 drop-shadow-sm tracking-tighter">
+            {score}
+          </h1>
 
           <div className="bg-indigo-50 border-2 border-indigo-100 rounded-3xl p-5 flex items-center justify-between mb-8">
-            <span className="font-black text-slate-500 uppercase text-xs tracking-wider">Akurasi Jawaban</span>
-            <span className={`font-black text-3xl ${accuracy >= 70 ? 'text-emerald-500' : 'text-amber-500'}`}>{accuracy}%</span>
+            <span className="font-black text-slate-500 uppercase text-xs tracking-wider">
+              Akurasi Jawaban
+            </span>
+            <span
+              className={`font-black text-3xl ${accuracy >= 70 ? "text-emerald-500" : "text-amber-500"}`}
+            >
+              {accuracy}%
+            </span>
           </div>
+
+          {/* Label khusus jika ini essay */}
+          {isEssaySession && (
+            <div className="bg-indigo-50 border border-indigo-100 rounded-2xl px-4 py-3 mb-6 flex items-center gap-3">
+              <Bot size={16} className="text-indigo-500 shrink-0" />
+              <p className="text-xs font-bold text-indigo-600 text-left">
+                Skor di atas adalah hasil penilaian AI berdasarkan kualitas
+                jawabanmu. Klik <strong>Lihat Feedback AI</strong> di tiap soal
+                untuk melihat analisis lengkap.
+              </p>
+            </div>
+          )}
 
           {breakdown && breakdown.length > 0 && (
             <div className="mt-8 mb-8 text-left border-t-2 border-slate-100 pt-8">
-              <h3 className="text-slate-800 font-black text-xl italic uppercase tracking-tighter mb-4">Riwayat Jawaban</h3>
-              <div className="space-y-4 max-h-96 overflow-y-auto pr-2 custom-scrollbar">
-                {breakdown.map((item, idx) => (
-                  <div key={idx} className="flex flex-col gap-2 animate-fade-in">
-                    <div className={`p-4 rounded-2xl flex items-center justify-between border-2 transition-all ${item.isCorrect ? 'bg-emerald-50 border-emerald-100' : 'bg-rose-50 border-rose-100'}`}>
-                      <div className="flex items-center gap-4 flex-1">
-                        <span className="text-2xl shrink-0">{item.isCorrect ? '✅' : '❌'}</span>
-                        <div className="flex-1">
-                          <p className="font-black text-slate-700 uppercase leading-tight line-clamp-2 pr-2">
-                            {item.question || `Soal ${idx + 1}`}
-                          </p>
-                          <p className="text-[10px] font-bold text-slate-400 mt-1">
-                            {/* 🛠️ SINKRONISASI LABEL JAWABAN USER MENGGUNAKAN DISPLAYSELECTED */}
-                            Jawabanmu: <span className={item.isCorrect ? 'text-emerald-600' : 'text-rose-500'}>
-                              {item.displaySelected || (item.selectedAnswer === true ? "Benar" : item.selectedAnswer === false ? "Salah" : item.selectedAnswer || "(Tidak dijawab)")}
-                            </span>
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="flex flex-col items-end shrink-0 gap-2">
-                        <span className={`font-black text-lg ${item.isCorrect ? 'text-emerald-500' : 'text-rose-500'}`}>
-                          {item.isCorrect ? `+${item.pointsEarned || 100}` : '0 Poin'}
-                        </span>
-                        {!item.isCorrect && (
-                          <button
-                            onClick={() => handleAskAI(item, idx)}
-                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 ${activeFeedbackIndex === idx ? 'bg-indigo-600 text-white' : 'bg-indigo-100 text-indigo-600 hover:bg-indigo-200'}`}
-                          >
-                            <Bot size={14} /> {activeFeedbackIndex === idx ? 'Tutup' : 'Tanya AI'}
-                          </button>
-                        )}
-                      </div>
-                    </div>
-
-                    {!item.isCorrect && activeFeedbackIndex === idx && (
-                      <div className="bg-indigo-50 border-2 border-indigo-100 p-5 rounded-2xl ml-4 sm:ml-12 relative animate-fade-in">
-                        <div className="absolute -top-2 left-6 w-4 h-4 bg-indigo-50 rotate-45 border-l-2 border-t-2 border-indigo-100"></div>
-                        <div className="flex items-start gap-3 relative z-10">
-                          <div className="bg-indigo-600 text-white p-2 rounded-xl shrink-0">
-                            {isAILoading && !aiExplanations[idx] ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
-                          </div>
-                          <div>
-                            <h4 className="font-black text-indigo-800 text-xs uppercase tracking-widest mb-1">AI Teacher Feedback</h4>
-                            <p className="text-sm font-bold text-indigo-900/80 leading-relaxed">
-                              {isAILoading && !aiExplanations[idx] ? <span className="animate-pulse">Sedang menganalisis...</span> : aiExplanations[idx]}
-                            </p>
-                            {/* 🛠️ SINKRONISASI LABEL KUNCI JAWABAN */}
-                            {item.correctAnswer !== undefined && (
-                              <p className="text-xs font-black text-emerald-600 mt-2 italic">
-                                Jawaban Benar: {item.correctAnswer === true ? "Benar" : item.correctAnswer === false ? "Salah" : item.correctAnswer}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ))}
+              <h3 className="text-slate-800 font-black text-xl italic uppercase tracking-tighter mb-4">
+                {isEssaySession ? "Penilaian AI per Soal" : "Riwayat Jawaban"}
+              </h3>
+              <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
+                {breakdown.map((item, idx) => renderBreakdownItem(item, idx))}
               </div>
             </div>
           )}
 
           <div className="flex flex-col sm:flex-row gap-3">
-            <button onClick={() => navigate("/student/join")} className="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-black text-xl py-5 rounded-3xl shadow-[0_8px_0_rgb(67,56,202)] transition-all active:translate-y-2 active:shadow-none">Main Lagi 🕹️</button>
-            <button onClick={() => navigate("/student/dashboard")} className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-500 font-black text-sm py-4 rounded-3xl transition-all">Ke Dashboard</button>
+            <button
+              onClick={() => navigate("/student/join")}
+              className="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-black text-xl py-5 rounded-3xl shadow-[0_8px_0_rgb(67,56,202)] transition-all active:translate-y-2 active:shadow-none"
+            >
+              Main Lagi 🕹️
+            </button>
+            <button
+              onClick={() => navigate("/student/dashboard")}
+              className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-500 font-black text-sm py-4 rounded-3xl transition-all"
+            >
+              Ke Dashboard
+            </button>
           </div>
         </div>
-        <p className="mt-4 text-center text-white/30 font-black text-[10px] uppercase tracking-[0.5em]">WordIT Engine • ITS Surabaya</p>
+        <p className="mt-4 text-center text-white/30 font-black text-[10px] uppercase tracking-[0.5em]">
+          WordIT Engine • ITS Surabaya
+        </p>
       </div>
     </div>
-  )
+  );
 }
