@@ -246,7 +246,7 @@ export default function AIQuizGenerator({
                   </div>
                   <div className="flex-1">
                     <p className="font-bold text-slate-200 text-base">
-                      {q.front || q.word || q.question || q.leftItem}
+                      {q.question || q.front || q.hint || q.leftItem || q.word}
                     </p>
 
                     {/* Ekstra Preview untuk Pilihan Ganda */}
@@ -277,19 +277,7 @@ export default function AIQuizGenerator({
                       </div>
                     )}
 
-                    {/* ✅ AI-08: Ekstra Preview untuk MATCHING */}
-                    {(q.leftItem || q.rightItem) && !q.question && (
-                      <div className="mt-3 flex items-center gap-2 flex-wrap">
-                        <span className="text-[10px] px-2 py-1 bg-indigo-500/20 text-indigo-300 rounded-lg border border-indigo-500/30">
-                          ← {q.leftItem || "-"}
-                        </span>
-                        <span className="text-slate-500">↔</span>
-                        <span className="text-[10px] px-2 py-1 bg-emerald-500/20 text-emerald-300 rounded-lg border border-emerald-500/30">
-                          {q.rightItem || "-"} →
-                        </span>
-                      </div>
-                    )}
-
+                    {/* Matching extra preview removed to avoid redundancy */}
                     <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest mt-3 bg-emerald-400/10 inline-block px-3 py-1 rounded-full border border-emerald-400/20">
                       Jawaban:{" "}
                       {q.back ||

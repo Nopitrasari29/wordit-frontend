@@ -102,16 +102,16 @@
 - [x] **AI-05**: Auto-quiz Generation (Topic to Quiz)
   - [x] Input topik + level → Groq generate soal dalam < 8 detik.
   - [x] Validasi JSON mutlak agar tidak ada halusinasi (khusus Anagram/Hangman).
-  - [ ] **NOTED**: Pastikan jumlah soal akurat sesuai input user (tambahkan looping/retry jika AI memberikan soal kurang dari jumlah request). ✅
+  - [x] **NOTED**: Pastikan jumlah soal akurat sesuai input user (tambahkan looping/retry jika AI memberikan soal kurang dari jumlah request). ✅
 - [x] **AI-06**: AI Feedback Per Soal
   - [x] Penjelasan edukatif < 100 kata untuk jawaban salah dalam < 5 detik via Groq/Gemini.
 - [x] **AI-07**: Smart Grading (Essay)
   - [x] AI menilai jawaban essay, return skor 0-100 + justifikasi. Target akurasi > 85%.
-- [ ] **AI-08**: Prompt Engineering & Tuning
-  - [ ] Optimasi prompt agar respons konsisten dan minimalisir halusinasi data.
-  - [ ] **NOTED**: Perbaiki mapping prompt khusus untuk format template MATCHING agar sesuai struktur `pairs` (kiri-kanan).
-- [ ] **AI-09**: AI Quota Monitoring
-  - [ ] Logging penggunaan API & sistem alert jika mendekati limit harian.
+- [x] **AI-08**: Prompt Engineering & Tuning
+  - [x] Optimasi prompt agar respons konsisten dan minimalisir halusinasi data.
+  - [x] **NOTED**: Perbaiki mapping prompt khusus untuk format template MATCHING agar sesuai struktur `pairs` (kiri-kanan).
+- [x] **AI-09**: AI Quota Monitoring
+  - [x] Logging penggunaan API & sistem alert jika mendekati limit harian.
 - [x] **AI-10**: Adaptive Difficulty (Dynamic Gameplay)
   - [x] Sistem otomatis: Naik ke Hard jika accuracy > 80%, turun ke Easy jika < 50%.
 
@@ -140,22 +140,22 @@
   - [x] **`src/modules/ai/smart-grading.service.ts` [NEW FILE]**: File khusus menangani logika AI Smart Grading untuk tipe Essay.
 
 ### III. Frontend (FE) - UI, UX & Alerts
-- [ ] **FE-17**: Halaman AI Quiz Generator (Full Flow)
+- [x] **FE-17**: Halaman AI Quiz Generator (Full Flow)
   - [x] UI Input topik, preview hasil AI, edit konten, & banner disclaimer AI.
-  - [ ] **NOTED**: AI masih belum mematuhi strict count soal (misal minta 10 keluar 5).
-- [ ] **FE-18**: Feedback AI di Result Page
-  - [ ] Komponen penjelasan AI yang muncul di breakdown kuis untuk tiap soal salah (Saat ini masih pakai teks dummy simulasi).
-- [ ] **FE-19**: Analytics Dashboard Siswa (Personal Growth & Gamification)
-  - [ ] **Konsep**: Fokus memotivasi siswa secara individu dengan melihat progres mereka.
-  - [ ] **Statistik Utama**: Hubungkan `AnalyticsStudentPage.tsx` dengan database untuk menampilkan *Total Kuis Dimainkan*, *Rata-Rata Akurasi*, dan *Total Waktu Belajar*.
-  - [ ] **Riwayat (History)**: Buat daftar/tabel riwayat kuis terakhir yang dimainkan lengkap dengan skor dan tanggal.
-  - [ ] **Badges (Gamification)**: Siswa bisa mendapat medali otomatis (misal: Emas untuk skor 100, Kilat untuk waktu < 1 menit, Rajin untuk > 5 game).
-- [ ] **FE-20**: Analytics Dashboard Guru (Zero Setup Auto-Grouping)
+  - [x] **NOTED**: AI masih belum mematuhi strict count soal (misal minta 10 keluar 5).
+- [x] **FE-18**: Feedback AI di Result Page
+  - [x] Komponen penjelasan AI yang muncul di breakdown kuis untuk tiap soal salah (Saat ini masih pakai teks dummy simulasi).
+- [x] **FE-19**: Analytics Dashboard Siswa (Personal Growth & Gamification)
+  - [x] **Konsep**: Fokus memotivasi siswa secara individu dengan melihat progres mereka.
+  - [x] **Statistik Utama**: Hubungkan `AnalyticsStudentPage.tsx` dengan database untuk menampilkan *Total Kuis Dimainkan*, *Rata-Rata Akurasi*, dan *Total Waktu Belajar*.
+  - [x] **Riwayat (History)**: Buat daftar/tabel riwayat kuis terakhir yang dimainkan lengkap dengan skor dan tanggal.
+  - [x] **Badges (Gamification)**: Siswa bisa mendapat medali otomatis (misal: Emas untuk skor 100, Kilat untuk waktu < 1 menit, Rajin untuk > 5 game).
+- [x] **FE-20**: Analytics Dashboard Guru (Zero Setup Auto-Grouping)
   - [x] **Bug Fix**: Memperbaiki masalah blank page saat menekan tombol "Lihat Detail" pada daftar kelas atau saat menekan tombol "Kembali".
-  - [ ] **Bug Fix**: Pastikan hanya data siswa (role STUDENT) yang dimasukkan ke dalam daftar, jangan sertakan akun Guru yang ikut mencoba kuis.
-  - [ ] **Konsep Auto-Grouping**: Guru tidak perlu repot membuat kelas dan menginput siswa manual. Sistem memotong teks sebelum garis bawah `_` pada nama pemain (Contoh: input `3A_Budi` otomatis membuat grup `3A`).
-  - [ ] **Halaman Daftar Kelas (`ClassPage.tsx`)**: Tampilkan kartu kelompok (misal: Card Kelas 3A, Kelas 3B) yang berisi Total Siswa dan Rata-rata Skor per kelompok.
-  - [ ] **Halaman Detail Kelas (`AnalyticsClassPage.tsx`)**: Menampilkan grafik performa kuis yang dimainkan oleh kelas spesifik tersebut, serta list "Siswa Perlu Perhatian Khusus" (skor < 60) lengkap dengan tombol tindak lanjut.
+  - [x] **Bug Fix**: Pastikan hanya data siswa (role STUDENT) yang dimasukkan ke dalam daftar, jangan sertakan akun Guru yang ikut mencoba kuis.
+  - [x] **Konsep Auto-Grouping**: Guru tidak perlu repot membuat kelas dan menginput siswa manual. Sistem memotong teks sebelum garis bawah `_` pada nama pemain (Contoh: input `3A_Budi` otomatis membuat grup `3A`).
+  - [x] **Halaman Daftar Kelas (`ClassPage.tsx`)**: Tampilkan kartu kelompok (misal: Card Kelas 3A, Kelas 3B) yang berisi Total Siswa dan Rata-rata Skor per kelompok.
+  - [x] **Halaman Detail Kelas (`AnalyticsClassPage.tsx`)**: Menampilkan grafik performa kuis yang dimainkan oleh kelas spesifik tersebut, serta list "Siswa Perlu Perhatian Khusus" (skor < 60) lengkap dengan tombol tindak lanjut.
 - [x] **FE-21**: Standard Assessment - Multiple Choice (Semua Jenjang)
   - [x] **[NEW FILE] `src/components/game/builder/MultipleChoiceBuilder.tsx`**: Form pembuat soal, 4 opsi jawaban, penentu kunci jawaban.
   - [x] **[NEW FILE] `src/components/game/engines/MultipleChoiceEngine.tsx`**: UI kuis bergaya modern saat dimainkan (timer, highlight klik).
@@ -165,42 +165,64 @@
 - [x] **FE-23**: Standard Assessment - Drag & Drop / Matching (Semua Jenjang)
   - [x] **[NEW FILE] `src/components/game/builder/MatchingBuilder.tsx`**: Form pasangan jawaban (Kiri dan Kanan).
   - [x] **[NEW FILE] `src/components/game/engines/MatchingEngine.tsx`**: Implementasi library `@dnd-kit` untuk fitur tarik-pasang.
-  - [ ] **NOTED**: AI Generator untuk Matching masih gagal mapping format `pairs` kiri/kanan.
+  - [x] **NOTED**: AI Generator untuk Matching masih gagal mapping format `pairs` kiri/kanan.
 - [x] **FE-24**: Standard Assessment - Smart Essay (Semua Jenjang)
   - [x] **[NEW FILE] `src/components/game/builder/EssayBuilder.tsx`**: Form soal & Kata Kunci untuk patokan nilai AI.
   - [x] **[NEW FILE] `src/components/game/engines/EssayEngine.tsx`**: Textarea jawaban siswa & trigger AI Grading di akhir soal.
-  - [ ] **NOTED**: AI Grading di Essay Engine belum konek ke API real backend, masih pakai mock function lokal.
+  - [x] **NOTED**: AI Grading di Essay Engine belum konek ke API real backend, masih pakai mock function lokal.
 - [x] **FE-NEW-06**: Update Main Components & Routing
   - [x] **`src/pages/creator/CreateGamePage.tsx`**: Tambah 4 opsi template baru ke menu pemilihan guru.
   - [x] **`src/components/game/GameEngineSelector.tsx`**: Arahkan routing player agar memuat *Engine* yang tepat sesuai tipe kuis.
   - [x] **Bug Fix**: Sinkronisasi module router dan renderer (termasuk prop `onIntermission`).
-- [ ] **FE-NEW-06**: Admin Navigation Handling
-  - [ ] Memastikan Dashboard Admin otomatis terupdate (refetch data) saat status user berubah via Telegram.
-- [ ] **FE-NEW-07**: Real-time Admin Alerts (Badge & Toast)
-  - [ ] **Badge Count**: Angka merah pada menu "Users" untuk jumlah status PENDING.
-  - [ ] **Live Toast**: Notifikasi pop-up instan via `react-hot-toast` saat ada guru daftar.
+- [x] **FE-NEW-06**: Admin Navigation Handling
+  - [x] Memastikan Dashboard Admin otomatis terupdate (refetch data) saat status user berubah via Telegram.
+- [x] **FE-NEW-07**: Real-time Admin Alerts (Badge & Toast)
+  - [x] **Badge Count**: Angka merah pada menu "Users" untuk jumlah status PENDING.
+  - [x] **Live Toast**: Notifikasi pop-up instan via `react-hot-toast` saat ada guru daftar.
 
 ### IV. QA & Validation
-- [ ] **QA-06**: Stress Test AI Generator
-  - [ ] Menguji 10 topik berbeda secara simultan untuk memastikan JSON tidak break.
-- [ ] **QA-07**: End-to-End Telegram Approval Flow 📱 [REVISED]
-  - [ ] Uji coba: Guru Register -> Bot kirim pesan ke Admin -> Admin klik Approve di HP -> Status di DB & Web berubah otomatis.
-- [ ] **QA-08**: Validation Analytics Accuracy
-  - [ ] Memastikan hitungan rata-rata di dashboard FE sesuai dengan data asli di PostgreSQL.
+- [x] **QA-06**: Stress Test AI Generator
+  - [x] Menguji 10 topik berbeda secara simultan untuk memastikan JSON tidak break.
+- [x] **QA-07**: End-to-End Telegram Approval Flow 📱 [REVISED]
+  - [x] Uji coba: Guru Register -> Bot kirim pesan ke Admin -> Admin klik Approve di HP -> Status di DB & Web berubah otomatis.
+- [x] **QA-08**: Validation Analytics Accuracy
+  - [x] Memastikan hitungan rata-rata di dashboard FE sesuai dengan data asli di PostgreSQL.
 
 ---
 
-## 🚀 Sprint 4: Polish, Responsif & Deployment (To Do)
-*(Moodle/LTI TIDAK dikerjakan — ini project lanjutan)*
+## 🚀 Sprint 4: Moodle LTI Integration & Deployment (To Do)
+*(Fokus Utama: Hosting ke Server Kampus & Integrasi Moodle LTI 1.3)*
 
-- [ ] **FE-21**: Seluruh halaman responsif di semua perangkat (360px, 768px, 1280px).
-- [ ] **FE-22**: Dark mode / accessibility improvements (opsional).
-- [ ] **DEPLOY-01**: Setup hosting ke **server departemen**.
-  - [ ] Koordinasi dengan Bu Rizka / Pak Ridho / admin lab untuk akses server.
-  - [ ] Setup environment: Docker, PostgreSQL, Redis di server.
-  - [ ] Konfigurasi domain/subdomain agar bisa diakses via internet.
-  - [ ] Setup CI/CD sederhana atau deploy manual via SSH.
-- [ ] **QA-07**: Menguji seluruh flow E2E di environment production (server dept).
+### I. Local LTI 1.3 Simulation (Tahap 1 - Saat Ini)
+- [/] **LTI-01**: Persiapan Local Tunneling
+  - [/] Setup **Ngrok** untuk mengekspos backend `localhost:3000` dan frontend `localhost:5173` ke HTTPS publik.
+  - [ ] Buat *sandbox environment* menggunakan **MoodleCloud** gratis sebagai kelinci percobaan.
+- [/] **LTI-02**: Konfigurasi LTI Provider di Backend
+  - [/] Install library `ltijs` atau sistem OAuth2 LTI 1.3 Advantage.
+  - [ ] Generate LTI Keys & Endpoints (Login URL, Redirect URI) lalu daftarkan ke MoodleCloud.
+- [ ] **LTI-03**: SSO (Single Sign-On)
+  - [ ] Buat sistem sesi otomatis berbasis identitas siswa dari Moodle tanpa perlu halaman Register/Login WordIT.
+- [ ] **LTI-04**: Context Sync (Auto-Grouping)
+  - [ ] Tangkap `context_id` dari Moodle untuk memisahkan siswa sesuai kelas/mata kuliah asli mereka secara murni (menggantikan sistem Regex).
+- [ ] **LTI-05**: Grade Passback (Sinkronisasi Nilai)
+  - [ ] Integrasikan `finishGame()` agar melempar nilai akhir otomatis ke Gradebook Moodle.
+
+### II. Deployment & Hosting (Tahap 2 - Setelah Akses Diberikan)
+- [ ] **DEPLOY-01**: Koordinasi Akses Server
+  - [ ] Minta akses VPS/Server ke Bu Rizka / Pak Ridho / admin lab.
+  - [ ] Tentukan domain/subdomain resmi (misal: wordit.dti.its.ac.id).
+- [ ] **DEPLOY-02**: Setup Environment Server
+  - [ ] Instalasi Docker & Docker Compose di server.
+  - [ ] Setup Database PostgreSQL & Redis di server.
+- [ ] **DEPLOY-03**: Build & Launch
+  - [ ] Konfigurasi Nginx Reverse Proxy & SSL (HTTPS) agar domain aman & publik.
+  - [ ] Deploy Backend Node.js & Frontend React.
+
+### III. UI Polish & UAT
+- [ ] **FE-21**: Responsivitas Layar Penuh
+  - [ ] Pastikan arena bermain (terutama Matching & Anagram) rapi saat dibuka di HP (360px) dan Tablet.
+- [ ] **QA-10**: End-to-End Production Test
+  - [ ] Uji coba menyeluruh integrasi LTI 1.3 di server asli milik Departemen/Kampus.
 
 ---
 
@@ -219,8 +241,8 @@
 
 | # | Keputusan | Detail |
 |---|-----------|--------|
-| 1 | **Moodle TIDAK jadi** | Integrasi LTI adalah project lanjutan, bukan scope ini |
-| 2 | Prioritas standalone | Fokus full ke web app mandiri |
+| 1 | **Integrasi LTI Moodle** | Menjadi fokus utama untuk Sprint 4 |
+| 2 | Prioritas standalone | Fokus full ke web app mandiri sebelum dikaitkan via LTI |
 | 3 | Target per jenjang | SD selesai dulu → SMP → SMA |
 | 4 | Sistem approval Teacher | PENDING sampai Admin approve. Admin tidak bisa register sendiri |
 | 5 | Satu jenjang per Teacher | Radio button, bukan multi-select |

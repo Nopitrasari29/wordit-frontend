@@ -65,8 +65,8 @@ export default function AnalyticsStudentPage() {
       setIsLoading(true);
       try {
         // 🚀 Memanggil endpoint real data
-        const response = await api.get("/scores/analytics/student");
-        const data = response.data;
+        const response = await api.get("/analytics/student/me");
+        const data = response.data.data;
 
         // ✅ SINKRONISASI: Petakan data overview dari Backend
         setStats({

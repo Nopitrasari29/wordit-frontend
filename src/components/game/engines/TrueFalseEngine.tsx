@@ -110,7 +110,7 @@ export default function TrueFalseEngine({
     // 🚀 Realtime Update
     if (roomCode)
       socket.emit("updateScore", { code: roomCode, score: newScore });
-    submitAnswer(realGameId, currentIndex, answerChoice, newScore).catch(
+    submitAnswer(realGameId, currentIndex, String(answerChoice), newScore).catch(
       () => {},
     );
 

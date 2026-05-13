@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Bot, Sparkles, Loader2, ChevronDown, ChevronUp } from "lucide-react";
+import { Bot, Sparkles, Loader2, ChevronUp } from "lucide-react";
 import { getFeedbackForQuestion } from "../services/ai.service";
 
 export default function ResultPage() {
@@ -155,9 +155,18 @@ export default function ResultPage() {
               ? "Salah"
               : item.correctAnswer || "Tidak tersedia";
 
+        const studentAnswer =
+          item.displaySelected ||
+          (item.selectedAnswer === true
+            ? "Benar"
+            : item.selectedAnswer === false
+              ? "Salah"
+              : item.selectedAnswer || "(Tidak dijawab)");
+
         const feedbackText = await getFeedbackForQuestion(
           questionText,
           correctAnswer,
+          studentAnswer
         );
 
         const explanation = `🤖 AI Teacher Feedback\n\n${feedbackText}`;

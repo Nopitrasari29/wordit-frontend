@@ -31,10 +31,12 @@ export const generateGameWithAI = async (
 export const getFeedbackForQuestion = async (
   questionText: string,
   correctAnswer: string,
+  studentAnswer?: string,
 ): Promise<string> => {
   const response = await api.post("/ai/get-feedback", {
     questionText,
     correctAnswer,
+    studentAnswer,
   });
   return (
     response.data.data?.feedback ||

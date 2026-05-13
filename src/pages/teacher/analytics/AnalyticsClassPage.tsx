@@ -33,25 +33,36 @@ export default function AnalyticsClassPage({
 
   const [analyticsData, setAnalyticsData] = useState<any>(data || null);
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedGameId, setSelectedGameId] = useState<string>("");
 
-  // Jika standalone (tidak ada prop data), fetch dari API berdasarkan game pertama guru
+  // Update default selected game if games prop changes
+  useEffect(() => {
+    if (games && games.length > 0 && !selectedGameId) {
+      setSelectedGameId(games[0].id);
+    }
+  }, [games]);
+
+  // Jika standalone (tidak ada prop data), fetch dari API berdasarkan game yang dipilih guru
   useEffect(() => {
     if (data) {
       setAnalyticsData(data);
       return;
     }
-    if (games && games.length > 0) {
-      // Jika ada prop games (dari TeacherDashboard), ambil analytics game pertama
+    if (games && games.length > 0 && selectedGameId) {
+      // Jika ada prop games (dari TeacherDashboard), ambil analytics game yang dipilih
       const fetchFromGames = async () => {
         setIsLoading(true);
         try {
-          const firstGame = games[0];
-          const res = await api.get(`/analytics/game/${firstGame.id}`);
+          const res = await api.get(`/analytics/game/${selectedGameId}`);
           if (res.data.status === "success") {
             setAnalyticsData(res.data.data);
+          } else {
+             // Reset jika gagal
+             setAnalyticsData(null);
           }
         } catch (e) {
           console.error("Gagal memuat analytics:", e);
+          setAnalyticsData(null);
         } finally {
           setIsLoading(false);
         }
@@ -102,7 +113,7 @@ export default function AnalyticsClassPage({
       }
     };
     fetchStandalone();
-  }, [data, games, groupFilter]);
+  }, [data, games, groupFilter, selectedGameId]);
 
   if (isLoading) {
     return (
@@ -142,6 +153,32 @@ export default function AnalyticsClassPage({
           <h2 className="text-2xl font-black text-slate-800">
             Detail Kelas <span className="text-indigo-600">{groupFilter}</span>
           </h2>
+        </div>
+      )}
+
+      {/* ✅ FIX: Dropdown untuk memilih game jika berada di Teacher Dashboard */}
+      {games && games.length > 0 && (
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-50 p-4 md:p-6 rounded-[2rem] border border-slate-100 mb-6">
+          <div className="flex items-center gap-3">
+             <div className="w-10 h-10 bg-indigo-100 text-indigo-600 rounded-xl flex items-center justify-center text-xl">
+               🕹️
+             </div>
+             <div>
+               <h3 className="font-black text-slate-700 text-sm">Pilih Game</h3>
+               <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Untuk melihat detail analitik</p>
+             </div>
+          </div>
+          <select 
+            value={selectedGameId}
+            onChange={(e) => setSelectedGameId(e.target.value)}
+            className="bg-white border-2 border-indigo-100 rounded-xl px-4 py-3 font-bold text-slate-700 outline-none focus:border-indigo-400 min-w-[200px]"
+          >
+            {games.map((g) => (
+              <option key={g.id} value={g.id}>
+                {g.title}
+              </option>
+            ))}
+          </select>
         </div>
       )}
 

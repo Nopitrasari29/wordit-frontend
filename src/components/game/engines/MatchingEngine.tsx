@@ -5,7 +5,7 @@ import socket from "../../../hooks/useSocket";
 import { toast } from "react-hot-toast";
 import { Link2, CheckCircle2 } from "lucide-react";
 
-export default function MatchingEngine({ data, onGameOver }: { data: any, onGameOver?: any, onIntermission?: () => void }) {
+export default function MatchingEngine({ data, onGameOver, onIntermission }: { data: any, onGameOver?: any, onIntermission?: () => void }) {
     const navigate = useNavigate();
     const realGameId = data?.id || data?._id;
     const roomCode = data?.shareCode || "";
@@ -91,10 +91,10 @@ export default function MatchingEngine({ data, onGameOver }: { data: any, onGame
 
                 if (roomCode) socket.emit("updateScore", { code: roomCode, score: newScore });
 
-                submitAnswer(realGameId, selectedLeft.originalIndex, {
+                submitAnswer(realGameId, selectedLeft.originalIndex, JSON.stringify({
                     leftItem: selectedLeft.text,
                     rightItem: selectedRight.text
-                }, newScore).catch(() => { });
+                }), newScore).catch(() => { });
 
                 // Selesai jika jumlah match = jumlah pairs
                 if (matchesHistoryRef.current.filter(m => m.isCorrect).length === pairs.length) {
