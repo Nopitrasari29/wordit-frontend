@@ -32,6 +32,29 @@ export default function GameCard({ game, onDelete, onPublish }: GameCardProps) {
                 {game.educationLevel}
               </span>
             </div>
+            {/* Metadata Badges */}
+            <div className="flex flex-wrap gap-2 mt-2">
+              {game.classGrade && (
+                <span className="bg-purple-50 text-purple-600 px-2 py-0.5 rounded-md text-[10px] font-bold border border-purple-100">
+                  Kelas {game.classGrade}
+                </span>
+              )}
+              {game.subject && (
+                <span className="bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded-md text-[10px] font-bold border border-emerald-100">
+                  {game.subject}
+                </span>
+              )}
+              {game.chapter && (
+                <span className="bg-amber-50 text-amber-600 px-2 py-0.5 rounded-md text-[10px] font-bold border border-amber-100">
+                  Bab: {game.chapter}
+                </span>
+              )}
+              {game.topic && (
+                <span className="bg-sky-50 text-sky-600 px-2 py-0.5 rounded-md text-[10px] font-bold border border-sky-100">
+                  {game.topic}
+                </span>
+              )}
+            </div>
           </div>
         </div>
       </div>

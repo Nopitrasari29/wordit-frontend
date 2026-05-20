@@ -8,6 +8,7 @@ type Props = {
     disabled?: boolean;
     // ✅ FIX 1: Daftarkan isFullWidth di sini agar RegisterPage tidak error
     isFullWidth?: boolean; 
+    variant?: string;
 };
 
 export default function Button({

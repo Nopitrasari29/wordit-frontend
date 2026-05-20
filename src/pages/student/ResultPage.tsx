@@ -20,17 +20,10 @@ export default function ResultPage() {
     [key: number]: string;
   }>({});
 
-  // Deteksi apakah ini sesi essay (berdasarkan struktur breakdown)
+  // Deteksi apakah ini sesi essay (berdasarkan ketiadaan isCorrect)
   const isEssaySession =
     breakdown.length > 0 &&
-    breakdown.some(
-      (item) =>
-        typeof item.isCorrect === "undefined" ||
-        (item.pointsEarned !== undefined &&
-          item.pointsEarned > 0 &&
-          item.pointsEarned < 100 &&
-          typeof item.isCorrect === "undefined"),
-    );
+    breakdown.some((item) => typeof item.isCorrect === "undefined");
 
   useEffect(() => {
     const savedName = sessionStorage.getItem("playerName") || "Player";
@@ -186,12 +179,7 @@ export default function ResultPage() {
 
   // Render satu item breakdown — auto-detect essay vs pilihan ganda
   const renderBreakdownItem = (item: any, idx: number) => {
-    const isEssayItem =
-      typeof item.isCorrect === "undefined" ||
-      (item.selectedAnswer !== true &&
-        item.selectedAnswer !== false &&
-        item.pointsEarned !== 0 &&
-        item.pointsEarned !== 100);
+    const isEssayItem = typeof item.isCorrect === "undefined";
     const pts = item.pointsEarned ?? (item.isCorrect ? 100 : 0);
     const scoreStyle = getScoreStyle(pts);
 
@@ -332,7 +320,7 @@ export default function ResultPage() {
                       ? "Benar"
                       : item.selectedAnswer === false
                         ? "Salah"
-                        : item.selectedAnswer || "(Tidak dijawab)")}
+                        : item.selectedAnswer || item.word || "(Tidak dijawab)")}
                 </span>
               </p>
             </div>
@@ -430,9 +418,12 @@ export default function ResultPage() {
           <h2 className="text-slate-400 font-black uppercase tracking-widest text-xs mb-2">
             Total Score
           </h2>
-          <h1 className="text-8xl font-black text-indigo-600 mb-6 drop-shadow-sm tracking-tighter">
-            {score}
-          </h1>
+          <div className="flex items-baseline justify-center gap-2 mb-6 drop-shadow-sm">
+            <h1 className="text-8xl font-black text-indigo-600 tracking-tighter">
+              {score !== undefined && score !== null && !isNaN(score) ? score.toLocaleString() : "0"}
+            </h1>
+            <span className="text-3xl font-black text-indigo-400 uppercase tracking-widest">XP</span>
+          </div>
 
           <div className="bg-indigo-50 border-2 border-indigo-100 rounded-3xl p-5 flex items-center justify-between mb-8">
             <span className="font-black text-slate-500 uppercase text-xs tracking-wider">

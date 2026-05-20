@@ -1,3 +1,7 @@
+type Props = {
+    templateType: string;
+};
+
 export default function TemplatePreview({ templateType }: Props) {
   const content: any = {
     ANAGRAM: { text: "Rearrange letters to form words", icon: "🧩" },

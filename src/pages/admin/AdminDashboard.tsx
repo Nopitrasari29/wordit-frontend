@@ -17,6 +17,16 @@ export default function AdminDashboard() {
     date: string;
   } | null>(null);
 
+  // States untuk System Logs
+  const [logs, setLogs] = useState<any[]>([]);
+  const [logsLoading, setLogsLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [filterAction, setFilterAction] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [limit, setLimit] = useState(10);
+  const [timeRange, setTimeRange] = useState("ALL");
+
   // ✅ FE-NEW-06: Fungsi fetch dipisah agar bisa dipanggil ulang
   async function fetchStats() {
     try {
@@ -44,10 +54,39 @@ export default function AdminDashboard() {
     }
   }
 
+  // Fetch Admin Logs
+  async function fetchLogs(pageNum = 1) {
+    setLogsLoading(true);
+    try {
+      const response = await api.get("/analytics/admin/logs", {
+        params: {
+          page: pageNum,
+          limit: limit,
+          action: filterAction || undefined,
+          search: searchQuery || undefined,
+          timeRange: timeRange !== "ALL" ? timeRange : undefined,
+        },
+      });
+      if (response.data.status === "success") {
+        setLogs(response.data.data.logs);
+        setPage(response.data.data.pagination.page);
+        setTotalPages(response.data.data.pagination.totalPages);
+      }
+    } catch (error) {
+      console.error("Gagal mengambil log admin:", error);
+    } finally {
+      setLogsLoading(false);
+    }
+  }
+
   useEffect(() => {
     fetchStats();
     fetchQuotaStatus();
   }, []);
+
+  useEffect(() => {
+    fetchLogs(page);
+  }, [page, filterAction, limit, timeRange]);
 
   // ✅ FE-NEW-06: Auto-refetch saat ada update dari Telegram approval via socket
   useEffect(() => {
@@ -59,19 +98,21 @@ export default function AdminDashboard() {
         "🔄 AdminDashboard: socket admin_refresh diterima, refetching stats...",
       );
       await fetchStats();
+      fetchLogs(page);
     });
 
     // Listener untuk notifikasi guru baru daftar (pendaftar baru muncul real-time)
     socket.on("new_teacher_registered", async () => {
       console.log("🔄 AdminDashboard: guru baru daftar, refetching stats...");
       await fetchStats();
+      fetchLogs(page);
     });
 
     return () => {
       socket.off("admin_refresh");
       socket.off("new_teacher_registered");
     };
-  }, []);
+  }, [page]);
 
   if (loading || !stats) {
     return (
@@ -192,7 +233,7 @@ export default function AdminDashboard() {
                         AI Quota Monitor
                       </h2>
                       <p className="text-sm font-bold text-slate-400">
-                        Pemantauan penggunaan API AI harian (AI-09)
+                        Pemantauan penggunaan API AI harian
                       </p>
                     </div>
                   </div>
@@ -259,61 +300,210 @@ export default function AdminDashboard() {
 
         {/* ================= SYSTEM LOGS ================= */}
         <div className="bg-white rounded-[2.5rem] p-8 md:p-10 shadow-sm border border-slate-100">
-          <h2 className="text-2xl font-black text-slate-800 mb-8 flex items-center gap-3">
-            System Logs{" "}
-            <span className="bg-slate-100 text-slate-400 text-xs px-3 py-1 rounded-full font-bold">
-              RECENT
-            </span>
-          </h2>
-
-          <div className="space-y-2">
-            {stats.systemLogs.map((log: any) => (
-              <div
-                key={log.id}
-                className="flex flex-col sm:flex-row sm:justify-between sm:items-center p-5 hover:bg-slate-50 transition-all rounded-[1.5rem] group"
-              >
-                <div className="flex items-center gap-4">
-                  <div
-                    className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors
-                    ${
-                      log.action?.includes("CRITICAL")
-                        ? "bg-rose-100 text-rose-500"
-                        : log.action?.includes("WARNING")
-                          ? "bg-amber-100 text-amber-500"
-                          : log.action?.includes("AI_")
-                            ? "bg-indigo-100 text-indigo-500"
-                            : "bg-slate-100 text-slate-500 group-hover:bg-indigo-600 group-hover:text-white"
-                    }`}
-                  >
-                    {log.action?.includes("CRITICAL")
-                      ? "🚨"
-                      : log.action?.includes("WARNING")
-                        ? "⚠️"
-                        : log.action?.includes("AI_")
-                          ? "🤖"
-                          : "📝"}
-                  </div>
-                  <div>
-                    <p className="font-bold text-slate-700">{log.action}</p>
-                    {log.details && (
-                      <p className="text-xs text-slate-400">{log.details}</p>
-                    )}
-                    {log.userName && (
-                      <p className="text-[10px] text-indigo-400 mt-1 uppercase tracking-widest font-black">
-                        USER: {log.userName}
-                      </p>
-                    )}
-                  </div>
-                </div>
-                <span className="bg-slate-100 text-slate-400 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-tighter mt-3 sm:mt-0">
-                  {formatDistanceToNow(new Date(log.createdAt), {
-                    addSuffix: true,
-                    locale: localeId,
-                  })}
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
+            <div>
+              <h2 className="text-2xl font-black text-slate-800 flex items-center gap-3">
+                System Logs{" "}
+                <span className="bg-slate-100 text-slate-400 text-xs px-3 py-1 rounded-full font-bold">
+                  MONITORING
                 </span>
+              </h2>
+              <p className="text-sm text-slate-400 mt-1">Pantau seluruh aktivitas user secara real-time</p>
+            </div>
+
+            {/* Filter and Search controls */}
+            <div className="flex flex-wrap gap-3 items-center">
+              {/* Search */}
+              <div className="relative flex items-center">
+                <input
+                  type="text"
+                  placeholder="Cari user atau detail..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      setPage(1);
+                      fetchLogs(1);
+                    }
+                  }}
+                  className="w-full sm:w-60 bg-slate-50 border border-slate-200 text-slate-700 placeholder-slate-400 rounded-full px-5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 font-bold"
+                />
+                <button
+                  onClick={() => {
+                    setPage(1);
+                    fetchLogs(1);
+                  }}
+                  className="absolute right-2 bg-indigo-600 text-white rounded-full px-4 py-1.5 text-xs font-black hover:bg-indigo-700 transition"
+                >
+                  Cari
+                </button>
               </div>
-            ))}
+
+              {/* Action Dropdown */}
+              <select
+                value={filterAction}
+                onChange={(e) => {
+                  setFilterAction(e.target.value);
+                  setPage(1);
+                }}
+                className="bg-slate-50 border border-slate-200 text-slate-700 rounded-full px-5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 font-bold"
+              >
+                <option value="">Semua Aktivitas</option>
+                <option value="CREATE_GAME">🎮 Buat Game</option>
+                <option value="UPDATE_GAME">📝 Edit Game</option>
+                <option value="DELETE_GAME">🗑️ Hapus Game</option>
+                <option value="TOGGLE_PUBLISH">👁️ Publish/Unpublish Game</option>
+                <option value="FINISH_GAME">🏆 Selesai Game</option>
+                <option value="LOGIN">🔑 Login</option>
+                <option value="LOGOUT">🚪 Logout</option>
+                <option value="REGISTER">🆕 Register</option>
+                <option value="APPROVE_TEACHER">✅ Approve Guru</option>
+                <option value="REJECT_TEACHER">❌ Reject Guru</option>
+                <option value="CHANGE_ROLE">🔄 Ubah Role</option>
+                <option value="UPDATE_PROFILE">👤 Ubah Profil</option>
+                <option value="DELETE_USER">🚨 Hapus User</option>
+              </select>
+
+              {/* Filter Waktu Dropdown */}
+              <select
+                value={timeRange}
+                onChange={(e) => {
+                  setTimeRange(e.target.value);
+                  setPage(1);
+                }}
+                className="bg-slate-50 border border-slate-200 text-slate-700 rounded-full px-5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 font-bold"
+              >
+                <option value="ALL">Semua Waktu</option>
+                <option value="yesterday">Kemarin</option>
+                <option value="week">Seminggu Terakhir</option>
+                <option value="month">Sebulan Terakhir</option>
+                <option value="2months">2 Bulan Terakhir</option>
+              </select>
+
+              {/* Limit/Jumlah Data Dropdown */}
+              <select
+                value={limit}
+                onChange={(e) => {
+                  setLimit(Number(e.target.value));
+                  setPage(1);
+                }}
+                className="bg-slate-50 border border-slate-200 text-slate-700 rounded-full px-5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 font-bold"
+              >
+                <option value={5}>5 Data / Hal</option>
+                <option value={10}>10 Data / Hal</option>
+                <option value={20}>20 Data / Hal</option>
+                <option value={50}>50 Data / Hal</option>
+                <option value={100}>100 Data / Hal</option>
+              </select>
+
+              {/* Clear filters */}
+              {(filterAction || searchQuery || timeRange !== "ALL" || limit !== 10) && (
+                <button
+                  onClick={() => {
+                    setFilterAction("");
+                    setSearchQuery("");
+                    setTimeRange("ALL");
+                    setLimit(10);
+                    setPage(1);
+                  }}
+                  className="text-xs text-rose-500 font-black hover:underline"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
           </div>
+
+          {logsLoading ? (
+            <div className="flex flex-col items-center justify-center py-20 space-y-4">
+              <Loader2 size={36} className="text-indigo-500 animate-spin" />
+              <p className="font-bold text-slate-400 text-sm">Memuat log...</p>
+            </div>
+          ) : logs.length === 0 ? (
+            <div className="text-center py-20 bg-slate-50 rounded-[1.5rem]">
+              <p className="text-slate-400 font-bold">Tidak ada log aktivitas ditemukan</p>
+            </div>
+          ) : (
+            <>
+              <div className="space-y-2">
+                {logs.map((log: any) => (
+                  <div
+                    key={log.id}
+                    className="flex flex-col sm:flex-row sm:justify-between sm:items-center p-5 hover:bg-slate-50 transition-all rounded-[1.5rem] group border border-transparent hover:border-slate-100"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div
+                        className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors
+                        ${
+                          log.action?.includes("CRITICAL") || log.action?.includes("DELETE") || log.action?.includes("REJECT")
+                            ? "bg-rose-100 text-rose-500"
+                            : log.action?.includes("WARNING")
+                              ? "bg-amber-100 text-amber-500"
+                              : log.action?.includes("CREATE") || log.action?.includes("APPROVE") || log.action?.includes("FINISH")
+                                ? "bg-emerald-100 text-emerald-500"
+                                : log.action?.includes("UPDATE") || log.action?.includes("CHANGE")
+                                  ? "bg-indigo-100 text-indigo-500"
+                                  : "bg-slate-100 text-slate-500 group-hover:bg-indigo-600 group-hover:text-white"
+                        }`}
+                      >
+                        {log.action?.includes("CRITICAL")
+                          ? "🚨"
+                          : log.action?.includes("DELETE") || log.action?.includes("REJECT")
+                            ? "🗑️"
+                            : log.action?.includes("CREATE") || log.action?.includes("APPROVE")
+                              ? "✨"
+                              : log.action?.includes("FINISH")
+                                ? "🏆"
+                                : log.action?.includes("WARNING")
+                                  ? "⚠️"
+                                  : "📝"}
+                      </div>
+                      <div>
+                        <p className="font-bold text-slate-700">{log.action}</p>
+                        {log.details && (
+                          <p className="text-xs text-slate-400 mt-0.5">{log.details}</p>
+                        )}
+                        {log.userName && (
+                          <p className="text-[10px] text-indigo-400 mt-1 uppercase tracking-widest font-black">
+                            USER: {log.userName}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    <span className="bg-slate-100 text-slate-400 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-tighter mt-3 sm:mt-0">
+                      {formatDistanceToNow(new Date(log.createdAt), {
+                        addSuffix: true,
+                        locale: localeId,
+                      })}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Pagination Controls */}
+              {totalPages > 1 && (
+                <div className="flex justify-between items-center mt-8 pt-6 border-t border-slate-100">
+                  <button
+                    onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+                    disabled={page === 1}
+                    className="px-5 py-2 bg-slate-100 text-slate-600 font-bold rounded-full text-sm hover:bg-slate-200 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Sebelumnya
+                  </button>
+                  <span className="text-sm text-slate-500 font-bold">
+                    Halaman <strong className="text-indigo-600 font-black">{page}</strong> dari <strong className="text-slate-700 font-black">{totalPages}</strong>
+                  </span>
+                  <button
+                    onClick={() => setPage((prev) => Math.min(prev + 1, totalPages))}
+                    disabled={page === totalPages}
+                    className="px-5 py-2 bg-indigo-600 text-white font-bold rounded-full text-sm hover:bg-indigo-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Selanjutnya
+                  </button>
+                </div>
+              )}
+            </>
+          )}
         </div>
       </div>
     </div>

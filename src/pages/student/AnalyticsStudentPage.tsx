@@ -39,6 +39,10 @@ export default function AnalyticsStudentPage() {
     overallAccuracy: 0,
     totalXp: 0,
     totalTimeSpentSeconds: 0,
+    highestScore: 0,
+    lowestScore: 0,
+    averageScore: 0,
+    mostFrequentMistake: null as string | null,
   });
   const [performanceData, setPerformanceData] = useState<
     { game: string; score: number }[]
@@ -74,6 +78,10 @@ export default function AnalyticsStudentPage() {
           overallAccuracy: data.overview.averageAccuracy || 0,
           totalXp: data.overview.totalXp || 0, // Diambil dari hasil _sum di Backend
           totalTimeSpentSeconds: data.overview.totalTimeSpentSeconds || 0,
+          highestScore: data.overview.highestScore || 0,
+          lowestScore: data.overview.lowestScore || 0,
+          averageScore: data.overview.averageScore || 0,
+          mostFrequentMistake: data.overview.mostFrequentMistake || null,
         });
 
         // ✅ SINKRONISASI: Petakan data riwayat terbaru ke grafik
@@ -187,6 +195,65 @@ export default function AnalyticsStudentPage() {
               {formatStudyTime(stats.totalTimeSpentSeconds)}
             </h2>
           </div>
+        </div>
+      </div>
+
+      {/* ✅ NEW STATS GRID: Max, Min, Avg, Sering Salah */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="bg-indigo-50 p-6 rounded-[2rem] shadow-sm border border-indigo-100 flex items-center gap-5 hover:-translate-y-1 transition-all duration-300 group">
+          <div className="w-14 h-14 shrink-0 bg-white text-indigo-600 rounded-2xl flex items-center justify-center text-2xl shadow-sm">
+            🏆
+          </div>
+          <div>
+            <p className="text-indigo-500 font-bold text-sm mb-1 uppercase tracking-widest text-[10px]">
+              Skor Tertinggi (Max)
+            </p>
+            <h2 className="text-2xl font-black text-indigo-900">
+              {stats.highestScore}
+            </h2>
+          </div>
+        </div>
+
+        <div className="bg-rose-50 p-6 rounded-[2rem] shadow-sm border border-rose-100 flex items-center gap-5 hover:-translate-y-1 transition-all duration-300 group">
+          <div className="w-14 h-14 shrink-0 bg-white text-rose-600 rounded-2xl flex items-center justify-center text-2xl shadow-sm">
+            📉
+          </div>
+          <div>
+            <p className="text-rose-500 font-bold text-sm mb-1 uppercase tracking-widest text-[10px]">
+              Skor Terendah (Min)
+            </p>
+            <h2 className="text-2xl font-black text-rose-900">
+              {stats.lowestScore}
+            </h2>
+          </div>
+        </div>
+
+        <div className="bg-emerald-50 p-6 rounded-[2rem] shadow-sm border border-emerald-100 flex items-center gap-5 hover:-translate-y-1 transition-all duration-300 group">
+          <div className="w-14 h-14 shrink-0 bg-white text-emerald-600 rounded-2xl flex items-center justify-center text-2xl shadow-sm">
+            📊
+          </div>
+          <div>
+            <p className="text-emerald-500 font-bold text-sm mb-1 uppercase tracking-widest text-[10px]">
+              Rata-rata Skor (Avg)
+            </p>
+            <h2 className="text-2xl font-black text-emerald-900">
+              {stats.averageScore}
+            </h2>
+          </div>
+        </div>
+
+        <div className="bg-amber-50 p-6 rounded-[2rem] shadow-sm border border-amber-100 flex flex-col justify-center hover:-translate-y-1 transition-all duration-300 group">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-8 h-8 shrink-0 bg-white text-amber-600 rounded-xl flex items-center justify-center text-lg shadow-sm">
+              ⚠️
+            </div>
+            <p className="text-amber-600 font-bold uppercase tracking-widest text-[10px] leading-tight">
+              Soal Sering Salah
+            </p>
+          </div>
+          <h2 className="text-sm font-black text-amber-900 leading-snug line-clamp-2" title={stats.mostFrequentMistake || "Belum ada kesalahan"}>
+            {stats.mostFrequentMistake ? `"${stats.mostFrequentMistake}"` : "-"}
+          </h2>
         </div>
       </div>
 

@@ -13,14 +13,14 @@ export default function RegisterPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [role, setRole] = useState("STUDENT")
-  // State baru untuk EducationLevel sesuai Enum di Prisma
-  const [educationLevel, setEducationLevel] = useState<string | undefined>(undefined)
+  // State baru untuk EducationLevels sesuai Enum di Prisma
+  const [educationLevels, setEducationLevels] = useState<string[]>([])
   const [isLoading, setIsLoading] = useState(false)
 
-  // Reset educationLevel jika user pindah role ke STUDENT
+  // Reset educationLevels jika user pindah role ke STUDENT
   useEffect(() => {
     if (role === "STUDENT") {
-      setEducationLevel(undefined)
+      setEducationLevels([])
     }
   }, [role])
 
@@ -32,8 +32,8 @@ export default function RegisterPage() {
     }
 
     // Validasi: Teacher wajib pilih jenjang (Sprint 2 - BE-NEW-04)
-    if (role === "TEACHER" && !educationLevel) {
-      return toast.error("Guru wajib memilih satu jenjang pendidikan!")
+    if (role === "TEACHER" && educationLevels.length === 0) {
+      return toast.error("Guru wajib memilih minimal satu jenjang pendidikan!")
     }
 
     // Validasi: Blokir register Admin (Sprint 2 - BE-NEW-03)
@@ -43,8 +43,8 @@ export default function RegisterPage() {
 
     setIsLoading(true)
     try {
-      // Pastikan AuthContext.register kamu diupdate untuk menerima educationLevel
-      await register(name, email, password, role, educationLevel)
+      // Pastikan AuthContext.register diupdate untuk menerima educationLevels
+      await register(name, email, password, role, educationLevels)
 
       if (role === "TEACHER") {
         toast.success("Registrasi berhasil! Mohon tunggu approval Admin. ⏳")
@@ -104,27 +104,34 @@ export default function RegisterPage() {
               </div>
             </div>
 
-            {/* SEKSI BARU: Radio Button Education Level untuk Teacher (Sprint 2 - FE-NEW-03) */}
+            {/* SEKSI BARU: Checkbox Education Level untuk Teacher */}
             {role === "TEACHER" && (
               <div className="w-full flex flex-col gap-3 p-4 bg-indigo-50 rounded-3xl border border-indigo-100 transition-all animate-in fade-in slide-in-from-top-2">
                 <label className="text-xs font-black uppercase tracking-wider text-indigo-600 ml-2">
-                  Pilih Satu Jenjang Pendidikan
+                  Pilih Jenjang Pendidikan (Bisa Lebih Dari Satu)
                 </label>
                 <div className="grid grid-cols-2 gap-2">
                   {["SD", "SMP", "SMA", "UNIVERSITY"].map((level) => (
                     <label
                       key={level}
                       className={`flex items-center justify-center p-3 rounded-2xl border-2 cursor-pointer transition-all font-bold text-sm
-                        ${educationLevel === level
+                        ${educationLevels.includes(level)
                           ? "bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-200"
                           : "bg-white border-slate-100 text-slate-500 hover:border-indigo-200"}`}
                     >
                       <input
-                        type="radio"
-                        name="educationLevel"
+                        type="checkbox"
+                        name="educationLevels"
                         value={level}
                         className="hidden"
-                        onChange={(e) => setEducationLevel(e.target.value)}
+                        checked={educationLevels.includes(level)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setEducationLevels((prev) => [...prev, level]);
+                          } else {
+                            setEducationLevels((prev) => prev.filter((l) => l !== level));
+                          }
+                        }}
                       />
                       {level}
                     </label>

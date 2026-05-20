@@ -1,5 +1,6 @@
 // src/pages/teacher/create-game/ChooseLevelPage.tsx
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../../context/AuthContext";
 
 const LEVELS = [
   { id: "SD", label: "Sekolah Dasar (SD)", icon: "🏫", color: "bg-orange-500" },
@@ -11,6 +12,12 @@ const LEVELS = [
 
 export default function ChooseLevelPage() {
   const navigate = useNavigate();
+  const { user } = useAuth(); // Ambil data user
+
+  // Filter jenjang sesuai dengan milik guru, jika admin tampilkan semua
+  const allowedLevels = user?.role === "ADMIN" 
+    ? LEVELS 
+    : LEVELS.filter(level => user?.educationLevels?.includes(level.id));
 
   return (
     <div className="max-w-4xl mx-auto py-20 px-6 font-sans">
@@ -20,7 +27,12 @@ export default function ChooseLevelPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {LEVELS.map((level) => (
+        {allowedLevels.length === 0 && (
+          <div className="col-span-1 md:col-span-2 text-center text-slate-400 font-bold p-10 bg-slate-50 rounded-[2.5rem]">
+            Anda belum memiliki jenjang pendidikan yang terdaftar.
+          </div>
+        )}
+        {allowedLevels.map((level) => (
           <button
             key={level.id}
             // Navigasi sekarang akan mengirim ?level=UNIVERSITY untuk opsi universitas

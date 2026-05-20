@@ -9,7 +9,7 @@ export interface User {
   email: string;
   role: Role;
   approvalStatus: ApprovalStatus; // Tambahkan ini
-  educationLevel?: EducationLevel | null; // Tambahkan ini
+  educationLevels?: EducationLevel[]; // Tambahkan ini
   photoUrl?: string | null;
   createdAt: string;
   updatedAt?: string;

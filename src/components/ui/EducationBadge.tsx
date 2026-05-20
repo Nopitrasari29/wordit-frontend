@@ -1,3 +1,7 @@
+type Props = {
+    level: string;
+};
+
 export default function EducationBadge({ level }: Props) {
     const colors: any = {
         SD: "bg-emerald-500",

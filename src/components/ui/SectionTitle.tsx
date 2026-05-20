@@ -1,3 +1,8 @@
+type Props = {
+    title: string;
+    subtitle?: string;
+};
+
 export default function SectionTitle({ title, subtitle }: Props) {
     return (
         <div className="text-center mb-16 px-4">

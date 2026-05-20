@@ -1,3 +1,12 @@
+import React from "react";
+import Wave from "./Wave";
+
+type Props = {
+    title: string;
+    color: string;
+    children: React.ReactNode;
+};
+
 export default function PageWrapper({ title, color, children }: Props) {
     return (
         <div className="page-enter min-h-screen bg-slate-50 font-sans">
@@ -9,7 +18,7 @@ export default function PageWrapper({ title, color, children }: Props) {
                 <h1 className="text-5xl font-black tracking-tight relative z-10 max-w-6xl mx-auto">{title}</h1>
             </div>
 
-            <Wave color="#f8fafc" />
+            <Wave />
 
             <div className="max-w-6xl mx-auto px-6 -mt-10 relative z-20 pb-20">
                 {children}

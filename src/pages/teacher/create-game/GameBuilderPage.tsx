@@ -39,6 +39,19 @@ export default function GameBuilderPage() {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // State untuk metadata baru
+  const [classGrade, setClassGrade] = useState("");
+  const [subject, setSubject] = useState("");
+  const [chapter, setChapter] = useState("");
+  const [topic, setTopic] = useState("");
+  const [timeLimit, setTimeLimit] = useState<number | "">(""); // Timer dalam detik
+
+  // Handle Buat Manual
+  const handleManualCreate = () => {
+    setQuestionsFromAI([]);
+    setStep(2);
+  };
+
   // 🔥 HANDLER 1: AI Generator Finished
   const handleAIFinished = (data: any) => {
     // Normalisasi data dari AI: ambil array dari property manapun yang tersedia
@@ -153,12 +166,21 @@ export default function GameBuilderPage() {
       }
 
       // 🎯 PAYLOAD FINAL: gameJson dikirim sebagai Object {} sesuai Zod Backend terbaru
+      // Tambahkan konfigurasi tambahan ke dalam gameJson atau langsung ke root sesuai schema
+      if (timeLimit) {
+        quizContent.timeLimit = Number(timeLimit);
+      }
+
       const finalPayload = {
         title: gamePayload.title.trim(),
         templateType: template,
         educationLevel: level,
         difficulty: DifficultyLevel.MEDIUM,
         isPublished: publishStatus,
+        classGrade: classGrade || undefined,
+        subject: subject || undefined,
+        chapter: chapter || undefined,
+        topic: topic || undefined,
         gameJson: quizContent,
       };
 
@@ -240,12 +262,27 @@ export default function GameBuilderPage() {
                   soal (maks. 20)
                 </span>
               </div>
-              <AIQuizGenerator
-                level={level}
-                template={template}
-                onFinish={handleAIFinished}
-                requestedCount={questionCount}
-              />
+              
+              <div className="flex flex-col md:flex-row gap-4">
+                <div className="flex-1">
+                  <AIQuizGenerator
+                    level={level}
+                    template={template}
+                    onFinish={handleAIFinished}
+                    requestedCount={questionCount}
+                  />
+                </div>
+                
+                <div className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-slate-200 rounded-[2rem] md:w-1/3 bg-slate-50">
+                  <p className="text-sm font-bold text-slate-500 mb-4 text-center">Atau buat kuis sendiri dari awal tanpa bantuan AI</p>
+                  <Button 
+                    onClick={handleManualCreate}
+                    isFullWidth
+                  >
+                    ✏️ Buat Manual
+                  </Button>
+                </div>
+              </div>
             </div>
           </div>
         ) : (
@@ -258,12 +295,42 @@ export default function GameBuilderPage() {
               <input
                 type="text"
                 placeholder="Misal: Kuis Spin Wheel Seru..."
-                className="w-full bg-slate-50 border-2 border-transparent px-8 py-5 rounded-full focus:bg-white focus:border-indigo-500 outline-none font-black text-2xl text-slate-800 transition-all"
+                className="w-full bg-slate-50 border-2 border-transparent px-8 py-5 rounded-full focus:bg-white focus:border-indigo-500 outline-none font-black text-2xl text-slate-800 transition-all mb-6"
                 value={gamePayload.title}
                 onChange={(e) =>
                   setGamePayload({ ...gamePayload, title: e.target.value })
                 }
               />
+
+              {/* Input Metadata Tambahan */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 ml-2">
+                <div>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Kelas / Grade</label>
+                  <input type="text" placeholder="Misal: 7A, Kelas 10..." className="w-full bg-slate-50 border border-slate-100 px-4 py-3 rounded-xl focus:border-indigo-500 outline-none text-sm font-bold text-slate-700" value={classGrade} onChange={(e) => setClassGrade(e.target.value)} />
+                </div>
+                <div>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Mata Pelajaran</label>
+                  <input type="text" placeholder="Misal: Biologi, Matematika..." className="w-full bg-slate-50 border border-slate-100 px-4 py-3 rounded-xl focus:border-indigo-500 outline-none text-sm font-bold text-slate-700" value={subject} onChange={(e) => setSubject(e.target.value)} />
+                </div>
+                <div>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Bab</label>
+                  <input type="text" placeholder="Misal: Sistem Pencernaan..." className="w-full bg-slate-50 border border-slate-100 px-4 py-3 rounded-xl focus:border-indigo-500 outline-none text-sm font-bold text-slate-700" value={chapter} onChange={(e) => setChapter(e.target.value)} />
+                </div>
+                <div>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Topik Spesifik</label>
+                  <input type="text" placeholder="Misal: Enzim Lambung..." className="w-full bg-slate-50 border border-slate-100 px-4 py-3 rounded-xl focus:border-indigo-500 outline-none text-sm font-bold text-slate-700" value={topic} onChange={(e) => setTopic(e.target.value)} />
+                </div>
+              </div>
+
+              {/* Timer Input */}
+              <div className="mt-6 ml-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Waktu Pengerjaan / Timer (opsional)</label>
+                <div className="flex items-center gap-3">
+                  <input type="number" min={0} placeholder="0" className="w-24 bg-slate-50 border border-slate-100 px-4 py-3 rounded-xl focus:border-indigo-500 outline-none text-sm font-bold text-slate-700 text-center" value={timeLimit} onChange={(e) => setTimeLimit(e.target.value ? Number(e.target.value) : "")} />
+                  <span className="text-slate-500 text-sm font-bold">Detik</span>
+                  <span className="text-slate-400 text-xs italic ml-2">(Biarkan kosong untuk tanpa batas waktu khusus)</span>
+                </div>
+              </div>
             </div>
 
             <div className="bg-white rounded-[3.5rem] p-8 md:p-14 shadow-2xl border border-slate-100 min-h-[400px]">

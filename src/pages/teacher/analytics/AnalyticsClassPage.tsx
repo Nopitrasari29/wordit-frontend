@@ -34,13 +34,33 @@ export default function AnalyticsClassPage({
   const [analyticsData, setAnalyticsData] = useState<any>(data || null);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedGameId, setSelectedGameId] = useState<string>("");
+  const [levelFilter, setLevelFilter] = useState<string>("ALL");
+  const [gradeFilter, setGradeFilter] = useState<string>("ALL");
 
-  // Update default selected game if games prop changes
+  // Reset gradeFilter ketika levelFilter berubah
   useEffect(() => {
-    if (games && games.length > 0 && !selectedGameId) {
-      setSelectedGameId(games[0].id);
+    setGradeFilter("ALL");
+  }, [levelFilter]);
+
+  // Update default selected game jika games prop atau filter berubah
+  useEffect(() => {
+    if (games && games.length > 0) {
+      const filtered = games.filter((g) => {
+        if (levelFilter !== "ALL" && g.educationLevel !== levelFilter) return false;
+        if (gradeFilter !== "ALL") {
+          const gGrade = String(g.classGrade || "").toLowerCase();
+          const selGrade = String(gradeFilter).toLowerCase();
+          if (!gGrade.includes(selGrade) && !selGrade.includes(gGrade)) return false;
+        }
+        return true;
+      });
+      if (filtered.length > 0) {
+        setSelectedGameId(filtered[0].id);
+      } else {
+        setSelectedGameId("");
+      }
     }
-  }, [games]);
+  }, [games, levelFilter, gradeFilter]);
 
   // Jika standalone (tidak ada prop data), fetch dari API berdasarkan game yang dipilih guru
   useEffect(() => {
@@ -74,7 +94,17 @@ export default function AnalyticsClassPage({
     const fetchStandalone = async () => {
       setIsLoading(true);
       try {
-        const res = await api.get("/analytics/teacher/classes");
+        const params = [];
+        if (levelFilter !== "ALL") {
+          params.push(`educationLevel=${levelFilter}`);
+        }
+        if (gradeFilter !== "ALL") {
+          params.push(`classGrade=${gradeFilter}`);
+        }
+        const queryString = params.length > 0 ? `?${params.join("&")}` : "";
+        const url = `/analytics/teacher/classes${queryString}`;
+          
+        const res = await api.get(url);
         if (res.data.status === "success") {
           // Konversi format classes ke format classDistribution agar chart bisa jalan
           const classes = res.data.data.classes || [];
@@ -113,7 +143,7 @@ export default function AnalyticsClassPage({
       }
     };
     fetchStandalone();
-  }, [data, games, groupFilter, selectedGameId]);
+  }, [data, games, groupFilter, selectedGameId, levelFilter, gradeFilter]);
 
   if (isLoading) {
     return (
@@ -156,7 +186,7 @@ export default function AnalyticsClassPage({
         </div>
       )}
 
-      {/* ✅ FIX: Dropdown untuk memilih game jika berada di Teacher Dashboard */}
+      {/* ✅ FIX: Dropdown untuk memilih game dan Jenjang jika berada di Teacher Dashboard */}
       {games && games.length > 0 && (
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-50 p-4 md:p-6 rounded-[2rem] border border-slate-100 mb-6">
           <div className="flex items-center gap-3">
@@ -164,21 +194,63 @@ export default function AnalyticsClassPage({
                🕹️
              </div>
              <div>
-               <h3 className="font-black text-slate-700 text-sm">Pilih Game</h3>
-               <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Untuk melihat detail analitik</p>
+               <h3 className="font-black text-slate-700 text-sm">Pilih Data Analitik</h3>
+               <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Filter berdasarkan Game atau Jenjang</p>
              </div>
           </div>
-          <select 
-            value={selectedGameId}
-            onChange={(e) => setSelectedGameId(e.target.value)}
-            className="bg-white border-2 border-indigo-100 rounded-xl px-4 py-3 font-bold text-slate-700 outline-none focus:border-indigo-400 min-w-[200px]"
-          >
-            {games.map((g) => (
-              <option key={g.id} value={g.id}>
-                {g.title}
-              </option>
-            ))}
-          </select>
+          <div className="flex flex-col md:flex-row gap-3">
+            <select 
+              value={levelFilter}
+              onChange={(e) => setLevelFilter(e.target.value)}
+              className="bg-white border-2 border-indigo-100 rounded-xl px-4 py-3 font-bold text-slate-700 outline-none focus:border-indigo-400 min-w-[150px]"
+            >
+              <option value="ALL">Semua Jenjang</option>
+              <option value="SD">Sekolah Dasar (SD)</option>
+              <option value="SMP">SMP</option>
+              <option value="SMA">SMA</option>
+              <option value="UNIVERSITY">Universitas / Umum</option>
+            </select>
+            {["SD", "SMP", "SMA"].includes(levelFilter) && (
+              <select 
+                value={gradeFilter}
+                onChange={(e) => setGradeFilter(e.target.value)}
+                className="bg-white border-2 border-indigo-100 rounded-xl px-4 py-3 font-bold text-slate-700 outline-none focus:border-indigo-400 min-w-[150px]"
+              >
+                <option value="ALL">Semua Kelas</option>
+                {levelFilter === "SD" && [1, 2, 3, 4, 5, 6].map(grade => (
+                  <option key={grade} value={String(grade)}>Kelas {grade}</option>
+                ))}
+                {levelFilter === "SMP" && [7, 8, 9].map(grade => (
+                  <option key={grade} value={String(grade)}>Kelas {grade}</option>
+                ))}
+                {levelFilter === "SMA" && [10, 11, 12].map(grade => (
+                  <option key={grade} value={String(grade)}>Kelas {grade}</option>
+                ))}
+              </select>
+            )}
+            <select 
+              value={selectedGameId}
+              onChange={(e) => setSelectedGameId(e.target.value)}
+              className="bg-white border-2 border-indigo-100 rounded-xl px-4 py-3 font-bold text-slate-700 outline-none focus:border-indigo-400 min-w-[200px]"
+            >
+              <option value="">-- Pilih Game Tertentu --</option>
+              {games
+                .filter((g) => {
+                  if (levelFilter !== "ALL" && g.educationLevel !== levelFilter) return false;
+                  if (gradeFilter !== "ALL") {
+                    const gGrade = String(g.classGrade || "").toLowerCase();
+                    const selGrade = String(gradeFilter).toLowerCase();
+                    if (!gGrade.includes(selGrade) && !selGrade.includes(gGrade)) return false;
+                  }
+                  return true;
+                })
+                .map((g) => (
+                  <option key={g.id} value={g.id}>
+                    {g.title}
+                  </option>
+                ))}
+            </select>
+          </div>
         </div>
       )}
 

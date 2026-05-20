@@ -254,10 +254,14 @@ export default function UserManagementPage() {
                     </td>
 
                     <td className="py-5 px-4">
-                      {user.educationLevel ? (
-                        <span className="bg-blue-50 text-blue-600 px-3 py-1 rounded-lg text-[10px] font-black border border-blue-100">
-                          {user.educationLevel}
-                        </span>
+                      {user.educationLevels && user.educationLevels.length > 0 ? (
+                        <div className="flex flex-wrap gap-1">
+                          {user.educationLevels.map((lvl: string) => (
+                            <span key={lvl} className="bg-blue-50 text-blue-600 px-2 py-1 rounded-lg text-[10px] font-black border border-blue-100">
+                              {lvl}
+                            </span>
+                          ))}
+                        </div>
                       ) : (
                         <span className="text-slate-300 italic text-[10px]">
                           Not set

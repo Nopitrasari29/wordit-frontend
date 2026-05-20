@@ -48,15 +48,15 @@ export function AuthProvider({ children }: any) {
     email: string,
     password: string,
     role: string,
-    educationLevel?: string // Tambahkan parameter opsional ini [cite: 46, 154, 159]
+    educationLevels?: string[] // Menerima array untuk guru
   ) {
-    // Kirim data ke authService [cite: 128, 159]
+    // Kirim data ke authService
     return await authService.register({
       name,
       email,
       password,
       role,
-      educationLevel // Sertakan field ini dalam payload API [cite: 46, 128]
+      educationLevels // Sertakan array ini
     })
   }
 

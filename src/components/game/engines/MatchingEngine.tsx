@@ -5,7 +5,8 @@ import socket from "../../../hooks/useSocket";
 import { toast } from "react-hot-toast";
 import { Link2, CheckCircle2 } from "lucide-react";
 
-export default function MatchingEngine({ data, onGameOver, onIntermission }: { data: any, onGameOver?: any, onIntermission?: () => void }) {
+export default function MatchingEngine(props: { data: any, onGameOver?: any, onIntermission?: () => void }) {
+    const { data, onGameOver } = props;
     const navigate = useNavigate();
     const realGameId = data?.id || data?._id;
     const roomCode = data?.shareCode || "";
