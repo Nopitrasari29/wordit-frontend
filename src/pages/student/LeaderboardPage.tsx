@@ -32,9 +32,27 @@ export default function LeaderboardPage() {
     }, [])
 
     return (
-        <div className="min-h-screen bg-slate-50 font-sans pb-20 pt-24">
-            {/* ... rest of your code ... */}
-             <div className="max-w-4xl mx-auto px-6">
+        <div className="min-h-screen bg-slate-50 font-sans pb-20 pt-28">
+            <div className="max-w-4xl mx-auto px-6 mb-10">
+                <div className="bg-gradient-to-r from-indigo-600 to-blue-500 rounded-[2.5rem] p-8 md:p-12 text-white shadow-xl shadow-indigo-200 relative overflow-hidden">
+                    <div className="absolute -right-10 -top-10 w-64 h-64 bg-white opacity-10 rounded-full blur-3xl"></div>
+                    <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                        <div className="max-w-xl">
+                            <h1 className="text-3xl md:text-5xl font-black mb-3 italic tracking-tighter">
+                                Game Terpopuler 🏆
+                            </h1>
+                            <p className="text-indigo-100 font-semibold text-sm md:text-base leading-relaxed">
+                                Lihat daftar kuis edukasi yang paling sering dimainkan dan dicari oleh para siswa di WordIT!
+                            </p>
+                        </div>
+                        <div className="text-5xl md:text-7xl animate-bounce shrink-0 select-none">
+                            👑
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div className="max-w-4xl mx-auto px-6">
                 <div className="bg-white rounded-[2.5rem] p-8 shadow-sm border border-slate-100 overflow-hidden">
                     {/* Custom Table Header */}
                     <div className="flex px-4 pb-6 border-b-2 border-slate-50 text-xs font-black text-slate-400 uppercase tracking-widest">

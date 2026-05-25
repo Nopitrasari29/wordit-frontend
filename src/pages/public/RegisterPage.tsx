@@ -17,48 +17,46 @@ export default function RegisterPage() {
   const [educationLevels, setEducationLevels] = useState<string[]>([])
   const [isLoading, setIsLoading] = useState(false)
 
-  // Reset educationLevels jika user pindah role ke STUDENT
   useEffect(() => {
-    if (role === "STUDENT") {
-      setEducationLevels([])
-    }
-  }, [role])
+    setEducationLevels([]);
+  }, [role]);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
 
     if (password.length < 6) {
-      return toast.error("Password minimal 6 karakter!")
+      return toast.error("Password minimal 6 karakter!");
     }
 
-    // Validasi: Teacher wajib pilih jenjang (Sprint 2 - BE-NEW-04)
     if (role === "TEACHER" && educationLevels.length === 0) {
-      return toast.error("Guru wajib memilih minimal satu jenjang pendidikan!")
+      return toast.error("Guru wajib memilih minimal satu jenjang pendidikan!");
     }
 
-    // Validasi: Blokir register Admin (Sprint 2 - BE-NEW-03)
+    if (role === "STUDENT" && educationLevels.length === 0) {
+      return toast.error("Siswa wajib memilih jenjang pendidikan!");
+    }
+
     if (role === "ADMIN") {
-      return toast.error("Pendaftaran Admin hanya bisa dilakukan melalui sistem internal.")
+      return toast.error("Pendaftaran Admin hanya bisa dilakukan melalui sistem internal.");
     }
 
-    setIsLoading(true)
+    setIsLoading(true);
     try {
-      // Pastikan AuthContext.register diupdate untuk menerima educationLevels
-      await register(name, email, password, role, educationLevels)
+      await register(name, email, password, role, educationLevels);
 
       if (role === "TEACHER") {
-        toast.success("Registrasi berhasil! Mohon tunggu approval Admin. ⏳")
+        toast.success("Registrasi berhasil! Mohon tunggu approval Admin. ⏳");
       } else {
-        toast.success("Akun Berhasil Dibuat! 🚀")
+        toast.success("Akun Berhasil Dibuat! 🚀");
       }
-      navigate("/login")
+      navigate("/login");
     } catch (err: any) {
-      const msg = err.response?.data?.message || "Register gagal. Cek koneksi server!"
-      toast.error(msg)
+      const msg = err.response?.data?.message || "Register gagal. Cek koneksi server!";
+      toast.error(msg);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
     <div className="min-h-screen flex justify-center items-center p-4 bg-gradient-to-br from-indigo-100 via-blue-50 to-white relative overflow-hidden font-sans pt-28 pb-12">
@@ -131,6 +129,38 @@ export default function RegisterPage() {
                           } else {
                             setEducationLevels((prev) => prev.filter((l) => l !== level));
                           }
+                        }}
+                      />
+                      {level}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* SEKSI BARU: Selector Education Level untuk Student */}
+            {role === "STUDENT" && (
+              <div className="w-full flex flex-col gap-3 p-4 bg-blue-50 rounded-3xl border border-blue-100 transition-all animate-in fade-in slide-in-from-top-2">
+                <label className="text-xs font-black uppercase tracking-wider text-blue-600 ml-2">
+                  Pilih Jenjang Pendidikanmu (Pilih Salah Satu)
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  {["SD", "SMP", "SMA", "UNIVERSITY"].map((level) => (
+                    <label
+                      key={level}
+                      className={`flex items-center justify-center p-3 rounded-2xl border-2 cursor-pointer transition-all font-bold text-sm
+                        ${educationLevels.includes(level)
+                          ? "bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-200"
+                          : "bg-white border-slate-100 text-slate-500 hover:border-blue-200"}`}
+                    >
+                      <input
+                        type="radio"
+                        name="studentEducationLevel"
+                        value={level}
+                        className="hidden"
+                        checked={educationLevels.includes(level)}
+                        onChange={() => {
+                          setEducationLevels([level]); // Single-select, save as an array with 1 item
                         }}
                       />
                       {level}

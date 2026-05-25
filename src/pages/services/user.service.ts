@@ -1,56 +1,43 @@
-const API_URL = "http://localhost:3000/api"
-
-/* ============================== */
-/* GET TOKEN */
-/* ============================== */
-
-function getToken() {
-  return localStorage.getItem("token")
-}
+import api from "./api";
 
 /* ============================== */
 /* UPDATE PROFILE (SELF USER) */
 /* ============================== */
 
 export async function updateProfile(data: {
-  name?: string
-  email?: string
-  currentPassword?: string
-  newPassword?: string
-  photo?: File
+  name?: string;
+  email?: string;
+  currentPassword?: string;
+  newPassword?: string;
+  photo?: File;
+  bio?: string;
 }) {
+  const formData = new FormData();
 
-  const token = getToken()
-
-  const formData = new FormData()
-
-  if (data.name) formData.append("name", data.name)
-  if (data.email) formData.append("email", data.email)
+  if (data.name) formData.append("name", data.name);
+  if (data.email) formData.append("email", data.email);
+  if (data.bio !== undefined) formData.append("bio", data.bio);
 
   if (data.currentPassword)
-    formData.append("currentPassword", data.currentPassword)
+    formData.append("currentPassword", data.currentPassword);
 
   if (data.newPassword)
-    formData.append("newPassword", data.newPassword)
+    formData.append("newPassword", data.newPassword);
 
   if (data.photo)
-    formData.append("profile_picture", data.photo)
+    formData.append("profile_picture", data.photo);
 
-  const res = await fetch(`${API_URL}/users/profile`, {
-    method: "PATCH",
+  const res = await api.patch("/users/profile", formData, {
     headers: {
-      Authorization: `Bearer ${token}`
+      "Content-Type": "multipart/form-data",
     },
-    body: formData
-  })
+  });
 
-  const json = await res.json()
-
-  if (!res.ok) {
-    throw new Error(json.message || "Failed to update profile")
+  if (res.data.status !== "success" && !res.data.success) {
+    throw new Error(res.data.message || "Failed to update profile");
   }
 
-  return json.data
+  return res.data.data;
 }
 
 /* ============================== */
@@ -58,46 +45,22 @@ export async function updateProfile(data: {
 /* ============================== */
 
 export async function getUsers() {
-
-  const token = getToken()
-
-  const res = await fetch(`${API_URL}/users`, {
-    headers: {
-      Authorization: `Bearer ${token}`
-    }
-  })
-
-  const json = await res.json()
-
-  if (!res.ok) {
-    throw new Error(json.message || "Failed to fetch users")
+  const res = await api.get("/users");
+  if (res.data.status !== "success" && !res.data.success) {
+    throw new Error(res.data.message || "Failed to fetch users");
   }
-
-  return json.data
+  return res.data.data;
 }
 
 /* ============================== */
-/* ADMIN APPROVE/REJECT USER (Sprint 2 - BE-NEW-02) */
+/* ADMIN APPROVE/REJECT USER */
 /* ============================== */
 export async function approveUser(id: string, action: "APPROVE" | "REJECT") {
-  const token = getToken()
-
-  const res = await fetch(`${API_URL}/users/${id}/approve`, {
-    method: "PATCH",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`
-    },
-    body: JSON.stringify({ action }) // Mengirim action sesuai kontrak backend
-  })
-
-  const json = await res.json()
-
-  if (!res.ok) {
-    throw new Error(json.message || "Gagal memproses approval")
+  const res = await api.patch(`/users/${id}/approve`, { action });
+  if (res.data.status !== "success" && !res.data.success) {
+    throw new Error(res.data.message || "Gagal memproses approval");
   }
-
-  return json.data
+  return res.data.data;
 }
 
 /* ============================== */
@@ -105,25 +68,11 @@ export async function approveUser(id: string, action: "APPROVE" | "REJECT") {
 /* ============================== */
 
 export async function updateUser(id: string, data: any) {
-
-  const token = getToken()
-
-  const res = await fetch(`${API_URL}/users/${id}`, {
-    method: "PATCH",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`
-    },
-    body: JSON.stringify(data)
-  })
-
-  const json = await res.json()
-
-  if (!res.ok) {
-    throw new Error(json.message || "Failed to update user")
+  const res = await api.patch(`/users/${id}`, data);
+  if (res.data.status !== "success" && !res.data.success) {
+    throw new Error(res.data.message || "Failed to update user");
   }
-
-  return json.data
+  return res.data.data;
 }
 
 /* ============================== */
@@ -131,21 +80,9 @@ export async function updateUser(id: string, data: any) {
 /* ============================== */
 
 export async function deleteUser(id: string) {
-
-  const token = getToken()
-
-  const res = await fetch(`${API_URL}/users/${id}`, {
-    method: "DELETE",
-    headers: {
-      Authorization: `Bearer ${token}`
-    }
-  })
-
-  const json = await res.json()
-
-  if (!res.ok) {
-    throw new Error(json.message || "Failed to delete user")
+  const res = await api.delete(`/users/${id}`);
+  if (res.data.status !== "success" && !res.data.success) {
+    throw new Error(res.data.message || "Failed to delete user");
   }
-
-  return json.data
+  return res.data.data;
 }

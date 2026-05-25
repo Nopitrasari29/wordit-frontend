@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react"
+import { Link } from "react-router-dom"
 import { getGames } from "../services/game.service"
-import { dummyGames } from "../../data/dummyGames"
 import { templateIcons } from "../../data/templateIcons"
 // Note: Kalau GameCard sudah ada, bisa dipakai. Di kode kamu ini kamu mapping div, jadi saya modif div mapping-nya.
 // import GameCard from "../../components/game/common/GameCard"
+
 
 export default function ExplorePage() {
   const [games, setGames] = useState<any[]>([])
@@ -18,22 +19,14 @@ export default function ExplorePage() {
       }
       const data = await getGames(params)
 
-      if (data && data.length > 0) {
+      if (data && Array.isArray(data)) {
         setGames(data)
       } else {
-        if (levelFilter && levelFilter !== "ALL") {
-          setGames(dummyGames.filter(g => g.educationLevel === levelFilter))
-        } else {
-          setGames(dummyGames)
-        }
+        setGames([])
       }
     } catch (err) {
-      console.log("Backend kosong, pakai dummy")
-      if (levelFilter && levelFilter !== "ALL") {
-        setGames(dummyGames.filter(g => g.educationLevel === levelFilter))
-      } else {
-        setGames(dummyGames)
-      }
+      console.error("Gagal memuat game:", err)
+      setGames([])
     }
     setLoading(false)
   }
@@ -47,12 +40,7 @@ export default function ExplorePage() {
     loadGames(lvl)
   }
 
-  if (loading) return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh]">
-      <div className="w-16 h-16 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
-      <p className="font-bold text-slate-500 mt-4">Memuat Game Seru...</p>
-    </div>
-  )
+
 
   return (
     <div className="min-h-screen font-sans pb-24">
@@ -87,42 +75,69 @@ export default function ExplorePage() {
 
         {/* GAME LIST */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-          {games.map(game => (
-            <div
-              key={game.id}
-              className="bg-white p-6 rounded-[2rem] shadow-sm hover:shadow-xl border border-slate-100 transition-all duration-300 hover:-translate-y-2 cursor-pointer flex flex-col group"
-            >
-              {/* BIG ICON AREA */}
-              <div className="bg-slate-100 h-32 rounded-[1.5rem] mb-6 flex items-center justify-center text-5xl group-hover:scale-105 transition-transform duration-300">
-                {templateIcons[game.templateType] || "🎮"}
+          {loading ? (
+            Array(6).fill(null).map((_, idx) => (
+              <div
+                key={idx}
+                className="bg-white p-6 rounded-[2rem] border border-slate-100 flex flex-col animate-pulse"
+              >
+                <div className="bg-slate-100 h-32 rounded-[1.5rem] mb-6"></div>
+                <div className="h-6 bg-slate-200 rounded-md mb-3 w-3/4"></div>
+                <div className="flex items-center gap-2 mb-6">
+                  <div className="h-5 bg-slate-100 rounded-full w-20"></div>
+                  <div className="h-5 bg-slate-100 rounded-full w-12"></div>
+                </div>
+                <div className="mt-auto pt-4 border-t border-slate-100 flex items-center justify-between">
+                  <div className="h-4 bg-slate-100 rounded-md w-24"></div>
+                  <div className="h-6 bg-slate-100 rounded-full w-16"></div>
+                </div>
               </div>
-
-              {/* TITLE */}
-              <h2 className="font-black text-xl text-slate-800 mb-3 truncate">
-                {game.title}
-              </h2>
-
-              {/* TAGS */}
-              <div className="flex items-center gap-2 mb-6">
-                <span className="bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full text-xs font-bold capitalize">
-                  {game.templateType.replaceAll("_", " ").toLowerCase()}
-                </span>
-                <span className="bg-slate-50 text-slate-600 px-3 py-1 rounded-full text-xs font-bold">
-                  {game.educationLevel}
-                </span>
-              </div>
-
-              {/* FOOTER AREA */}
-              <div className="mt-auto pt-4 border-t border-slate-100 flex items-center justify-between">
-                <p className="text-xs text-slate-400 font-bold">
-                  Diff: <span className="text-slate-600">{game.difficulty}</span>
-                </p>
-                <p className="text-xs text-indigo-500 font-black bg-indigo-50 px-3 py-1.5 rounded-full">
-                  ▶ {game.playCount || 0} plays
-                </p>
-              </div>
+            ))
+          ) : games.length === 0 ? (
+            <div className="col-span-full bg-white p-12 rounded-[2.5rem] border border-slate-100 text-center shadow-sm">
+              <span className="text-5xl mb-4 block">🔍</span>
+              <h3 className="text-xl font-black text-slate-800">Tidak Ada Game Tersedia</h3>
+              <p className="text-slate-400 font-bold text-sm mt-2">Belum ada game yang dipublikasikan untuk kategori ini.</p>
             </div>
-          ))}
+          ) : (
+            games.map(game => (
+              <Link
+                key={game.id}
+                to={`/play/${game.id}`}
+                className="bg-white p-6 rounded-[2rem] shadow-sm hover:shadow-xl border border-slate-100 transition-all duration-300 hover:-translate-y-2 cursor-pointer flex flex-col group text-left"
+              >
+                {/* BIG ICON AREA */}
+                <div className="bg-slate-100 h-32 rounded-[1.5rem] mb-6 flex items-center justify-center text-5xl group-hover:scale-105 transition-transform duration-300">
+                  {templateIcons[game.templateType] || "🎮"}
+                </div>
+
+                {/* TITLE */}
+                <h2 className="font-black text-xl text-slate-800 mb-3 truncate">
+                  {game.title}
+                </h2>
+
+                {/* TAGS */}
+                <div className="flex items-center gap-2 mb-6">
+                  <span className="bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full text-xs font-bold capitalize">
+                    {game.templateType.replaceAll("_", " ").toLowerCase()}
+                  </span>
+                  <span className="bg-slate-50 text-slate-600 px-3 py-1 rounded-full text-xs font-bold">
+                    {game.educationLevel}
+                  </span>
+                </div>
+
+                {/* FOOTER AREA */}
+                <div className="mt-auto pt-4 border-t border-slate-100 flex items-center justify-between">
+                  <p className="text-xs text-slate-400 font-bold">
+                    Diff: <span className="text-slate-600">{game.difficulty}</span>
+                  </p>
+                  <p className="text-xs text-indigo-500 font-black bg-indigo-50 px-3 py-1.5 rounded-full">
+                    ▶ {game.playCount || 0} plays
+                  </p>
+                </div>
+              </Link>
+            ))
+          )}
         </div>
       </div>
     </div>

@@ -1,8 +1,10 @@
 import { Link } from "react-router-dom";
 import Hero from "../../components/ui/Hero";
 import FeatureCard from "../../components/ui/FeatureCard";
+import { useAuth } from "../../context/AuthContext";
 
 export default function LandingPage() {
+  const { user } = useAuth();
   return (
     <div className="bg-white font-sans selection:bg-indigo-100 selection:text-indigo-900 overflow-x-hidden">
 
@@ -128,12 +130,44 @@ export default function LandingPage() {
             </h2>
 
             <div className="flex flex-col sm:flex-row gap-5 justify-center relative z-10">
-              <Link to="/register" className="bg-indigo-600 text-white px-10 py-4 md:px-12 md:py-5 rounded-full font-black text-lg md:text-xl hover:scale-105 active:scale-95 transition-all shadow-xl shadow-indigo-500/20">
-                Coba Gratis Sekarang
-              </Link>
-              <Link to="/explore" className="bg-white/10 text-white border border-white/20 backdrop-blur-md px-10 py-4 md:px-12 md:py-5 rounded-full font-black text-lg md:text-xl hover:bg-white/20 transition-all">
-                Lihat Galeri ➔
-              </Link>
+              {user?.role === "ADMIN" && (
+                <Link to="/admin/dashboard" className="bg-indigo-600 text-white px-10 py-4 md:px-12 md:py-5 rounded-full font-black text-lg md:text-xl hover:scale-105 active:scale-95 transition-all shadow-xl shadow-indigo-500/20">
+                  Masuk ke Admin Panel 🛡️
+                </Link>
+              )}
+
+              {user?.role === "TEACHER" && (
+                <>
+                  <Link to="/teacher/dashboard" className="bg-indigo-600 text-white px-10 py-4 md:px-12 md:py-5 rounded-full font-black text-lg md:text-xl hover:scale-105 active:scale-95 transition-all shadow-xl shadow-indigo-500/20">
+                    Dashboard Guru 🚀
+                  </Link>
+                  <Link to="/explore" className="bg-white/10 text-white border border-white/20 backdrop-blur-md px-10 py-4 md:px-12 md:py-5 rounded-full font-black text-lg md:text-xl hover:bg-white/20 transition-all">
+                    Lihat Galeri ➔
+                  </Link>
+                </>
+              )}
+
+              {user?.role === "STUDENT" && (
+                <>
+                  <Link to="/student/dashboard" className="bg-indigo-600 text-white px-10 py-4 md:px-12 md:py-5 rounded-full font-black text-lg md:text-xl hover:scale-105 active:scale-95 transition-all shadow-xl shadow-indigo-500/20">
+                    Dashboard Siswa 🎮
+                  </Link>
+                  <Link to="/explore" className="bg-white/10 text-white border border-white/20 backdrop-blur-md px-10 py-4 md:px-12 md:py-5 rounded-full font-black text-lg md:text-xl hover:bg-white/20 transition-all">
+                    Lihat Galeri ➔
+                  </Link>
+                </>
+              )}
+
+              {!user && (
+                <>
+                  <Link to="/register" className="bg-indigo-600 text-white px-10 py-4 md:px-12 md:py-5 rounded-full font-black text-lg md:text-xl hover:scale-105 active:scale-95 transition-all shadow-xl shadow-indigo-500/20">
+                    Coba Gratis Sekarang
+                  </Link>
+                  <Link to="/explore" className="bg-white/10 text-white border border-white/20 backdrop-blur-md px-10 py-4 md:px-12 md:py-5 rounded-full font-black text-lg md:text-xl hover:bg-white/20 transition-all">
+                    Lihat Galeri ➔
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </section>

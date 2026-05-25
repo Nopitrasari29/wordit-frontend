@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import ProtectedRoute from "./ProtectedRoute";
 import MainLayout from "../components/layout/MainLayout";
+import AdminLayout from "../components/layout/AdminLayout";
 
 /* PUBLIC PAGES */
 import LandingPage from "../pages/public/LandingPage";
@@ -33,7 +34,6 @@ import ChooseTemplatePage from "../pages/teacher/create-game/ChooseTemplatePage"
 import GameBuilderPage from "../pages/teacher/create-game/GameBuilderPage";
 import EditGamePage from "../pages/teacher/create-game/EditGamePage";
 import PreviewGamePage from "../pages/teacher/create-game/PreviewGamePage";
-import AddQuestionsPage from "../pages/teacher/create-game/AddQuestionsPage";
 import ClassPage from "../pages/teacher/ClassPage";
 import AnalyticsClassPage from "../pages/teacher/analytics/AnalyticsClassPage";
 import HostSessionPage from "../pages/teacher/HostSessionPage";
@@ -88,22 +88,23 @@ export default function Router() {
             <Route path="/teacher/create/level" element={<ChooseLevelPage />} />
             <Route path="/teacher/create/template" element={<ChooseTemplatePage />} />
             <Route path="/teacher/create/builder" element={<GameBuilderPage />} />
-            <Route path="/teacher/create/questions" element={<AddQuestionsPage />} />
 
             {/* Path Edit & Preview yang Sinkron dengan Navigation */}
             <Route path="/teacher/game/edit/:gameId" element={<EditGamePage />} />
             <Route path="/teacher/game/preview/:gameId" element={<PreviewGamePage />} />
           </Route>
+        </Route>
 
-          {/* ================= ADMIN ROUTES ================= */}
-          <Route element={<ProtectedRoute role="ADMIN" />}>
+        {/* ================= ADMIN ROUTES ================= */}
+        <Route element={<ProtectedRoute role="ADMIN" />}>
+          <Route element={<AdminLayout />}>
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
             <Route path="/admin/users" element={<UserManagementPage />} />
             <Route path="/admin/logs" element={<SystemLogsPage />} />
           </Route>
-
-          <Route path="*" element={<NotFoundPage />} />
         </Route>
+
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </BrowserRouter>
   );

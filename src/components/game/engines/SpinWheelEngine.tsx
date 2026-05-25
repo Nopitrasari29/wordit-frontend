@@ -21,6 +21,19 @@ export default function SpinWheelEngine({ data, onIntermission, onGameOver }: { 
     const [timeLeft, setTimeLeft] = useState(15);
     const [history, setHistory] = useState<any[]>([]);
 
+    const choices = useMemo(() => {
+        if (!selectedQuestion) return [];
+        const allAnswers = questions.map((q: any) => q.answer);
+        const distractors = allAnswers
+            .filter((a: string) => a.toLowerCase() !== selectedQuestion.answer.toLowerCase())
+            .sort(() => Math.random() - 0.5)
+            .slice(0, 3);
+        while (distractors.length < 3) {
+            distractors.push("Opsi " + (distractors.length + 1));
+        }
+        return [selectedQuestion.answer, ...distractors].sort(() => Math.random() - 0.5);
+    }, [selectedQuestion, questions]);
+
     const isBusy = useRef(false);
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -179,16 +192,34 @@ export default function SpinWheelEngine({ data, onIntermission, onGameOver }: { 
             ) : (
                 <div className="w-full bg-white p-8 rounded-[3.5rem] shadow-xl border-2 border-indigo-50 text-center space-y-6 animate-in zoom-in duration-300">
                     <h3 className="text-2xl font-black italic text-slate-800">"{selectedQuestion.question}"</h3>
-                    <input
-                        type="text"
-                        disabled={isAnswered}
-                        value={userInput}
-                        onChange={(e) => setUserInput(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && handleResult(userInput.trim().toLowerCase() === selectedQuestion.answer.toLowerCase(), userInput)}
-                        className="w-full bg-slate-50 border-4 border-slate-100 p-5 rounded-2xl text-center font-black text-xl uppercase outline-none focus:border-indigo-500 transition-all"
-                        placeholder="Ketik Jawaban..."
-                        autoFocus
-                    />
+                    <div className="grid grid-cols-2 gap-4 w-full pt-4">
+                        {choices.map((choice: string, i: number) => {
+                            const isCorrectChoice = choice.toLowerCase() === selectedQuestion.answer.toLowerCase();
+                            let btnStyle = "bg-slate-50 hover:bg-indigo-50 border-slate-100 hover:border-indigo-300 text-slate-700 hover:text-indigo-600";
+                            if (isAnswered) {
+                                if (isCorrectChoice) {
+                                    btnStyle = "bg-emerald-500 border-emerald-600 text-white cursor-default";
+                                } else if (userInput.toLowerCase() === choice.toLowerCase()) {
+                                    btnStyle = "bg-rose-500 border-rose-600 text-white cursor-default";
+                                } else {
+                                    btnStyle = "bg-slate-100 border-slate-200 text-slate-400 opacity-50 cursor-default";
+                                }
+                            }
+                            return (
+                                <button
+                                    key={i}
+                                    disabled={isAnswered}
+                                    onClick={() => {
+                                        setUserInput(choice);
+                                        handleResult(isCorrectChoice, choice);
+                                    }}
+                                    className={`p-4 md:p-6 border-2 rounded-[2rem] font-black text-sm md:text-base transition-all active:scale-95 shadow-sm uppercase ${btnStyle}`}
+                                >
+                                    {choice}
+                                </button>
+                            );
+                        })}
+                    </div>
                 </div>
             )}
         </div>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "react-hot-toast";
 import { generateGameWithAI } from "../../pages/services/ai.service";
 
@@ -6,7 +6,6 @@ interface AIProps {
   level: string;
   template: string;
   onFinish: (data: any) => void;
-  // ✅ FE-17: Terima requestedCount dari parent agar bisa validasi strict count
   requestedCount?: number;
 }
 
@@ -16,11 +15,41 @@ export default function AIQuizGenerator({
   onFinish,
   requestedCount = 5,
 }: AIProps) {
-  const [topic, setTopic] = useState("");
+  const cacheKey = `ai_gen_${level}_${template}`;
+
+  const [topic, setTopic] = useState(() => {
+    return sessionStorage.getItem(`${cacheKey}_topic`) || "";
+  });
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<any>(null);
-  // ✅ FE-17: State untuk peringatan jumlah soal tidak sesuai
-  const [countWarning, setCountWarning] = useState<string | null>(null);
+  const [showGuide, setShowGuide] = useState(false);
+  const [itemsList, setItemsList] = useState<any[]>(() => {
+    const saved = sessionStorage.getItem(`${cacheKey}_items`);
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [countWarning, setCountWarning] = useState<string | null>(() => {
+    return sessionStorage.getItem(`${cacheKey}_warning`) || null;
+  });
+
+  // Keep sessionStorage updated
+  useEffect(() => {
+    sessionStorage.setItem(`${cacheKey}_topic`, topic);
+  }, [topic, cacheKey]);
+
+  useEffect(() => {
+    if (itemsList && itemsList.length > 0) {
+      sessionStorage.setItem(`${cacheKey}_items`, JSON.stringify(itemsList));
+    } else {
+      sessionStorage.removeItem(`${cacheKey}_items`);
+    }
+  }, [itemsList, cacheKey]);
+
+  useEffect(() => {
+    if (countWarning) {
+      sessionStorage.setItem(`${cacheKey}_warning`, countWarning);
+    } else {
+      sessionStorage.removeItem(`${cacheKey}_warning`);
+    }
+  }, [countWarning, cacheKey]);
 
   // 🛠️ UNIVERSAL DATA ADAPTER (Mendukung semua 10 template)
   const getNormalizedItems = (data: any) => {
@@ -55,13 +84,13 @@ export default function AIQuizGenerator({
         templateType: template as any,
         count: requestedCount,
       });
-      setResult(response);
+      const items = getNormalizedItems(response);
+      setItemsList(items);
 
       // ✅ FE-17: Validasi strict count — tampilkan peringatan jika soal kurang
-      const items = getNormalizedItems(response);
       if (items.length < requestedCount) {
         setCountWarning(
-          `AI hanya menghasilkan ${items.length} soal dari ${requestedCount} yang diminta. Kamu tetap bisa menggunakan soal ini atau klik Generate ulang.`,
+          `AI hanya menghasilkan ${items.length} soal dari ${requestedCount} yang diminta. Kamu tetap bisa menambahkan soal secara bertahap atau menggunakan soal ini.`,
         );
         toast(`⚠️ AI menghasilkan ${items.length}/${requestedCount} soal`, {
           icon: "⚠️",
@@ -76,20 +105,95 @@ export default function AIQuizGenerator({
     }
   }
 
-  const previewItems = getNormalizedItems(result);
+  async function generateMore() {
+    const missingCount = requestedCount - itemsList.length;
+    if (missingCount <= 0) return;
+
+    setLoading(true);
+    try {
+      const response = await generateGameWithAI({
+        topic,
+        educationLevel: level as any,
+        templateType: template as any,
+        count: missingCount,
+      });
+      const newItems = getNormalizedItems(response);
+      if (newItems.length === 0) {
+        toast.error("AI tidak berhasil menghasilkan soal tambahan. Coba lagi.");
+        return;
+      }
+      const updatedList = [...itemsList, ...newItems];
+      setItemsList(updatedList);
+
+      if (updatedList.length < requestedCount) {
+        setCountWarning(
+          `AI berhasil menambahkan ${newItems.length} soal (total ${updatedList.length}/${requestedCount}). Klik tombol di bawah untuk menambah lagi.`,
+        );
+      } else {
+        setCountWarning(null);
+        toast.success(`Berhasil menambahkan ${newItems.length} soal baru! Total ${updatedList.length} soal siap.`);
+      }
+    } catch (err: any) {
+      toast.error("Gagal generate soal tambahan AI.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const previewItems = itemsList;
 
   return (
     <div className="bg-[#0f172a] p-8 md:p-12 rounded-[3rem] text-white shadow-2xl relative overflow-hidden border border-white/5 font-sans">
       <div className="relative z-10">
         <div className="mb-6">
-          <h2 className="text-3xl font-black mb-2 italic flex items-center gap-3">
-            Magic Generator <span className="text-indigo-400">✨</span>
-          </h2>
-          <p className="text-slate-400 font-bold text-sm uppercase tracking-widest">
-            Merancang kuis {template.replace(/_/g, " ")} • Level {level} •{" "}
-            {requestedCount} Soal
-          </p>
+          <div className="flex justify-between items-start flex-wrap gap-4">
+            <div>
+              <h2 className="text-3xl font-black mb-2 italic flex items-center gap-3">
+                Magic Generator <span className="text-indigo-400">✨</span>
+              </h2>
+              <p className="text-slate-400 font-bold text-sm uppercase tracking-widest">
+                Merancang kuis {template.replace(/_/g, " ")} • Level {level} •{" "}
+                {requestedCount} Soal
+              </p>
+            </div>
+            <button
+              onClick={() => setShowGuide(!showGuide)}
+              className="bg-indigo-600/30 hover:bg-indigo-600/50 text-indigo-300 border border-indigo-500/20 px-4 py-2 rounded-full font-black text-xs transition-all active:scale-95 flex items-center gap-1.5"
+            >
+              💡 {showGuide ? "Tutup Panduan" : "Panduan Magic"}
+            </button>
+          </div>
         </div>
+
+        {showGuide && (
+          <div className="mb-8 bg-slate-800/80 border border-slate-700/60 p-6 rounded-2xl space-y-4 animate-in slide-in-from-top-4 duration-300">
+            <h4 className="font-black text-indigo-400 text-sm uppercase tracking-wider flex items-center gap-2">
+              💡 Cara Menggunakan Magic Generator
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs text-slate-300 font-medium">
+              <div className="space-y-3">
+                <p>
+                  <strong className="text-white">1. Pilih Topik yang Jelas:</strong><br />
+                  Gunakan istilah spesifik. Contoh: <code className="bg-slate-900 text-indigo-300 px-1.5 py-0.5 rounded">Tata Surya & Planet</code> atau <code className="bg-slate-900 text-indigo-300 px-1.5 py-0.5 rounded">Persamaan Kuadrat</code> lebih baik daripada <code className="bg-slate-900 text-indigo-300 px-1.5 py-0.5 rounded">Sains</code> atau <code className="bg-slate-900 text-indigo-300 px-1.5 py-0.5 rounded">Matematika</code>.
+                </p>
+                <p>
+                  <strong className="text-white">2. Adaptasi Templat & Level:</strong><br />
+                  AI secara otomatis menyesuaikan kosakata dan kerumitan soal untuk level <strong className="text-indigo-400">{level}</strong> dan format game <strong className="text-indigo-400">{template.replace(/_/g, " ")}</strong>.
+                </p>
+              </div>
+              <div className="space-y-3">
+                <p>
+                  <strong className="text-white">3. Skema Bertahap (Incremental):</strong><br />
+                  Jika kuota hasil generate pertama kurang dari target {requestedCount} soal, gunakan tombol <code className="bg-slate-900 text-indigo-300 px-1.5 py-0.5 rounded">➕ Tambah Soal</code> untuk menambah soal baru tanpa menghapus soal yang sudah terbuat.
+                </p>
+                <p>
+                  <strong className="text-white">4. Review & Impor:</strong><br />
+                  Semua soal pratinjau di bawah dapat diedit atau dihapus secara individual sebelum Anda mengeklik <strong className="text-indigo-400">Gunakan Soal AI</strong> untuk menyalinnya ke Lembar Kerja Builder.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* 🎯 FE-NEW-05: DISCLAIMER AI BANNER */}
         <div className="mb-8 bg-amber-500/10 border border-amber-500/20 p-4 rounded-2xl flex items-start gap-4">
@@ -132,13 +236,22 @@ export default function AIQuizGenerator({
               <p className="text-[12px] text-rose-200/90 font-bold leading-relaxed">
                 {countWarning}
               </p>
-              <button
-                onClick={generate}
-                disabled={loading}
-                className="mt-3 text-[11px] font-black text-rose-300 hover:text-white bg-rose-500/20 hover:bg-rose-500/40 px-4 py-2 rounded-full transition-all border border-rose-500/30 disabled:opacity-50"
-              >
-                {loading ? "Generating..." : "🔄 Generate Ulang"}
-              </button>
+              <div className="flex gap-3 mt-3">
+                <button
+                  onClick={generateMore}
+                  disabled={loading}
+                  className="text-[11px] font-black text-emerald-300 hover:text-white bg-emerald-500/20 hover:bg-emerald-500/40 px-4 py-2 rounded-full transition-all border border-emerald-500/30 disabled:opacity-50"
+                >
+                  {loading ? "Generating..." : `➕ Tambah ${requestedCount - itemsList.length} Soal`}
+                </button>
+                <button
+                  onClick={generate}
+                  disabled={loading}
+                  className="text-[11px] font-black text-rose-300 hover:text-white bg-rose-500/20 hover:bg-rose-500/40 px-4 py-2 rounded-full transition-all border border-rose-500/30 disabled:opacity-50"
+                >
+                  {loading ? "Generating..." : "🔄 Generate Ulang Semua"}
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -224,7 +337,7 @@ export default function AIQuizGenerator({
                   }
 
                   onFinish(finalData);
-                  setResult(null);
+                  setItemsList([]);
                   setTopic("");
                   setCountWarning(null);
                 }}
@@ -289,7 +402,7 @@ export default function AIQuizGenerator({
                             ? "BENAR"
                             : "SALAH"
                           : q.correctAnswer) ||
-                        "Sesuai Keyword"}
+                        "Penilaian Berbasis Kata Kunci (Smart AI)"}
                     </p>
                   </div>
                 </div>

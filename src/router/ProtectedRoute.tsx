@@ -1,8 +1,9 @@
-import { Navigate, Outlet } from "react-router-dom"
+import { Navigate, Outlet, useLocation } from "react-router-dom"
 import { useAuth } from "../hooks/useAuth"
 
 export default function ProtectedRoute({ role }: { role?: string }) {
     const { user, loading } = useAuth()
+    const location = useLocation()
 
     // Menghindari redirect saat data auth masih di-fetch
     if (loading) {
@@ -15,7 +16,7 @@ export default function ProtectedRoute({ role }: { role?: string }) {
 
     // Jika tidak ada user, tendang ke login
     if (!user) {
-        return <Navigate to="/login" replace />
+        return <Navigate to="/login" state={{ from: location.pathname }} replace />
     }
 
     // Jika ada batasan role dan role user tidak sesuai

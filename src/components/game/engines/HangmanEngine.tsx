@@ -181,6 +181,30 @@ export default function HangmanEngine({ data, onIntermission }: { data: any, onI
                 </div>
             </div>
 
+            {/* VISUAL HANGMAN SVG */}
+            <div className="flex justify-center items-center">
+                <svg className="w-40 h-48 stroke-slate-700 stroke-[5] fill-none stroke-linecap-round stroke-linejoin-round bg-slate-50 p-4 rounded-3xl border border-slate-100 shadow-inner">
+                    {/* Gallows */}
+                    <line x1="20" y1="150" x2="120" y2="150" />
+                    <line x1="50" y1="150" x2="50" y2="20" />
+                    <line x1="50" y1="20" x2="110" y2="20" />
+                    <line x1="110" y1="20" x2="110" y2="40" />
+
+                    {/* Head */}
+                    {lives <= 5 && <circle cx="110" cy="52" r="12" className="stroke-indigo-600 stroke-[4]" />}
+                    {/* Body */}
+                    {lives <= 4 && <line x1="110" y1="64" x2="110" y2="105" className="stroke-indigo-600" />}
+                    {/* Left Arm */}
+                    {lives <= 3 && <line x1="110" y1="75" x2="90" y2="60" className="stroke-indigo-600" />}
+                    {/* Right Arm */}
+                    {lives <= 2 && <line x1="110" y1="75" x2="130" y2="60" className="stroke-indigo-600" />}
+                    {/* Left Leg */}
+                    {lives <= 1 && <line x1="110" y1="105" x2="90" y2="130" className="stroke-indigo-600" />}
+                    {/* Right Leg */}
+                    {lives === 0 && <line x1="110" y1="105" x2="130" y2="130" className="stroke-rose-500" />}
+                </svg>
+            </div>
+
             {/* HINT AREA */}
             <div className="text-center space-y-4 w-full">
                 <div className="bg-white border-4 border-indigo-50 px-8 py-6 rounded-[2.5rem] shadow-sm">

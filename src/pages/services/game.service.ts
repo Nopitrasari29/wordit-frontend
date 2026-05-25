@@ -12,6 +12,9 @@ export const getGames = async (params?: {
   limit?: number;
 }) => {
   const res = await api.get("/games", { params });
+  if (res.data?.data && typeof res.data.data === "object" && "games" in res.data.data) {
+    return res.data.data.games;
+  }
   return res.data.data;
 };
 

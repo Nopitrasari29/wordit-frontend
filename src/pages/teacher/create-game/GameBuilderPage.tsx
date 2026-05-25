@@ -35,6 +35,7 @@ export default function GameBuilderPage() {
     questions: [] as any[], // Untuk Maze Chase & Spin Wheel, Multiple Choice, True/False, Essay
     pairs: [] as any[], // Untuk Matching
     gridSize: 8,
+    gradingMode: "AI",
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -79,13 +80,14 @@ export default function GameBuilderPage() {
     // Normalisasi content jika builder mengirim array satu lapis
     const dataObj = Array.isArray(content) ? content[0] : content;
 
-    setGamePayload((prev) => ({
+    setGamePayload((prev: any) => ({
       ...prev,
       words: dataObj.words || prev.words,
       cards: dataObj.cards || prev.cards,
       questions: dataObj.questions || prev.questions,
       pairs: dataObj.pairs || prev.pairs, // Tambahkan pairs
       gridSize: dataObj.gridSize || prev.gridSize,
+      gradingMode: dataObj.gradingMode || prev.gradingMode,
     }));
   };
 
@@ -130,6 +132,9 @@ export default function GameBuilderPage() {
           quizContent.pairs = currentItems;
         } else {
           quizContent.questions = currentItems;
+        }
+        if (template === TemplateType.ESSAY) {
+          quizContent.gradingMode = (gamePayload as any).gradingMode || "AI";
         }
       } else if (isQuestionBased) {
         // Format untuk Spin the Wheel & Maze Chase

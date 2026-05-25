@@ -5,6 +5,7 @@ import {
   TrendingUp,
   ChevronRight,
   Loader2,
+  Download,
 } from "lucide-react";
 import {
   BarChart,
@@ -69,6 +70,70 @@ export default function ClassPage() {
     fetchClassAnalytics();
   }, []);
 
+  const handleResetForRemedial = async (resultId: string, studentName: string) => {
+    if (!window.confirm(`Reset hasil kuis ${studentName} agar bisa melakukan tes ulang / remedial? Data nilai sebelumnya akan dihapus secara permanen.`)) {
+      return;
+    }
+    
+    try {
+      const response = await api.delete(`/analytics/remedial/${resultId}`);
+      if (response.data.status === "success") {
+        toast.success(`Berhasil! Sesi ${studentName} direset untuk remedial.`);
+        // Saring siswa dari state
+        setAtRiskStudents((prev) => prev.filter((s) => s.id !== resultId));
+        
+        // Refresh data kelas untuk memperbarui rata-rata skor
+        const classesResponse = await api.get("/analytics/teacher/classes");
+        if (classesResponse.data.status === "success") {
+          setClasses(classesResponse.data.data.classes);
+        }
+      }
+    } catch (err: any) {
+      console.error("Gagal reset remedial:", err);
+      toast.error(err.response?.data?.message || "Gagal melakukan reset remedial.");
+    }
+  };
+
+  const handleExportCSV = () => {
+    if (classes.length === 0) {
+      return toast.error("Tidak ada data kelas untuk diekspor.");
+    }
+    let csvContent = "Nama Kelas,Jumlah Siswa,Rata-rata Skor,Rata-rata Akurasi (%),Total Sesi Main\n";
+    classes.forEach((c) => {
+      csvContent += `"${c.name}",${c.students},${c.averageScore},${c.averageAccuracy},${c.totalPlays}\n`;
+    });
+    
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `Laporan_Performa_Kelas_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success("Laporan kelas berhasil diunduh! 📄");
+  };
+
+  const handleExportAtRiskCSV = () => {
+    if (atRiskStudents.length === 0) {
+      return toast.error("Tidak ada siswa remedial untuk diekspor.");
+    }
+    let csvContent = "Nama Siswa,Kelas,Kuis,Detail Kendala,Skor\n";
+    atRiskStudents.forEach((s) => {
+      csvContent += `"${s.name}","${s.className}","${s.gameName}","${s.issue}",${s.score}\n`;
+    });
+    
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `Daftar_Remedial_Siswa_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success("Daftar remedial berhasil diunduh! 📄");
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-[60vh] flex flex-col items-center justify-center space-y-4">
@@ -105,12 +170,22 @@ export default function ClassPage() {
             <span className="text-indigo-400">3A</span>).
           </p>
         </div>
-        <button
-          onClick={() => navigate("/teacher/create/level")}
-          className="bg-indigo-600 hover:bg-indigo-500 text-white px-8 py-4 rounded-full font-black shadow-xl shadow-indigo-200 transition-all active:scale-95"
-        >
-          + Buat Kuis Baru
-        </button>
+        <div className="flex flex-wrap gap-3">
+          {classes.length > 0 && (
+            <button
+              onClick={handleExportCSV}
+              className="bg-white border-2 border-indigo-600 text-indigo-600 hover:bg-indigo-50 px-6 py-4 rounded-full font-black shadow-xl shadow-indigo-100 transition-all active:scale-95 flex items-center gap-2"
+            >
+              <Download size={18} /> Ekspor Kelas (CSV)
+            </button>
+          )}
+          <button
+            onClick={() => navigate("/teacher/create/level")}
+            className="bg-indigo-600 hover:bg-indigo-500 text-white px-8 py-4 rounded-full font-black shadow-xl shadow-indigo-200 transition-all active:scale-95 flex items-center gap-2"
+          >
+            + Buat Kuis Baru
+          </button>
+        </div>
       </div>
 
       {classes.length === 0 ? (
@@ -290,7 +365,7 @@ export default function ClassPage() {
                   atRiskStudents.map((student) => (
                     <div
                       key={student.id}
-                      className="bg-white p-4 rounded-2xl shadow-sm border border-rose-50 flex items-center justify-between group cursor-pointer hover:border-rose-200 transition-colors"
+                      className="bg-white p-4 rounded-2xl shadow-sm border border-rose-50 flex items-center justify-between group hover:border-rose-200 transition-colors"
                     >
                       <div>
                         <h4 className="font-black text-slate-800 text-sm">
@@ -303,8 +378,17 @@ export default function ClassPage() {
                           {student.issue}
                         </p>
                       </div>
-                      <div className="bg-rose-50 w-12 h-12 rounded-xl flex items-center justify-center font-black text-rose-600 border border-rose-100">
-                        {student.score}
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => handleResetForRemedial(student.id, student.name)}
+                          className="bg-rose-500 hover:bg-rose-600 text-white px-3 py-2 rounded-xl text-[10px] font-black transition-all active:scale-95"
+                          title="Reset Sesi (Remedial / Test Ulang)"
+                        >
+                          🔄 Remed
+                        </button>
+                        <div className="bg-rose-50 w-12 h-12 rounded-xl flex items-center justify-center font-black text-rose-600 border border-rose-100 shrink-0">
+                          {student.score}
+                        </div>
                       </div>
                     </div>
                   ))
@@ -322,14 +406,10 @@ export default function ClassPage() {
 
               {atRiskStudents.length > 0 && (
                 <button
-                  onClick={() =>
-                    toast("Fitur pesan tindak lanjut belum tersedia.", {
-                      icon: "🚧",
-                    })
-                  }
-                  className="w-full mt-6 bg-rose-600 hover:bg-rose-500 text-white py-4 rounded-2xl font-black transition-all shadow-lg shadow-rose-200 active:scale-95 text-sm"
+                  onClick={handleExportAtRiskCSV}
+                  className="w-full mt-6 bg-rose-600 hover:bg-rose-500 text-white py-4 rounded-2xl font-black transition-all shadow-lg shadow-rose-200 active:scale-95 text-sm flex items-center justify-center gap-2"
                 >
-                  Tindak Lanjuti Siswa
+                  <Download size={18} /> Ekspor Daftar Remedial (CSV)
                 </button>
               )}
             </div>

@@ -12,13 +12,14 @@ export default function MainLayout() {
         location.pathname === "/register" ||
         location.pathname === "/forgot-password" ||
         location.pathname === "/student/join" ||
+        location.pathname.startsWith("/student/game/") ||
+        location.pathname === "/student/result" ||
+        location.pathname.startsWith("/play/") ||
         location.pathname === "/profile" ||
         location.pathname === "/profile/edit" ||
         location.pathname === "/teacher/projects" ||
         location.pathname.startsWith("/teacher/create") ||
-        location.pathname.startsWith("/teacher/edit") ||
-        location.pathname === "/admin/dashboard" ||
-        location.pathname === "/admin/users";
+        location.pathname.startsWith("/teacher/edit");
 
     // Khusus Landing Page tidak pakai padding atas agar Hero terlihat menyatu
     const isHeroPage = location.pathname === "/";

@@ -46,11 +46,32 @@ export default function GameLobbyPage() {
       },
     );
 
+    // 👢 6. KICKED FROM LOBBY: Siswa dikeluarkan oleh guru/host
+    socket.on("kickedFromLobby", () => {
+      toast.error("Kamu telah dikeluarkan dari lobby oleh Host. 👢");
+      navigate("/student/join");
+    });
+
+    // ❌ 7. ROOM ERROR: Kode kuis salah atau room tidak aktif
+    socket.on("roomError", (message: string) => {
+      toast.error(message || "Kode kuis tidak aktif atau tidak ditemukan. 🛑");
+      navigate("/student/join");
+    });
+
+    // 🛑 8. HOST DISCONNECTED: Guru keluar / mati koneksinya
+    socket.on("hostDisconnected", () => {
+      toast.error("Host terputus dari lobby. 🛑");
+      navigate("/student/join");
+    });
+
     // Cleanup agar tidak ada memory leak
     return () => {
       socket.off("updatePlayerList");
       socket.off("gameStarted");
       socket.off("lobbyInfo");
+      socket.off("kickedFromLobby");
+      socket.off("roomError");
+      socket.off("hostDisconnected");
     };
   }, [sessionId, navigate]);
 

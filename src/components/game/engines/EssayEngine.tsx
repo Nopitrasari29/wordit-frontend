@@ -79,6 +79,11 @@ export default function EssayEngine({
     setCharCount(currentAnswer.length);
   }, [currentAnswer]);
 
+  const wordCount = useMemo(() => {
+    const trimmed = currentAnswer.trim();
+    return trimmed ? trimmed.split(/\s+/).length : 0;
+  }, [currentAnswer]);
+
   useEffect(() => {
     if (questions.length === 0) return;
     timerRef.current = setInterval(() => {
@@ -151,9 +156,10 @@ export default function EssayEngine({
       .split(/\s+/)
       .filter((w) => w.length > 1).length;
     let tempPoints = 0;
-    if (wordCount >= 10) tempPoints = 60;
-    else if (wordCount >= 5) tempPoints = 40;
-    else if (isAnswerMeaningful(answerToSubmit)) tempPoints = 20;
+    if (wordCount >= 15) tempPoints = 100;
+    else if (wordCount >= 10) tempPoints = 80;
+    else if (wordCount >= 5) tempPoints = 60;
+    else if (isAnswerMeaningful(answerToSubmit)) tempPoints = 40;
 
     const newScore = score + tempPoints;
     setScore(newScore);
@@ -486,7 +492,7 @@ export default function EssayEngine({
             <span
               className={`text-xs font-black ${charCount < 15 && charCount > 0 ? "text-amber-400" : charCount >= 50 ? "text-emerald-500" : "text-slate-400"}`}
             >
-              {charCount} karakter
+              {wordCount} kata • {charCount} karakter
             </span>
           </div>
         </div>

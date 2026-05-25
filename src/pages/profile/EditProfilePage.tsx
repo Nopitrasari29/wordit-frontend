@@ -2,12 +2,14 @@ import { useState } from "react"
 import { useAuth } from "../../hooks/useAuth"
 import { getImageUrl } from "../../utils/assets"
 import Input from "../../components/ui/Input"
+import { updateProfile } from "../../pages/services/user.service"
 
 export default function EditProfilePage() {
   const { user, updateUser } = useAuth()
 
   const [name, setName] = useState(user?.name || "")
   const [email, setEmail] = useState(user?.email || "")
+  const [bio, setBio] = useState(user?.profile?.bio || "")
   const [currentPassword, setCurrentPassword] = useState("")
   const [newPassword, setNewPassword] = useState("")
   const [photo, setPhoto] = useState<File | null>(null)
@@ -26,27 +28,18 @@ export default function EditProfilePage() {
     e.preventDefault()
     try {
       setSaving(true)
-      const token = localStorage.getItem("token")
-      const formData = new FormData()
-
-      formData.append("name", name)
-      formData.append("email", email)
-      if (currentPassword) formData.append("currentPassword", currentPassword)
-      if (newPassword) formData.append("newPassword", newPassword)
-      if (photo) formData.append("profile_picture", photo)
-
-      // Ganti URL API Anda di sini
-      const res = await fetch("http://localhost:3000/api/users/profile", {
-        method: "PATCH",
-        headers: { Authorization: `Bearer ${token}` },
-        body: formData
+      
+      const updatedData = await updateProfile({
+        name,
+        email,
+        bio,
+        currentPassword: currentPassword || undefined,
+        newPassword: newPassword || undefined,
+        photo: photo || undefined
       })
 
-      const json = await res.json()
-      if (!res.ok) throw new Error(json.message || "Failed to update profile")
-
       // ✅ Update data user di Context (agar foto profil langsung berubah)
-      updateUser(json.data)
+      updateUser(updatedData)
 
       alert("Profile updated successfully!")
       window.location.href = "/profile"
@@ -108,6 +101,20 @@ export default function EditProfilePage() {
               placeholder="Email"
               required
             />
+
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-bold text-slate-600">Bio Description</label>
+              <textarea
+                value={bio}
+                onChange={(e) => setBio(e.target.value)}
+                placeholder="Tulis bio singkat Anda di sini..."
+                maxLength={250}
+                className="w-full border border-slate-200 px-6 py-4 rounded-3xl text-slate-700 focus:border-indigo-500 focus:bg-white outline-none transition-all resize-none h-32 text-sm font-medium"
+              />
+              <span className="text-[10px] text-right font-bold text-slate-400 uppercase tracking-widest">
+                {bio.length}/250 Karakter
+              </span>
+            </div>
 
             <div className="pt-4 border-t border-slate-100 mt-6">
               <p className="text-xs font-black text-indigo-400 uppercase tracking-[0.2em] mb-4">Ubah Password</p>

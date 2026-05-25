@@ -13,6 +13,13 @@ export default function GameEditPage() {
     const [errorInfo, setErrorInfo] = useState<string | null>(null);
     const [isSaving, setIsSaving] = useState(false);
 
+    // States untuk metadata tambahan
+    const [classGrade, setClassGrade] = useState("");
+    const [subject, setSubject] = useState("");
+    const [chapter, setChapter] = useState("");
+    const [topic, setTopic] = useState("");
+    const [timeLimit, setTimeLimit] = useState<number | "">("");
+
     const handleEditorChange = useCallback((content: any) => {
         setGamePayload((prev: any) => {
             if (!prev) return prev;
@@ -52,6 +59,12 @@ export default function GameEditPage() {
                     initialJson.pairs = initialJson.pairs || [];
                 }
 
+                setClassGrade(data.classGrade || "");
+                setSubject(data.subject || "");
+                setChapter(data.chapter || "");
+                setTopic(data.topic || "");
+                setTimeLimit(data.gameJson?.timeLimit || "");
+
                 setGamePayload({ ...data, gameJson: initialJson });
                 setErrorInfo(null);
             } catch (err: any) {
@@ -78,8 +91,18 @@ export default function GameEditPage() {
             // memotong paksa atau membersihkan struktur datanya (menghindari hilangnya
             // opsi Pilihan Ganda / Kata Kunci Essay).
 
+            if (timeLimit !== "") {
+                content.timeLimit = Number(timeLimit);
+            } else {
+                delete content.timeLimit;
+            }
+
             const updateData = {
                 title: gamePayload.title.trim(),
+                classGrade: classGrade || undefined,
+                subject: subject || undefined,
+                chapter: chapter || undefined,
+                topic: topic || undefined,
                 gameJson: content
             };
 
@@ -117,10 +140,40 @@ export default function GameEditPage() {
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-6 mb-3 block">Judul Aktivitas</label>
                     <input
                         type="text"
-                        className="w-full bg-slate-50 border-2 border-transparent px-8 py-5 rounded-full focus:bg-white focus:border-indigo-500 outline-none font-black text-2xl text-slate-800 transition-all shadow-inner"
+                        className="w-full bg-slate-50 border-2 border-transparent px-8 py-5 rounded-full focus:bg-white focus:border-indigo-500 outline-none font-black text-2xl text-slate-800 transition-all shadow-inner mb-6"
                         value={gamePayload?.title || ""}
                         onChange={(e) => setGamePayload({ ...gamePayload, title: e.target.value })}
                     />
+
+                    {/* Input Metadata Tambahan */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 ml-2">
+                        <div>
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Kelas / Grade</label>
+                            <input type="text" placeholder="Misal: 7A, Kelas 10..." className="w-full bg-slate-50 border border-slate-100 px-4 py-3 rounded-xl focus:border-indigo-500 outline-none text-sm font-bold text-slate-700" value={classGrade} onChange={(e) => setClassGrade(e.target.value)} />
+                        </div>
+                        <div>
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Mata Pelajaran</label>
+                            <input type="text" placeholder="Misal: Biologi, Matematika..." className="w-full bg-slate-50 border border-slate-100 px-4 py-3 rounded-xl focus:border-indigo-500 outline-none text-sm font-bold text-slate-700" value={subject} onChange={(e) => setSubject(e.target.value)} />
+                        </div>
+                        <div>
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Bab</label>
+                            <input type="text" placeholder="Misal: Sistem Pencernaan..." className="w-full bg-slate-50 border border-slate-100 px-4 py-3 rounded-xl focus:border-indigo-500 outline-none text-sm font-bold text-slate-700" value={chapter} onChange={(e) => setChapter(e.target.value)} />
+                        </div>
+                        <div>
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Topik Spesifik</label>
+                            <input type="text" placeholder="Misal: Enzim Lambung..." className="w-full bg-slate-50 border border-slate-100 px-4 py-3 rounded-xl focus:border-indigo-500 outline-none text-sm font-bold text-slate-700" value={topic} onChange={(e) => setTopic(e.target.value)} />
+                        </div>
+                    </div>
+
+                    {/* Timer Input */}
+                    <div className="mt-6 ml-2">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Waktu Pengerjaan / Timer (opsional)</label>
+                        <div className="flex items-center gap-3">
+                            <input type="number" min={0} placeholder="0" className="w-24 bg-slate-50 border border-slate-100 px-4 py-3 rounded-xl focus:border-indigo-500 outline-none text-sm font-bold text-slate-700 text-center" value={timeLimit} onChange={(e) => setTimeLimit(e.target.value ? Number(e.target.value) : "")} />
+                            <span className="text-slate-500 text-sm font-bold">Detik</span>
+                            <span className="text-slate-400 text-xs italic ml-2">(Biarkan kosong untuk tanpa batas waktu khusus)</span>
+                        </div>
+                    </div>
                 </div>
 
                 <div className="bg-white rounded-[4rem] p-8 md:p-14 shadow-2xl border border-slate-100 min-h-[500px] relative">

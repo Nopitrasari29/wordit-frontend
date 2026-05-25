@@ -11,8 +11,8 @@ export default function SpinWheelBuilder({ value, onChange }: any) {
         if (incoming.length > 0 && !hasMapped.current) {
             const mapped = incoming.map((item: any, index: number) => ({
                 id: item.id || `spin-${Date.now()}-${index}`,
-                question: item.question || "",
-                answer: item.answer || ""
+                question: item.question || item.hint || item.front || "",
+                answer: item.answer || item.word || item.correctAnswer || item.back || ""
             }));
             setQuestions(mapped);
             hasMapped.current = true;

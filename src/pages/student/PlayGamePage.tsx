@@ -37,7 +37,7 @@ export default function PlayGamePage() {
 
         setGame(finalData);
         if (finalData.shareCode) {
-          socket.emit("joinGame", finalData.shareCode);
+          socket.emit("joinGame", { code: finalData.shareCode, playerName });
         }
       } catch (err: any) {
         toast.error("Gagal memuat arena.");

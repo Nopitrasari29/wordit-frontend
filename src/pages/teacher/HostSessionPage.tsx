@@ -179,9 +179,24 @@ export default function HostSessionPage() {
                     </span>
                     <span className="text-white font-black text-xl tracking-tight uppercase italic">{player.name}</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-indigo-400 font-black text-3xl tracking-tighter">{player.score}</span>
-                    <span className="text-indigo-300/30 font-black text-[10px] uppercase">pts</span>
+                  <div className="flex items-center gap-4">
+                    {sessionState === 'WAITING' && (
+                      <button
+                        onClick={() => {
+                          if (window.confirm(`Kick ${player.name} dari lobby?`)) {
+                            socket.emit("kickPlayer", { code: game?.shareCode, playerId: player.id });
+                          }
+                        }}
+                        className="bg-rose-500 hover:bg-rose-600 text-white text-[10px] font-black px-3.5 py-2 rounded-xl transition-all"
+                        title="Kick Player"
+                      >
+                        Kick 👢
+                      </button>
+                    )}
+                    <div className="flex items-center gap-1">
+                      <span className="text-indigo-400 font-black text-3xl tracking-tighter">{player.score}</span>
+                      <span className="text-indigo-300/30 font-black text-[10px] uppercase">pts</span>
+                    </div>
                   </div>
                 </div>
               ))

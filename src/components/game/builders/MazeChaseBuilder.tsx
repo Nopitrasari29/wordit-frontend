@@ -11,8 +11,8 @@ export default function MazeChaseBuilder({ value, onChange }: any) {
 
         if (!hasMapped.current && incoming.length > 0) {
             const mapped = incoming.map((item: any) => ({
-                question: item.question || item.hint || "",
-                answer: item.answer || item.word || ""
+                question: item.question || item.hint || item.front || "",
+                answer: item.answer || item.word || item.correctAnswer || item.back || ""
             }));
             setQuestions(mapped);
             hasMapped.current = true;
@@ -65,7 +65,7 @@ export default function MazeChaseBuilder({ value, onChange }: any) {
                                 className="w-full bg-emerald-50 border-2 border-transparent px-6 py-3 rounded-xl focus:border-emerald-500 outline-none font-black text-emerald-700"
                                 value={q.answer}
                                 onChange={(e) => updateField(i, 'answer', e.target.value)}
-                                placeholder="Biru"
+                                placeholder="Masukkan jawaban yang benar..."
                             />
                         </div>
                         <button onClick={() => removeRow(i)} className="md:mt-6 bg-rose-50 text-rose-500 p-3 rounded-xl hover:bg-rose-500 hover:text-white transition-all opacity-0 group-hover:opacity-100">✕</button>

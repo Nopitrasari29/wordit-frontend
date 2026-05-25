@@ -16,13 +16,16 @@ export default function EssayBuilder({ value, onChange, initialData }: Props) {
     const [questions, setQuestions] = useState<Question[]>(
         initialData || value?.questions || []
     );
+    const [gradingMode, setGradingMode] = useState<"AI" | "KEYWORD">(
+        value?.gradingMode || "AI"
+    );
 
     // State lokal untuk input teks keyword per soal sebelum di-Enter
     const [keywordInputs, setKeywordInputs] = useState<{ [key: number]: string }>({});
 
     useEffect(() => {
-        onChange({ template: "ESSAY", questions });
-    }, [questions]);
+        onChange({ template: "ESSAY", questions, gradingMode });
+    }, [questions, gradingMode]);
 
     const addQuestion = () => {
         setQuestions([...questions, { question: "", keywords: [] }]);
@@ -76,14 +79,40 @@ export default function EssayBuilder({ value, onChange, initialData }: Props) {
 
     return (
         <div className="space-y-6 animate-fade-in font-sans">
-            <div className="flex justify-between items-end mb-8 border-b-2 border-slate-100 pb-6">
-                <div>
-                    <h2 className="text-3xl font-black text-slate-800 tracking-tight">Smart Essay (AI Grading)</h2>
-                    <p className="text-slate-400 font-bold mt-1 text-sm">Buat soal esai terbuka. AI akan menilai berdasarkan kata kunci (keywords) yang Anda berikan.</p>
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 border-b-2 border-slate-100 pb-6 gap-4">
+                <div className="space-y-4 w-full md:w-auto">
+                    <div>
+                        <h2 className="text-3xl font-black text-slate-800 tracking-tight">Smart Essay</h2>
+                        <p className="text-slate-400 font-bold mt-1 text-sm">Buat soal esai terbuka. Tentukan metode penilaian yang sesuai.</p>
+                    </div>
+
+                    {/* Toggle Mode Penilaian */}
+                    <div className="p-3 bg-slate-50 border border-slate-100 rounded-2xl flex items-center justify-between gap-6 max-w-md">
+                        <div>
+                            <span className="text-xs font-black text-slate-700 block">Metode Penilaian Esai</span>
+                            <span className="text-[10px] text-slate-400 font-bold">Pilih metode evaluasi jawaban siswa untuk kuis ini.</span>
+                        </div>
+                        <div className="flex bg-slate-200 p-1 rounded-xl shrink-0">
+                            <button
+                                type="button"
+                                onClick={() => setGradingMode("AI")}
+                                className={`px-3 py-1.5 rounded-lg font-black text-[10px] uppercase transition-all ${gradingMode === "AI" ? "bg-indigo-600 text-white shadow-sm" : "text-slate-600 hover:text-slate-800"}`}
+                            >
+                                AI Evaluator 🤖
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setGradingMode("KEYWORD")}
+                                className={`px-3 py-1.5 rounded-lg font-black text-[10px] uppercase transition-all ${gradingMode === "KEYWORD" ? "bg-indigo-600 text-white shadow-sm" : "text-slate-600 hover:text-slate-800"}`}
+                            >
+                                Kata Kunci (Gratis) 🔑
+                            </button>
+                        </div>
+                    </div>
                 </div>
                 <button
                     onClick={addQuestion}
-                    className="flex items-center gap-2 bg-indigo-50 text-indigo-600 px-6 py-3 rounded-full font-black hover:bg-indigo-600 hover:text-white transition-all active:scale-95 border-2 border-indigo-100 hover:border-indigo-600"
+                    className="flex items-center gap-2 bg-indigo-50 text-indigo-600 px-6 py-3 rounded-full font-black hover:bg-indigo-600 hover:text-white transition-all active:scale-95 border-2 border-indigo-100 hover:border-indigo-600 shrink-0"
                 >
                     <Plus size={20} />
                     Tambah Soal

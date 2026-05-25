@@ -35,8 +35,14 @@ export default function ProfilePage() {
             <div className="absolute -bottom-2 -right-2 bg-indigo-600 w-12 h-12 rounded-full flex items-center justify-center text-xl shadow-lg border-4 border-white">👤</div>
           </div>
           <div className="flex justify-center">
-            <span className="bg-white/70 backdrop-blur-sm border border-slate-200 text-slate-600 px-6 py-2 rounded-full font-black text-xs tracking-widest uppercase">
-              {user?.role}
+            <span className="bg-white/70 backdrop-blur-sm border border-slate-200 text-slate-600 px-6 py-2 rounded-full font-black text-xs tracking-widest uppercase flex items-center gap-1.5">
+              <span>{user?.role}</span>
+              {user?.educationLevels && user.educationLevels.length > 0 && (
+                <>
+                  <span className="text-slate-300 font-bold">•</span>
+                  <span className="text-indigo-600 font-black">{user.educationLevels.join(", ")}</span>
+                </>
+              )}
             </span>
           </div>
         </div>
@@ -57,38 +63,60 @@ export default function ProfilePage() {
         </Link>
 
         {/* GRID MENU (Value Cards) */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
+        <div className="grid grid-cols-1 max-w-md mx-auto w-full gap-8 text-left">
           {/* Project Card */}
-          <Link
-            to="/teacher/projects"
-            className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100 hover:shadow-xl hover:-translate-y-2 transition-all duration-300 group flex flex-col"
-          >
-            <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center text-3xl mb-4 group-hover:scale-110 transition-transform">
-              📁
-            </div>
-            <h3 className="text-2xl font-black text-slate-800 mb-2 tracking-tight leading-tight">
-              My Projects
-            </h3>
-            <p className="text-slate-500 font-semibold text-sm leading-relaxed text-balance">
-              Manage your created games, education activities, and resources.
-            </p>
-          </Link>
+          {user?.role === "TEACHER" && (
+            <Link
+              to="/teacher/projects"
+              className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100 hover:shadow-xl hover:-translate-y-2 transition-all duration-300 group flex flex-col"
+            >
+              <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center text-3xl mb-4 group-hover:scale-110 transition-transform">
+                📁
+              </div>
+              <h3 className="text-2xl font-black text-slate-800 mb-2 tracking-tight leading-tight">
+                My Projects
+              </h3>
+              <p className="text-slate-500 font-semibold text-sm leading-relaxed text-balance">
+                Manage your created games, education activities, and resources.
+              </p>
+            </Link>
+          )}
 
           {/* Result Card */}
-          <Link
-            to="/student/dashboard"
-            className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100 hover:shadow-xl hover:-translate-y-2 transition-all duration-300 group flex flex-col"
-          >
-            <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center text-3xl mb-4 group-hover:scale-110 transition-transform">
-              📊
-            </div>
-            <h3 className="text-2xl font-black text-slate-800 mb-2 tracking-tight leading-tight">
-              My Results
-            </h3>
-            <p className="text-slate-500 font-semibold text-sm leading-relaxed text-balance">
-              View your game history, achievement scores, and learning progress.
-            </p>
-          </Link>
+          {user?.role === "STUDENT" && (
+            <Link
+              to="/student/dashboard"
+              className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100 hover:shadow-xl hover:-translate-y-2 transition-all duration-300 group flex flex-col"
+            >
+              <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center text-3xl mb-4 group-hover:scale-110 transition-transform">
+                📊
+              </div>
+              <h3 className="text-2xl font-black text-slate-800 mb-2 tracking-tight leading-tight">
+                My Results
+              </h3>
+              <p className="text-slate-500 font-semibold text-sm leading-relaxed text-balance">
+                View your game history, achievement scores, and learning progress.
+              </p>
+            </Link>
+          )}
+
+          {/* Admin Dashboard Card */}
+          {user?.role === "ADMIN" && (
+            <Link
+              to="/admin/dashboard"
+              className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100 hover:shadow-xl hover:-translate-y-2 transition-all duration-300 group flex flex-col"
+            >
+              <div className="w-16 h-16 bg-purple-50 text-purple-600 rounded-2xl flex items-center justify-center text-3xl mb-4 group-hover:scale-110 transition-transform">
+                🛡️
+              </div>
+              <h3 className="text-2xl font-black text-slate-800 mb-2 tracking-tight leading-tight">
+                Admin Area
+              </h3>
+              <p className="text-slate-500 font-semibold text-sm leading-relaxed text-balance">
+                Monitor system performance, application stats, and view server logs.
+              </p>
+            </Link>
+          )}
         </div>
       </div>
     </div>

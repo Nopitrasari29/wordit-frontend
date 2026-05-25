@@ -1,11 +1,21 @@
 import { useEffect, useState } from "react"
 import { Link } from "react-router-dom"
 import { getGames } from "../services/game.service"
-import { dummyGames } from "../../data/dummyGames"
 import { templateIcons } from "../../data/templateIcons"
 import ScoreChart from "../../components/analytics/ScoreChart"
 import { useAuth } from "../../context/AuthContext"
 import { getMyAnalytics } from "../services/analytics.service"
+
+// ✅ FE-19: Helper untuk format detik menjadi string waktu yang mudah dibaca
+const formatStudyTime = (totalSeconds: number): string => {
+  if (!totalSeconds || totalSeconds <= 0) return "0 menit";
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  if (hours > 0)
+    return `${hours} jam ${minutes > 0 ? `${minutes} mnt` : ""}`.trim();
+  if (minutes > 0) return `${minutes} menit`;
+  return `${totalSeconds} detik`;
+};
 
 export default function StudentDashboard() {
   const { user } = useAuth()
@@ -16,15 +26,11 @@ export default function StudentDashboard() {
   // ✅ NEW ANALYTICS STATE
   const [analytics, setAnalytics] = useState<any>(null)
   const [history, setHistory] = useState<any[]>([])
+  const [badges, setBadges] = useState<any[]>([])
   const [loadingAnalytics, setLoadingAnalytics] = useState(true)
 
   // ✅ DEFAULT CHART
-  const [performanceData, setPerformanceData] = useState([
-    { game: "Anagram", score: 85 },
-    { game: "Hangman", score: 70 },
-    { game: "Word Search", score: 95 },
-    { game: "Maze Chase", score: 60 },
-  ])
+  const [performanceData, setPerformanceData] = useState<{ game: string; score: number }[]>([])
 
   useEffect(() => {
     const realName = user?.name || sessionStorage.getItem("playerName")
@@ -34,13 +40,14 @@ export default function StudentDashboard() {
       try {
         const data = await getGames()
 
-        if (data && data.length > 0) {
+        if (data && Array.isArray(data)) {
           setGames(data.slice(0, 3))
         } else {
-          setGames(dummyGames.slice(0, 3))
+          setGames([])
         }
-      } catch {
-        setGames(dummyGames.slice(0, 3))
+      } catch (err) {
+        console.error("Gagal memuat game:", err)
+        setGames([])
       }
     }
 
@@ -53,6 +60,7 @@ export default function StudentDashboard() {
 
         setAnalytics(data.overview)
         setHistory(data.recentHistory || [])
+        setBadges(data.badges || [])
 
         // ✅ REAL CHART
         if (data.recentHistory?.length > 0) {
@@ -116,13 +124,17 @@ export default function StudentDashboard() {
             ⚡
           </div>
 
-          <div>
+          <div className="flex-1 min-w-0">
             <p className="text-slate-400 font-black text-[10px] mb-1 uppercase tracking-widest">
               Total XP
             </p>
 
             <h2 className="text-3xl font-black text-slate-800 tracking-tighter">
-              {analytics?.totalXp || 0}
+              {loadingAnalytics ? (
+                <div className="h-8 bg-slate-200 rounded w-16 animate-pulse mt-1"></div>
+              ) : (
+                analytics?.totalXp || 0
+              )}
             </h2>
           </div>
         </div>
@@ -133,13 +145,17 @@ export default function StudentDashboard() {
             🎮
           </div>
 
-          <div>
+          <div className="flex-1 min-w-0">
             <p className="text-slate-400 font-black text-[10px] mb-1 uppercase tracking-widest">
               Quiz Played
             </p>
 
             <h2 className="text-3xl font-black text-slate-800">
-              {analytics?.totalGamesPlayed || 0}
+              {loadingAnalytics ? (
+                <div className="h-8 bg-slate-200 rounded w-12 animate-pulse mt-1"></div>
+              ) : (
+                analytics?.totalGamesPlayed || 0
+              )}
             </h2>
           </div>
         </div>
@@ -150,13 +166,17 @@ export default function StudentDashboard() {
             🎯
           </div>
 
-          <div>
+          <div className="flex-1 min-w-0">
             <p className="text-slate-400 font-black text-[10px] mb-1 uppercase tracking-widest">
               Avg Accuracy
             </p>
 
             <h2 className="text-3xl font-black text-slate-800">
-              {analytics?.averageAccuracy || 0}%
+              {loadingAnalytics ? (
+                <div className="h-8 bg-slate-200 rounded w-16 animate-pulse mt-1"></div>
+              ) : (
+                `${analytics?.averageAccuracy || 0}%`
+              )}
             </h2>
           </div>
         </div>
@@ -167,13 +187,17 @@ export default function StudentDashboard() {
             ⏱️
           </div>
 
-          <div>
+          <div className="flex-1 min-w-0">
             <p className="text-slate-400 font-black text-[10px] mb-1 uppercase tracking-widest">
               Study Time
             </p>
 
-            <h2 className="text-3xl font-black text-slate-800">
-              {Math.floor((analytics?.totalTimeSpentSeconds || 0) / 60)}m
+            <h2 className="text-2xl font-black text-slate-800">
+              {loadingAnalytics ? (
+                <div className="h-8 bg-slate-200 rounded w-24 animate-pulse mt-1"></div>
+              ) : (
+                formatStudyTime(analytics?.totalTimeSpentSeconds || 0)
+              )}
             </h2>
           </div>
         </div>
@@ -187,25 +211,30 @@ export default function StudentDashboard() {
         </h2>
 
         <div className="flex flex-wrap gap-4">
-
-          {(analytics?.averageAccuracy || 0) >= 90 && (
-            <div className="bg-amber-100 text-amber-700 px-5 py-3 rounded-2xl font-black">
-              🥇 Master Accuracy
-            </div>
+          {loadingAnalytics ? (
+            Array(3).fill(null).map((_, i) => (
+              <div
+                key={i}
+                className="h-11 bg-slate-100 border border-slate-200/50 rounded-2xl w-32 animate-pulse"
+              />
+            ))
+          ) : badges.filter((b: any) => b.isUnlocked).length > 0 ? (
+            badges
+              .filter((b: any) => b.isUnlocked)
+              .map((badge: any, i: number) => (
+                <div
+                  key={i}
+                  className={`flex items-center gap-2 px-6 py-3 rounded-2xl font-black text-sm border shadow-sm ${badge.color || "bg-indigo-50 text-indigo-700 border-indigo-100"}`}
+                >
+                  <span className="text-xl">{badge.icon}</span>
+                  {badge.name}
+                </div>
+              ))
+          ) : (
+            <p className="text-slate-400 font-bold text-sm italic">
+              Belum ada badge yang terbuka. Terus kumpulkan XP! 🎯
+            </p>
           )}
-
-          {(analytics?.totalGamesPlayed || 0) >= 5 && (
-            <div className="bg-cyan-100 text-cyan-700 px-5 py-3 rounded-2xl font-black">
-              🔥 Active Learner
-            </div>
-          )}
-
-          {(analytics?.totalXp || 0) >= 1000 && (
-            <div className="bg-indigo-100 text-indigo-700 px-5 py-3 rounded-2xl font-black">
-              ⚡ XP Hunter
-            </div>
-          )}
-
         </div>
       </div>
 
@@ -234,9 +263,17 @@ export default function StudentDashboard() {
 
         <div className="bg-slate-50/50 rounded-[2.5rem] p-6 md:p-10 border border-slate-100">
 
-          <div className="h-72">
-            <ScoreChart data={performanceData} />
-          </div>
+          {performanceData.length > 0 ? (
+            <div className="h-72">
+              <ScoreChart data={performanceData} />
+            </div>
+          ) : (
+            <div className="h-72 flex items-center justify-center border-2 border-dashed border-slate-200 rounded-3xl">
+              <p className="text-slate-400 font-bold">
+                Belum ada data permainan. Yuk, mainkan kuis sekarang!
+              </p>
+            </div>
+          )}
 
         </div>
       </div>
@@ -249,40 +286,58 @@ export default function StudentDashboard() {
         </h2>
 
         <div className="space-y-4">
+          {loadingAnalytics ? (
+            Array(3).fill(null).map((_, i) => (
+              <div
+                key={i}
+                className="flex items-center justify-between bg-slate-50 rounded-2xl p-5 animate-pulse"
+              >
+                <div className="space-y-2 w-1/2">
+                  <div className="h-5 bg-slate-200 rounded w-3/4"></div>
+                  <div className="h-3 bg-slate-200 rounded w-1/4"></div>
+                </div>
+                <div className="space-y-2 text-right w-12">
+                  <div className="h-6 bg-slate-200 rounded w-full ml-auto"></div>
+                  <div className="h-3 bg-slate-200 rounded w-3/4 ml-auto"></div>
+                </div>
+              </div>
+            ))
+          ) : (
+            <>
+              {history.length === 0 && (
+                <div className="text-slate-400 font-bold text-center py-10">
+                  Belum ada riwayat permainan
+                </div>
+              )}
 
-          {history.length === 0 && !loadingAnalytics && (
-            <div className="text-slate-400 font-bold text-center py-10">
-              Belum ada riwayat permainan
-            </div>
+              {history.map((item, idx) => (
+                <div
+                  key={idx}
+                  className="flex items-center justify-between bg-slate-50 rounded-2xl p-5"
+                >
+                  <div>
+                    <h3 className="font-black text-slate-700">
+                      {item.gameTitle}
+                    </h3>
+
+                    <p className="text-xs text-slate-400 font-bold uppercase">
+                      {item.templateType}
+                    </p>
+                  </div>
+
+                  <div className="text-right">
+                    <p className="font-black text-cyan-600 text-xl">
+                      {item.score}
+                    </p>
+
+                    <p className="text-xs text-slate-400 font-bold">
+                      {item.accuracy}%
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </>
           )}
-
-          {history.map((item, idx) => (
-            <div
-              key={idx}
-              className="flex items-center justify-between bg-slate-50 rounded-2xl p-5"
-            >
-              <div>
-                <h3 className="font-black text-slate-700">
-                  {item.gameTitle}
-                </h3>
-
-                <p className="text-xs text-slate-400 font-bold uppercase">
-                  {item.templateType}
-                </p>
-              </div>
-
-              <div className="text-right">
-                <p className="font-black text-cyan-600 text-xl">
-                  {item.score}
-                </p>
-
-                <p className="text-xs text-slate-400 font-bold">
-                  {item.accuracy}%
-                </p>
-              </div>
-            </div>
-          ))}
-
         </div>
       </div>
 
@@ -303,33 +358,42 @@ export default function StudentDashboard() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 px-2">
-
-          {games.map(game => (
-            <div
-              key={game.id}
-              className="bg-white p-8 rounded-[3rem] shadow-sm hover:shadow-2xl border border-slate-100 transition-all duration-300 hover:-translate-y-2 flex flex-col relative overflow-hidden group"
-            >
-              <div className="bg-slate-50 rounded-[2.5rem] h-44 mb-6 flex items-center justify-center text-6xl transition-transform group-hover:scale-110 shadow-inner">
-                {templateIcons[game.templateType] || "🧩"}
-              </div>
-
-              <h3 className="text-xl font-black text-slate-800 mb-2 truncate px-2 italic">
-                {game.title}
-              </h3>
-
-              <p className="text-slate-400 text-sm font-bold px-2 mb-6 line-clamp-2">
-                {game.description}
-              </p>
-
-              <Link
-                to={`/student/game/${game.id}`}
-                className="mt-auto bg-cyan-500 hover:bg-cyan-600 text-white py-4 rounded-[1.5rem] font-black text-center transition-all shadow-lg shadow-cyan-100"
-              >
-                Mainkan 🚀
+          {games.length === 0 ? (
+            <div className="col-span-full bg-white p-12 rounded-[2.5rem] border border-slate-100 text-center shadow-sm">
+              <span className="text-5xl mb-4 block">🎒</span>
+              <h3 className="text-xl font-black text-slate-800">Belum Ada Game Tersedia</h3>
+              <p className="text-slate-400 font-bold text-sm mt-2 mb-6">Eksplor halaman jelajah untuk mencari kuis buatan guru-guru lain.</p>
+              <Link to="/explore" className="inline-block bg-cyan-500 hover:bg-cyan-600 text-white px-8 py-3.5 rounded-full font-black text-sm transition-all active:scale-95 shadow-lg shadow-cyan-100">
+                Jelajah Kuis ➔
               </Link>
             </div>
-          ))}
+          ) : (
+            games.map(game => (
+              <div
+                key={game.id}
+                className="bg-white p-8 rounded-[3rem] shadow-sm hover:shadow-2xl border border-slate-100 transition-all duration-300 hover:-translate-y-2 flex flex-col relative overflow-hidden group"
+              >
+                <div className="bg-slate-50 rounded-[2.5rem] h-44 mb-6 flex items-center justify-center text-6xl transition-transform group-hover:scale-110 shadow-inner">
+                  {templateIcons[game.templateType] || "🧩"}
+                </div>
 
+                <h3 className="text-xl font-black text-slate-800 mb-2 truncate px-2 italic">
+                  {game.title}
+                </h3>
+
+                <p className="text-slate-400 text-sm font-bold px-2 mb-6 line-clamp-2">
+                  {game.description}
+                </p>
+
+                <Link
+                  to={`/play/${game.id}`}
+                  className="mt-auto bg-cyan-500 hover:bg-cyan-600 text-white py-4 rounded-[1.5rem] font-black text-center transition-all shadow-lg shadow-cyan-100"
+                >
+                  Mainkan 🚀
+                </Link>
+              </div>
+            ))
+          )}
         </div>
       </div>
     </div>

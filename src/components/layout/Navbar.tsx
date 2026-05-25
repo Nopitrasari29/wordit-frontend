@@ -86,12 +86,14 @@ export default function Navbar() {
 
         {/* MENU TENGAH */}
         <div className="hidden md:flex items-center gap-6 font-bold text-slate-500">
-          <Link
-            to="/explore"
-            className="hover:text-indigo-600 transition-colors"
-          >
-            Explore
-          </Link>
+          {user?.role !== "ADMIN" && (
+            <Link
+              to="/explore"
+              className="hover:text-indigo-600 transition-colors"
+            >
+              Explore
+            </Link>
+          )}
 
           {user?.role === "STUDENT" && (
             <>

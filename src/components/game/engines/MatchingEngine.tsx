@@ -184,9 +184,9 @@ export default function MatchingEngine(props: { data: any, onGameOver?: any, onI
                 </div>
             </div>
 
-            <div className="w-full bg-white p-6 md:p-10 rounded-[3rem] shadow-xl border border-slate-100 flex flex-col md:flex-row gap-8 relative overflow-hidden">
-                <div className="flex-1 flex flex-col gap-4">
-                    <h3 className="text-center font-black text-slate-400 uppercase text-xs mb-2 tracking-widest">Pilih Item</h3>
+            <div className="w-full bg-white p-3 md:p-10 rounded-[2.5rem] md:rounded-[3rem] shadow-xl border border-slate-100 flex flex-row gap-3 md:gap-8 relative overflow-hidden">
+                <div className="flex-1 flex flex-col gap-3 md:gap-4">
+                    <h3 className="text-center font-black text-slate-400 uppercase text-[9px] md:text-xs mb-1 md:mb-2 tracking-widest">Pilih Item</h3>
                     {leftItems.map((item) => {
                         const isMatched = matchedIds.includes(item.uniqueId);
                         const isSelected = selectedLeft?.uniqueId === item.uniqueId;
@@ -195,13 +195,13 @@ export default function MatchingEngine(props: { data: any, onGameOver?: any, onI
                                 key={item.uniqueId}
                                 disabled={isMatched}
                                 onClick={() => setSelectedLeft(isSelected ? null : item)}
-                                className={`p-4 md:p-6 rounded-2xl font-bold text-lg transition-all border-b-4 text-left flex justify-between items-center ${isMatched ? 'bg-emerald-50 text-emerald-400 border-transparent opacity-50 cursor-not-allowed' :
+                                className={`p-3 md:p-6 rounded-xl md:rounded-2xl font-black text-xs md:text-lg transition-all border-b-4 text-left flex justify-between items-center ${isMatched ? 'bg-emerald-50 text-emerald-400 border-transparent opacity-50 cursor-not-allowed' :
                                     isSelected ? 'bg-indigo-500 text-white border-indigo-700 scale-105 shadow-lg' :
                                         'bg-slate-100 text-slate-700 hover:bg-slate-200 border-slate-300'
                                     }`}
                             >
-                                <span>{item.text}</span>
-                                {isMatched && <CheckCircle2 size={20} />}
+                                <span className="truncate">{item.text}</span>
+                                {isMatched && <CheckCircle2 size={16} className="hidden sm:inline shrink-0" />}
                             </button>
                         );
                     })}
@@ -211,8 +211,8 @@ export default function MatchingEngine(props: { data: any, onGameOver?: any, onI
                     <Link2 size={40} className={selectedLeft && selectedRight ? "animate-bounce text-indigo-500" : ""} />
                 </div>
 
-                <div className="flex-1 flex flex-col gap-4">
-                    <h3 className="text-center font-black text-slate-400 uppercase text-xs mb-2 tracking-widest">Cari Pasangannya</h3>
+                <div className="flex-1 flex flex-col gap-3 md:gap-4">
+                    <h3 className="text-center font-black text-slate-400 uppercase text-[9px] md:text-xs mb-1 md:mb-2 tracking-widest">Cari Pasangannya</h3>
                     {rightItems.map((item) => {
                         const isMatched = matchedIds.includes(item.uniqueId);
                         const isSelected = selectedRight?.uniqueId === item.uniqueId;
@@ -221,13 +221,13 @@ export default function MatchingEngine(props: { data: any, onGameOver?: any, onI
                                 key={item.uniqueId}
                                 disabled={isMatched}
                                 onClick={() => setSelectedRight(isSelected ? null : item)}
-                                className={`p-4 md:p-6 rounded-2xl font-bold text-lg transition-all border-b-4 text-left flex justify-between items-center ${isMatched ? 'bg-emerald-50 text-emerald-400 border-transparent opacity-50 cursor-not-allowed' :
+                                className={`p-3 md:p-6 rounded-xl md:rounded-2xl font-black text-xs md:text-lg transition-all border-b-4 text-left flex justify-between items-center ${isMatched ? 'bg-emerald-50 text-emerald-400 border-transparent opacity-50 cursor-not-allowed' :
                                     isSelected ? 'bg-amber-500 text-white border-amber-700 scale-105 shadow-lg' :
                                         'bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border-indigo-200'
                                     }`}
                             >
-                                <span>{item.text}</span>
-                                {isMatched && <CheckCircle2 size={20} />}
+                                <span className="truncate">{item.text}</span>
+                                {isMatched && <CheckCircle2 size={16} className="hidden sm:inline shrink-0" />}
                             </button>
                         );
                     })}

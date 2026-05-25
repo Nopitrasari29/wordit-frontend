@@ -31,12 +31,49 @@ export default function Hero() {
         </p>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-          <Link to={user?.role === "TEACHER" ? "/teacher/dashboard" : "/register"} className="bg-indigo-600 text-white px-8 py-4 rounded-full font-black text-lg shadow-xl shadow-indigo-100 hover:-translate-y-1 transition-all">
-            Mulai Buat Game 🚀
-          </Link>
-          <Link to="/explore" className="bg-white text-slate-700 border-2 border-slate-100 px-8 py-4 rounded-full font-black text-lg hover:bg-slate-50 transition-all">
-            Eksplor Galeri 🌐
-          </Link>
+          {user?.role === "ADMIN" && (
+            <>
+              <Link to="/admin/dashboard" className="bg-indigo-600 text-white px-8 py-4 rounded-full font-black text-lg shadow-xl shadow-indigo-100 hover:-translate-y-1 transition-all">
+                Masuk ke Admin Panel 🛡️
+              </Link>
+              <Link to="/admin/logs" className="bg-white text-slate-700 border-2 border-slate-100 px-8 py-4 rounded-full font-black text-lg hover:bg-slate-50 transition-all">
+                Lihat Log Sistem 📋
+              </Link>
+            </>
+          )}
+
+          {user?.role === "TEACHER" && (
+            <>
+              <Link to="/teacher/dashboard" className="bg-indigo-600 text-white px-8 py-4 rounded-full font-black text-lg shadow-xl shadow-indigo-100 hover:-translate-y-1 transition-all">
+                Mulai Buat Game 🚀
+              </Link>
+              <Link to="/explore" className="bg-white text-slate-700 border-2 border-slate-100 px-8 py-4 rounded-full font-black text-lg hover:bg-slate-50 transition-all">
+                Eksplor Galeri 🌐
+              </Link>
+            </>
+          )}
+
+          {user?.role === "STUDENT" && (
+            <>
+              <Link to="/student/dashboard" className="bg-indigo-600 text-white px-8 py-4 rounded-full font-black text-lg shadow-xl shadow-indigo-100 hover:-translate-y-1 transition-all">
+                Mulai Bermain 🎮
+              </Link>
+              <Link to="/explore" className="bg-white text-slate-700 border-2 border-slate-100 px-8 py-4 rounded-full font-black text-lg hover:bg-slate-50 transition-all">
+                Eksplor Galeri 🌐
+              </Link>
+            </>
+          )}
+
+          {!user && (
+            <>
+              <Link to="/register" className="bg-indigo-600 text-white px-8 py-4 rounded-full font-black text-lg shadow-xl shadow-indigo-100 hover:-translate-y-1 transition-all">
+                Mulai Buat Game 🚀
+              </Link>
+              <Link to="/explore" className="bg-white text-slate-700 border-2 border-slate-100 px-8 py-4 rounded-full font-black text-lg hover:bg-slate-50 transition-all">
+                Eksplor Galeri 🌐
+              </Link>
+            </>
+          )}
         </div>
       </div>
 

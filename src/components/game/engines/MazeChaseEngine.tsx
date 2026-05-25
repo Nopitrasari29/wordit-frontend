@@ -20,6 +20,7 @@ export default function MazeChaseEngine({ data, onGameOver, onIntermission }: { 
 
     const isBusy = useRef(false);
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const startTimeRef = useRef<number>(Date.now());
     const currentQ = questions[currentIdx];
 
     const initLevel = useCallback(() => {
@@ -41,6 +42,12 @@ export default function MazeChaseEngine({ data, onGameOver, onIntermission }: { 
         const edgePositions = [[0, 0], [0, 4], [4, 0], [4, 4]];
         edgePositions.forEach((pos, i) => {
             newGrid[pos[0]][pos[1]] = targets[i];
+        });
+
+        // 🧱 Tambahkan dinding rintangan (obstacles)
+        const obstacles = [[1, 2], [3, 2]];
+        obstacles.forEach(([r, c]) => {
+            newGrid[r][c] = { isObstacle: true };
         });
 
         setGrid(newGrid);
@@ -100,11 +107,12 @@ export default function MazeChaseEngine({ data, onGameOver, onIntermission }: { 
             if (isGameOver) {
                 // 🎯 GUNAKAN VARIABEL LOKAL (newScore & updatedHistory) AGAR TIDAK 0
                 const accuracy = Math.round((newScore / (questions.length * 100)) * 100);
+                const timeSpent = Math.round((Date.now() - startTimeRef.current) / 1000);
                 const payload = {
                     scoreValue: newScore,
                     maxScore: questions.length * 100,
                     accuracy,
-                    timeSpent: 0,
+                    timeSpent,
                     answersDetail: updatedHistory
                 };
 
@@ -130,6 +138,7 @@ export default function MazeChaseEngine({ data, onGameOver, onIntermission }: { 
             const nc = Math.max(0, Math.min(4, prev.c + dc));
             if (nr === prev.r && nc === prev.c) return prev;
             const cell = grid[nr][nc];
+            if (cell?.isObstacle) return prev; // Blokir gerakan jika rintangan
             if (cell) { handleAction("PORTAL", cell); return prev; }
             return { r: nr, c: nc };
         });
@@ -178,10 +187,52 @@ export default function MazeChaseEngine({ data, onGameOver, onIntermission }: { 
                 <div className="grid grid-cols-5 gap-1 sm:gap-2">
                     {grid.map((row, r) => row.map((cell, c) => (
                         <div key={`${r}-${c}`} className={`aspect-square w-full rounded-xl sm:rounded-2xl flex items-center justify-center transition-all duration-150 ${playerPos.r === r && playerPos.c === c ? 'bg-indigo-500 scale-110 z-10' : 'bg-slate-800/30'}`}>
-                            {playerPos.r === r && playerPos.c === c ? <span className="text-2xl sm:text-4xl animate-bounce">🏃</span> : cell ? <div className="bg-white p-0.5 sm:p-1 rounded-md sm:rounded-lg text-center leading-tight shadow-sm w-[90%] h-[90%] flex items-center justify-center overflow-hidden"><span className="font-black text-[7px] sm:text-[9px] uppercase break-words px-0.5 line-clamp-3">{cell.text}</span></div> : null}
+                            {playerPos.r === r && playerPos.c === c ? (
+                                <span className="text-2xl sm:text-4xl animate-bounce">🏃</span>
+                            ) : cell?.isObstacle ? (
+                                <div className="w-[90%] h-[90%] bg-rose-950/70 border-4 border-rose-900/60 rounded-xl sm:rounded-2xl flex items-center justify-center text-xl sm:text-2xl shadow-inner select-none">🧱</div>
+                            ) : cell ? (
+                                <div className="bg-white p-0.5 sm:p-1 rounded-md sm:rounded-lg text-center leading-tight shadow-sm w-[90%] h-[90%] flex items-center justify-center overflow-hidden">
+                                    <span className="font-black text-[7px] sm:text-[9px] uppercase break-words px-0.5 line-clamp-3">{cell.text}</span>
+                                </div>
+                            ) : null}
                         </div>
                     )))}
                 </div>
+            </div>
+
+            {/* VIRTUAL D-PAD FOR MOBILE / ACCESSIBILITY */}
+            <div className="flex flex-col items-center gap-1 mt-4">
+                <button
+                    onClick={() => movePlayer(-1, 0)}
+                    disabled={isBusy.current || lives <= 0}
+                    className="w-14 h-14 bg-indigo-600 hover:bg-indigo-500 active:scale-95 disabled:bg-slate-300 text-white rounded-2xl font-black text-2xl shadow-md flex items-center justify-center transition-all"
+                >
+                    ⬆️
+                </button>
+                <div className="flex gap-14">
+                    <button
+                        onClick={() => movePlayer(0, -1)}
+                        disabled={isBusy.current || lives <= 0}
+                        className="w-14 h-14 bg-indigo-600 hover:bg-indigo-500 active:scale-95 disabled:bg-slate-300 text-white rounded-2xl font-black text-2xl shadow-md flex items-center justify-center transition-all"
+                    >
+                        ⬅️
+                    </button>
+                    <button
+                        onClick={() => movePlayer(0, 1)}
+                        disabled={isBusy.current || lives <= 0}
+                        className="w-14 h-14 bg-indigo-600 hover:bg-indigo-500 active:scale-95 disabled:bg-slate-300 text-white rounded-2xl font-black text-2xl shadow-md flex items-center justify-center transition-all"
+                    >
+                        ➡️
+                    </button>
+                </div>
+                <button
+                    onClick={() => movePlayer(1, 0)}
+                    disabled={isBusy.current || lives <= 0}
+                    className="w-14 h-14 bg-indigo-600 hover:bg-indigo-500 active:scale-95 disabled:bg-slate-300 text-white rounded-2xl font-black text-2xl shadow-md flex items-center justify-center transition-all"
+                >
+                    ⬇️
+                </button>
             </div>
         </div>
     );

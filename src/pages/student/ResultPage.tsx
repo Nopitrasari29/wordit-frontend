@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Bot, Sparkles, Loader2, ChevronUp } from "lucide-react";
 import { getFeedbackForQuestion } from "../services/ai.service";
+import confetti from "canvas-confetti";
 
 export default function ResultPage() {
   const navigate = useNavigate();
@@ -31,17 +32,28 @@ export default function ResultPage() {
 
     const finalScore =
       location.state?.scoreValue ??
+      location.state?.score ??
       parseInt(sessionStorage.getItem("lastScore") || "0");
     const finalAccuracy =
       location.state?.accuracy ??
       parseInt(sessionStorage.getItem("lastAccuracy") || "0");
     const finalBreakdown =
-      location.state?.answersDetail ||
+      location.state?.answersDetail ??
+      location.state?.breakdown ??
       JSON.parse(sessionStorage.getItem("lastBreakdown") || "[]");
 
     setScore(finalScore);
     setAccuracy(finalAccuracy);
     setBreakdown(finalBreakdown);
+
+    if (finalAccuracy >= 80) {
+      confetti({
+        particleCount: 150,
+        spread: 85,
+        origin: { y: 0.6 },
+        colors: ["#6366f1", "#3b82f6", "#10b981", "#f59e0b", "#ec4899"],
+      });
+    }
   }, [location]);
 
   const getStars = (acc: number) => {

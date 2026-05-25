@@ -143,9 +143,30 @@ export default function FlashcardEngine({ data, onGameOver }: { data: any, onGam
                 onClick={() => !isBusy.current && setShow(!show)}
                 className={`w-full aspect-[4/3] flex items-center justify-center p-8 rounded-[4rem] shadow-2xl cursor-pointer transition-all duration-500 transform ${show ? 'bg-indigo-600 text-white rotate-y-180' : 'bg-white text-slate-800 border-[12px] border-indigo-50'}`}
             >
-                <div className="text-center">
+                <div className="text-center flex flex-col items-center">
                     <p className="text-[10px] font-black uppercase tracking-widest opacity-50 mb-4">{show ? "Jawaban" : "Pertanyaan"}</p>
                     <h3 className="text-3xl md:text-5xl font-black leading-tight uppercase italic">{show ? card.back : card.front}</h3>
+                    
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            try {
+                                if ('speechSynthesis' in window) {
+                                    window.speechSynthesis.cancel();
+                                    const text = show ? card.back : card.front;
+                                    const utterance = new SpeechSynthesisUtterance(text);
+                                    utterance.lang = "id-ID";
+                                    window.speechSynthesis.speak(utterance);
+                                }
+                            } catch (err) {
+                                console.error(err);
+                            }
+                        }}
+                        className={`mt-6 w-12 h-12 rounded-full flex items-center justify-center text-lg active:scale-90 transition-all ${show ? 'bg-indigo-700/60 hover:bg-indigo-700 text-white' : 'bg-indigo-50 hover:bg-indigo-100 text-indigo-600'}`}
+                        title="Dengarkan Pelafalan"
+                    >
+                        🔊
+                    </button>
                 </div>
             </div>
 
