@@ -1,13 +1,29 @@
 import { useState } from "react"
 import { Link } from "react-router-dom"
+import { forgotPassword } from "../services/auth.service"
+import { toast } from "react-hot-toast"
 
 export default function ForgotPasswordPage() {
     const [email, setEmail] = useState("")
     const [message, setMessage] = useState("")
+    const [loading, setLoading] = useState(false)
 
-    function submit(e: any) {
+    async function submit(e: any) {
         e.preventDefault()
-        setMessage("If the email exists, reset instructions will be sent.")
+        setLoading(true)
+        setMessage("")
+        try {
+            const res = await forgotPassword(email)
+            setMessage(res.message || "Jika email terdaftar, instruksi reset password akan dikirim.")
+            toast.success("Permintaan reset berhasil dikirim!")
+        } catch (err: any) {
+            console.error(err)
+            const errorMsg = err.response?.data?.message || err.message || "Gagal meminta reset password."
+            toast.error(errorMsg)
+            setMessage(`Gagal: ${errorMsg}`)
+        } finally {
+            setLoading(false)
+        }
     }
 
     return (
@@ -36,18 +52,27 @@ export default function ForgotPasswordPage() {
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             required
-                            className="w-full bg-slate-50 text-slate-800 px-6 py-4 rounded-full border-2 border-slate-100 focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/20 outline-none transition-all font-semibold"
+                            disabled={loading}
+                            className="w-full bg-slate-50 text-slate-800 px-6 py-4 rounded-full border-2 border-slate-100 focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/20 outline-none transition-all font-semibold disabled:opacity-50"
                         />
                     </div>
 
-                    <button type="submit" className="w-full bg-indigo-600 text-white font-black text-lg py-4 rounded-full shadow-[0_8px_20px_rgba(79,70,229,0.3)] hover:-translate-y-1 hover:shadow-lg transition-all active:scale-95">
-                        Send Reset Link
+                    <button 
+                        type="submit" 
+                        disabled={loading}
+                        className="w-full bg-indigo-600 text-white font-black text-lg py-4 rounded-full shadow-[0_8px_20px_rgba(79,70,229,0.3)] hover:-translate-y-1 hover:shadow-lg transition-all active:scale-95 disabled:bg-indigo-400 disabled:cursor-not-allowed"
+                    >
+                        {loading ? "Sending..." : "Send Reset Link"}
                     </button>
                 </form>
 
                 {message && (
-                    <div className="mt-6 bg-emerald-50 text-emerald-600 border border-emerald-100 p-4 rounded-2xl font-bold text-sm animate-fade-in-up text-center">
-                        ✅ {message}
+                    <div className={`mt-6 p-4 rounded-2xl font-bold text-sm animate-fade-in-up text-center border ${
+                        message.startsWith("Gagal") 
+                            ? "bg-rose-50 text-rose-600 border-rose-100" 
+                            : "bg-emerald-50 text-emerald-600 border-emerald-100"
+                    }`}>
+                        {message.startsWith("Gagal") ? "❌" : "✅"} {message}
                     </div>
                 )}
 
