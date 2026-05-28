@@ -108,8 +108,12 @@ export default function TrueFalseEngine({
     else toast.error("Oops, Salah! ❌");
 
     // 🚀 Realtime Update
-    if (roomCode)
-      socket.emit("updateScore", { code: roomCode, score: newScore });
+    if (roomCode) {
+      const correctCount = historyRef.current.filter((h: any) => h.isCorrect).length;
+      const accuracy = Math.round((correctCount / historyRef.current.length) * 100);
+      const progress = `${currentIndex + 1}/${questions.length}`;
+      socket.emit("updateScore", { code: roomCode, score: newScore, accuracy, progress });
+    }
     submitAnswer(realGameId, currentIndex, String(answerChoice), newScore).catch(
       () => {},
     );

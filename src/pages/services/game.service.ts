@@ -112,7 +112,9 @@ export const finishGame = async (
 ) => {
   try {
     // 🎯 FIX: Gunakan ID UUID untuk hit endpoint backend
-    const res = await api.post(`/games/${id}/finish`, payload);
+    const ltik = sessionStorage.getItem("ltik");
+    const finalPayload = ltik ? { ...payload, ltik } : payload;
+    const res = await api.post(`/games/${id}/finish`, finalPayload);
     return res.data.data;
   } catch (err: any) {
     console.error("⚠️ Gagal simpan skor ke DB:", err?.response?.data || err.message);

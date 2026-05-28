@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import GameRenderer from "../../components/game/GameRenderer";
-import { getGameById, getGameByCode, finishGame } from "../services/game.service";
+import { getGameById, getGameByCode, finishGame, playGame } from "../services/game.service";
 import socket from "../../hooks/useSocket";
 import { toast } from "react-hot-toast";
 import RankingOverlay from "../../components/game/common/RankingOverlay";
+import { useAuth } from "../../hooks/useAuth";
 
 
 export default function PlayGamePage() {
@@ -17,6 +18,11 @@ export default function PlayGamePage() {
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
   const [overlayCountdown, setOverlayCountdown] = useState(3);
 
+  // State untuk local score (Guest & Teacher)
+  const [localScoreResult, setLocalScoreResult] = useState<any>(null);
+
+  const { user } = useAuth();
+  const isStudent = user && user.role === "STUDENT";
   const playerName = sessionStorage.getItem("playerName") || "Player";
 
   useEffect(() => {
@@ -35,9 +41,25 @@ export default function PlayGamePage() {
         const finalData = (data as any).data || data;
         if (!finalData) throw new Error("Data game tidak ditemukan.");
 
+        // 🧠 Panggil endpoint /play untuk start session game & dapatkan rekomendasi difficulty (Hanya untuk Student)
+        if (isStudent) {
+          try {
+            const sessionData = await playGame(finalData.id || finalData._id);
+            if (sessionData && sessionData.recommendedDifficulty) {
+              finalData.recommendedDifficulty = sessionData.recommendedDifficulty;
+            }
+          } catch (playErr) {
+            console.warn("⚠️ Gagal memulai sesi bermain (playGame):", playErr);
+          }
+        }
+
         setGame(finalData);
         if (finalData.shareCode) {
           socket.emit("joinGame", { code: finalData.shareCode, playerName });
+          if (isStudent) {
+            sessionStorage.setItem("activeGameRoom", finalData.shareCode);
+            sessionStorage.setItem("activeGameId", finalData.id || finalData._id);
+          }
         }
       } catch (err: any) {
         toast.error("Gagal memuat arena.");
@@ -48,7 +70,7 @@ export default function PlayGamePage() {
     };
 
     loadGameArena();
-  }, [gameId, navigate]);
+  }, [gameId, navigate, isStudent]);
 
   useEffect(() => {
     const handleGameFinished = () => {
@@ -69,11 +91,11 @@ export default function PlayGamePage() {
     };
   }, [navigate, gameId, game]); // Menambahkan dependensi agar state terpantau
 
-    const handleGameOver = async () => {
+    const handleGameOver = async (scoreOverride?: number, accuracyOverride?: number, breakdownOverride?: any[]) => {
         const realGameId = game?.id || game?._id || gameId;
-        const score = parseInt(sessionStorage.getItem("lastScore") || "0");
-        const accuracyRaw = parseInt(sessionStorage.getItem("lastAccuracy") || "0");
-        const rawBreakdown = sessionStorage.getItem("lastBreakdown");
+        const score = scoreOverride !== undefined ? scoreOverride : parseInt(sessionStorage.getItem("lastScore") || "0");
+        const accuracyRaw = accuracyOverride !== undefined ? accuracyOverride : parseInt(sessionStorage.getItem("lastAccuracy") || "0");
+        const rawBreakdown = breakdownOverride ? JSON.stringify(breakdownOverride) : sessionStorage.getItem("lastBreakdown");
         let breakdown = rawBreakdown ? JSON.parse(rawBreakdown) : [];
 
         // 🎯 REVISI QA: Auto-fill soal yang belum terjawab agar muncul di Result (Riwayat)
@@ -93,6 +115,16 @@ export default function PlayGamePage() {
 
         // Hitung ulang akurasi berdasarkan total soal yang sebenarnya
         const finalAccuracy = totalQuestions > 0 ? Math.round((breakdown.filter((b: any) => b.isCorrect).length / totalQuestions) * 100) : accuracyRaw;
+
+        // Jika bukan Student (misal Guru atau Tamu), tampilkan popup skor lokal
+        if (!isStudent) {
+            setLocalScoreResult({ score, accuracy: finalAccuracy, breakdown });
+            return;
+        }
+
+        // Hapus penanda room kuis aktif karena game sudah selesai
+        sessionStorage.removeItem("activeGameRoom");
+        sessionStorage.removeItem("activeGameId");
 
         try {
             await finishGame(realGameId!, {
@@ -158,7 +190,16 @@ export default function PlayGamePage() {
           <button onClick={() => navigate(-1)} className="text-white opacity-50 hover:opacity-100 transition-opacity text-xl">❮</button>
           <div>
             <h1 className="font-black text-white text-lg tracking-tight">{game?.title}</h1>
-            <p className="text-indigo-400 text-[9px] font-black uppercase tracking-widest">{game?.templateType?.replace('_', ' ')}</p>
+            <div className="flex items-center gap-2 mt-0.5">
+              <span className="text-indigo-400 text-[9px] font-black uppercase tracking-widest">
+                {game?.templateType?.replace('_', ' ')}
+              </span>
+              {game?.recommendedDifficulty && (
+                <span className="bg-indigo-500/20 text-indigo-300 text-[8px] font-black px-2 py-0.5 rounded-full border border-indigo-500/30 uppercase tracking-wider">
+                  🧠 AI Diff: {game.recommendedDifficulty}
+                </span>
+              )}
+            </div>
           </div>
         </div>
         <div className="bg-white/10 px-4 py-2 rounded-full border border-white/10">
@@ -179,6 +220,69 @@ export default function PlayGamePage() {
           )}
         </div>
       </div>
+
+      {/* LOCAL SCORE OVERLAY FOR GUEST & TEACHER */}
+      {localScoreResult && (
+        <div className="fixed inset-0 bg-slate-900/90 backdrop-blur-md flex items-center justify-center z-50 p-4">
+          <div className="bg-slate-800 text-white w-full max-w-md rounded-[3rem] p-8 border border-white/10 text-center flex flex-col shadow-2xl relative overflow-hidden animate-in fade-in zoom-in duration-200">
+            {/* Background elements */}
+            <div className="absolute -right-10 -top-10 w-40 h-40 bg-indigo-500/10 rounded-full blur-2xl"></div>
+            
+            <span className="text-6xl mb-4 block animate-bounce">🏆</span>
+            <h2 className="text-3xl font-black tracking-tight leading-none mb-1">Game Selesai!</h2>
+            <p className="text-indigo-400 text-xs font-black uppercase tracking-widest mb-6">Mode Demo / Latihan</p>
+            
+            {/* Score circle */}
+            <div className="bg-slate-700/50 border border-white/5 rounded-2xl p-6 mb-6 grid grid-cols-2 gap-4">
+              <div>
+                <span className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Skor Kamu</span>
+                <span className="text-3xl font-black text-indigo-400">{localScoreResult.score}</span>
+              </div>
+              <div>
+                <span className="block text-[10px] font-black text-slate-400 tracking-wider uppercase mb-1">Akurasi</span>
+                <span className="text-3xl font-black text-emerald-400">{localScoreResult.accuracy}%</span>
+              </div>
+            </div>
+
+            <div className="text-left text-xs text-slate-400 font-medium space-y-2 mb-8 bg-slate-900/40 p-4 rounded-2xl max-h-40 overflow-y-auto border border-white/5">
+              <span className="block text-[10px] font-black text-indigo-300 uppercase tracking-widest mb-2">Riwayat Jawaban:</span>
+              {localScoreResult.breakdown.map((item: any, idx: number) => (
+                <div key={idx} className="flex justify-between items-start py-1 border-b border-white/5 last:border-0 gap-2">
+                  <span className="truncate flex-1 text-slate-300 font-semibold">
+                    {item.question ? item.question : `Soal #${idx + 1}`}
+                  </span>
+                  <span className={`font-black uppercase text-[10px] px-2 py-0.5 rounded-full ${item.isCorrect ? 'bg-emerald-500/20 text-emerald-300' : 'bg-rose-500/20 text-rose-300'}`}>
+                    {item.isCorrect ? 'Benar' : 'Salah'}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={() => {
+                  setLocalScoreResult(null);
+                  navigate("/explore");
+                }}
+                className="bg-indigo-600 hover:bg-indigo-700 text-white font-black py-4 rounded-full uppercase tracking-wider text-xs transition-all shadow-lg shadow-indigo-500/20"
+              >
+                Kembali ke Eksplor
+              </button>
+              {!user && (
+                <button
+                  onClick={() => {
+                    setLocalScoreResult(null);
+                    navigate("/register");
+                  }}
+                  className="bg-white/10 hover:bg-white/20 text-white font-bold py-3 rounded-full text-xs transition-all"
+                >
+                  Daftar Akun WordIT
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

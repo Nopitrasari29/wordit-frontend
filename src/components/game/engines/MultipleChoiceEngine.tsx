@@ -92,7 +92,12 @@ export default function MultipleChoiceEngine({ data, onGameOver, onIntermission 
         else toast.error("Salah! ❌");
 
         // 🚀 Realtime Update ke Socket & DB
-        if (roomCode) socket.emit("updateScore", { code: roomCode, score: newScore });
+        if (roomCode) {
+            const correctCount = historyRef.current.filter(h => h.isCorrect).length;
+            const accuracy = Math.round((correctCount / historyRef.current.length) * 100);
+            const progress = `${currentIndex + 1}/${questions.length}`;
+            socket.emit("updateScore", { code: roomCode, score: newScore, accuracy, progress });
+        }
         submitAnswer(realGameId, currentIndex, option, newScore).catch(() => { });
 
         // Jeda 1 detik biar siswa bisa lihat animasi benar/salah, lalu lanjut soal

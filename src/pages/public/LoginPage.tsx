@@ -1,16 +1,24 @@
-import { useState } from "react"
-import { Link, useNavigate, useLocation } from "react-router-dom"
+import { useState, useEffect } from "react"
+import { Link, useNavigate, useLocation, useSearchParams } from "react-router-dom"
 import { useAuth } from "../../context/AuthContext"
 import Input from "../../components/ui/Input"
+import { toast } from "react-hot-toast"
 
 export default function LoginPage() {
   const { login } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
+  const [searchParams] = useSearchParams()
 
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [errorMsg, setErrorMsg] = useState("")
+
+  useEffect(() => {
+    if (searchParams.get("expired") === "true") {
+      toast.error("Sesi Anda telah berakhir. Silakan masuk kembali.", { id: "session-expired" });
+    }
+  }, [searchParams])
 
   async function submit(e: any) {
     e.preventDefault()
@@ -26,15 +34,20 @@ export default function LoginPage() {
       const from = location.state?.from || null
 
       if (from) {
-        const isFromAdmin = from.startsWith("/admin");
-        const isFromTeacher = from.startsWith("/teacher");
+        const path = typeof from === 'string' ? from : from.pathname;
+        const isFromAdmin = path.startsWith("/admin");
+        const isFromTeacher = path.startsWith("/teacher");
 
         if (user.role === "STUDENT" && (isFromAdmin || isFromTeacher)) {
           navigate("/student/dashboard");
         } else if (user.role === "TEACHER" && isFromAdmin) {
           navigate("/teacher/dashboard");
         } else {
-          navigate(from);
+          if (typeof from === 'string') {
+            navigate(from);
+          } else {
+            navigate(from.pathname + (from.search || ""));
+          }
         }
       } else {
         if (user.role === "ADMIN") navigate("/admin/dashboard")

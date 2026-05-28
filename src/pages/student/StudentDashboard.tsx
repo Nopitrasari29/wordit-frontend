@@ -32,6 +32,19 @@ export default function StudentDashboard() {
   // ✅ DEFAULT CHART
   const [performanceData, setPerformanceData] = useState<{ game: string; score: number }[]>([])
 
+  // State untuk Sesi Aktif Re-entry
+  const [activeRoom, setActiveRoom] = useState<string | null>(null)
+  const [activeId, setActiveId] = useState<string | null>(null)
+
+  useEffect(() => {
+    const room = sessionStorage.getItem("activeGameRoom")
+    const id = sessionStorage.getItem("activeGameId")
+    if (room && id) {
+      setActiveRoom(room)
+      setActiveId(id)
+    }
+  }, [])
+
   useEffect(() => {
     const realName = user?.name || sessionStorage.getItem("playerName")
     if (realName) setPlayerName(realName)
@@ -89,6 +102,25 @@ export default function StudentDashboard() {
 
   return (
     <div className="space-y-10 font-sans pb-12 pt-6">
+
+      {/* ================= RE-ENTRY ACTIVE SESSION BANNER ================= */}
+      {activeRoom && activeId && (
+        <div className="bg-amber-500 text-white rounded-[2rem] p-5 shadow-lg flex flex-col sm:flex-row justify-between items-center gap-4 animate-in slide-in-from-top duration-300">
+          <div className="flex items-center gap-3">
+            <span className="text-3xl animate-pulse">⚡</span>
+            <div>
+              <h3 className="font-black text-sm md:text-base leading-none">Kamu memiliki sesi kuis yang sedang aktif!</h3>
+              <p className="text-amber-100 text-xs mt-1">Sesi kelas untuk kuis dengan Room Code: <span className="font-bold uppercase">{activeRoom}</span> sedang menunggumu.</p>
+            </div>
+          </div>
+          <Link
+            to={`/play/${activeId}`}
+            className="bg-white text-amber-600 px-6 py-2.5 rounded-full font-black text-xs uppercase tracking-wider hover:bg-amber-50 transition-all shadow-md"
+          >
+            Masuk Kembali ⚡
+          </Link>
+        </div>
+      )}
 
       {/* ================= HEADER BANNER ================= */}
       <div className="bg-gradient-to-r from-cyan-500 to-blue-500 rounded-[2.5rem] p-8 md:p-12 text-white shadow-xl shadow-cyan-200 relative overflow-hidden">

@@ -16,7 +16,7 @@ export default function ProtectedRoute({ role }: { role?: string }) {
 
     // Jika tidak ada user, tendang ke login
     if (!user) {
-        return <Navigate to="/login" state={{ from: location.pathname }} replace />
+        return <Navigate to="/login" state={{ from: location }} replace />
     }
 
     // Jika ada batasan role dan role user tidak sesuai

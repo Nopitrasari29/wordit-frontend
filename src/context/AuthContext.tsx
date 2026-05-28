@@ -78,6 +78,13 @@ export function AuthProvider({ children }: any) {
     setUser(newUser);
   }
 
+  function loginLti(user: any, token: string) {
+    localStorage.setItem("token", token)
+    localStorage.setItem("user", JSON.stringify(user))
+    setUser(user)
+    setToken(token)
+  }
+
   return (
     <AuthContext.Provider
       value={{
@@ -85,6 +92,7 @@ export function AuthProvider({ children }: any) {
         token,
         loading,
         login,
+        loginLti,
         register,
         updateUser, // ✅ Tambahkan ini
         logout

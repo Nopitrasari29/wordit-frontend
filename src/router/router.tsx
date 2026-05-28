@@ -10,6 +10,7 @@ import RegisterPage from "../pages/public/RegisterPage";
 import ExplorePage from "../pages/public/ExplorePage";
 import ForgotPasswordPage from "../pages/public/ForgotPasswordPage";
 import NotFoundPage from "../pages/public/NotFoundPage";
+import LtiLaunchPage from "../pages/public/LtiLaunchPage";
 
 /* PROFILE PAGES */
 import ProfilePage from "../pages/profile/ProfilePage";
@@ -51,14 +52,14 @@ export default function Router() {
           {/* ================= PUBLIC ROUTES ================= */}
           <Route path="/" element={<LandingPage />} />
           <Route path="/explore" element={<ExplorePage />} />
+          <Route path="/play/:gameId" element={<PlayGamePage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/lti-launch" element={<LtiLaunchPage />} />
 
           {/* ================= GENERAL PROTECTED (Auth Only) ================= */}
           <Route element={<ProtectedRoute />}>
-            {/* Rute Play agar Teacher bisa Preview & Student bisa Play */}
-            <Route path="/play/:gameId" element={<PlayGamePage />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/profile/edit" element={<EditProfilePage />} />
           </Route>

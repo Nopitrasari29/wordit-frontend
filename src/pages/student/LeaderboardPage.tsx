@@ -1,48 +1,61 @@
 import { useEffect, useState } from "react"
 import { getGames } from "../services/game.service"
-// 🎯 Import tipe data Game jika sudah ada (biasanya di folder types)
-// import { Game } from "../../types/game" 
+import { getStudentLeaderboard } from "../services/user.service"
+import { getImageUrl } from "../../utils/assets"
 
 export default function LeaderboardPage() {
-    // 🛠️ FIX: Tambahkan tipe data <any[]> atau <Game[]> agar TypeScript tidak menganggapnya 'never'
     const [games, setGames] = useState<any[]>([]) 
+    const [students, setStudents] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
+    const [activeTab, setActiveTab] = useState<"games" | "students">("games")
 
     useEffect(() => {
-        async function load() {
+        async function loadData() {
             try {
-                const data = await getGames()
+                setLoading(true)
+                const [gamesData, studentsData] = await Promise.all([
+                    getGames(),
+                    getStudentLeaderboard().catch(err => {
+                        console.error("Gagal memuat leaderboard siswa:", err)
+                        return []
+                    })
+                ])
                 
-                // Pastikan data adalah array sebelum di-spread
-                const gameList = Array.isArray(data) ? data : []
+                // Pastikan data adalah array
+                const gameList = Array.isArray(gamesData) ? gamesData : []
+                const studentList = Array.isArray(studentsData) ? studentsData : []
                 
-                // Urutkan berdasarkan playCount terbanyak (High to Low)
+                // Urutkan game berdasarkan playCount terbanyak (High to Low)
                 const sortedGames = [...gameList].sort((a, b) => 
                     (b.playCount || 0) - (a.playCount || 0)
                 )
                 
                 setGames(sortedGames)
+                setStudents(studentList)
             } catch (error) {
                 console.error("Gagal memuat leaderboard:", error)
             } finally {
                 setLoading(false)
             }
         }
-        load()
+        loadData()
     }, [])
 
     return (
         <div className="min-h-screen bg-slate-50 font-sans pb-20 pt-28">
-            <div className="max-w-4xl mx-auto px-6 mb-10">
+            {/* HEADER BANNER */}
+            <div className="max-w-4xl mx-auto px-6 mb-8">
                 <div className="bg-gradient-to-r from-indigo-600 to-blue-500 rounded-[2.5rem] p-8 md:p-12 text-white shadow-xl shadow-indigo-200 relative overflow-hidden">
                     <div className="absolute -right-10 -top-10 w-64 h-64 bg-white opacity-10 rounded-full blur-3xl"></div>
                     <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                         <div className="max-w-xl">
                             <h1 className="text-3xl md:text-5xl font-black mb-3 italic tracking-tighter">
-                                Game Terpopuler 🏆
+                                {activeTab === "games" ? "Game Terpopuler 🏆" : "Student Hall of Fame 👑"}
                             </h1>
                             <p className="text-indigo-100 font-semibold text-sm md:text-base leading-relaxed">
-                                Lihat daftar kuis edukasi yang paling sering dimainkan dan dicari oleh para siswa di WordIT!
+                                {activeTab === "games" 
+                                    ? "Lihat daftar kuis edukasi yang paling sering dimainkan dan dicari oleh para siswa di WordIT!"
+                                    : "Papan peringkat 10 besar siswa teraktif yang mengumpulkan XP terbanyak dari kuis di WordIT!"}
                             </p>
                         </div>
                         <div className="text-5xl md:text-7xl animate-bounce shrink-0 select-none">
@@ -52,54 +65,123 @@ export default function LeaderboardPage() {
                 </div>
             </div>
 
+            {/* TAB SWITCHER */}
+            <div className="max-w-4xl mx-auto px-6 mb-8 flex justify-center">
+                <div className="bg-slate-200/60 p-1.5 rounded-full flex gap-1 border border-slate-300/30">
+                    <button
+                        onClick={() => setActiveTab("games")}
+                        className={`px-8 py-3 rounded-full font-black text-xs uppercase tracking-wider transition-all ${
+                            activeTab === "games"
+                                ? "bg-indigo-600 text-white shadow-md shadow-indigo-200"
+                                : "text-slate-600 hover:text-indigo-600"
+                        }`}
+                    >
+                        🎮 Kuis Terpopuler
+                    </button>
+                    <button
+                        onClick={() => setActiveTab("students")}
+                        className={`px-8 py-3 rounded-full font-black text-xs uppercase tracking-wider transition-all ${
+                            activeTab === "students"
+                                ? "bg-indigo-600 text-white shadow-md shadow-indigo-200"
+                                : "text-slate-600 hover:text-indigo-600"
+                        }`}
+                    >
+                        👑 Siswa Teraktif
+                    </button>
+                </div>
+            </div>
+
+            {/* LIST SECTION */}
             <div className="max-w-4xl mx-auto px-6">
                 <div className="bg-white rounded-[2.5rem] p-8 shadow-sm border border-slate-100 overflow-hidden">
                     {/* Custom Table Header */}
                     <div className="flex px-4 pb-6 border-b-2 border-slate-50 text-xs font-black text-slate-400 uppercase tracking-widest">
                         <div className="w-16 text-center">No</div>
-                        <div className="flex-1">Nama Game</div>
-                        <div className="w-32 text-right">Total Plays</div>
+                        <div className="flex-1 px-4">{activeTab === "games" ? "Nama Game" : "Nama Siswa"}</div>
+                        <div className="w-36 text-right">{activeTab === "games" ? "Total Plays" : "Skor XP"}</div>
                     </div>
 
-                    {/* List Games */}
+                    {/* List Content */}
                     <div className="pt-4 space-y-2">
                         {loading ? (
                             <div className="flex justify-center py-20">
                                 <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-600"></div>
                             </div>
-                        ) : games.length === 0 ? (
-                            <p className="text-center py-10 text-slate-400 font-bold">Belum ada data game.</p>
-                        ) : (
-                            games.map((g: any, index: number) => (
-                                <div
-                                    key={g.id}
-                                    className="flex items-center px-4 py-4 hover:bg-slate-50 rounded-[1.5rem] transition-all group"
-                                >
-                                    <div className="w-16 flex justify-center">
-                                        <span className={`w-10 h-10 rounded-full flex items-center justify-center font-black text-lg shadow-sm
-                                            ${index === 0 ? "bg-amber-100 text-amber-600" :
-                                                index === 1 ? "bg-slate-200 text-slate-600" :
-                                                index === 2 ? "bg-orange-100 text-orange-600" :
-                                                    "bg-white text-slate-400 border border-slate-100"}`}
-                                        >
-                                            {index + 1}
-                                        </span>
-                                    </div>
+                        ) : activeTab === "games" ? (
+                            games.length === 0 ? (
+                                <p className="text-center py-10 text-slate-400 font-bold">Belum ada data game.</p>
+                            ) : (
+                                games.map((g: any, index: number) => (
+                                    <div
+                                        key={g.id}
+                                        className="flex items-center px-4 py-4 hover:bg-slate-50 rounded-[1.5rem] transition-all group"
+                                    >
+                                        <div className="w-16 flex justify-center">
+                                            <span className={`w-10 h-10 rounded-full flex items-center justify-center font-black text-lg shadow-sm
+                                                ${index === 0 ? "bg-amber-100 text-amber-600 border border-amber-200" :
+                                                    index === 1 ? "bg-slate-200 text-slate-600 border border-slate-300" :
+                                                    index === 2 ? "bg-orange-100 text-orange-600 border border-orange-200" :
+                                                        "bg-white text-slate-400 border border-slate-100"}`}
+                                            >
+                                                {index + 1}
+                                            </span>
+                                        </div>
 
-                                    <div className="flex-1 font-black text-slate-700 text-lg md:text-xl truncate px-4 group-hover:text-indigo-600 transition-colors">
-                                        {g.title}
-                                        <div className="text-[10px] text-slate-400 uppercase tracking-tighter block md:hidden">
-                                            {g.templateType}
+                                        <div className="flex-1 font-black text-slate-700 text-lg md:text-xl truncate px-4 group-hover:text-indigo-600 transition-colors uppercase italic">
+                                            {g.title}
+                                            <div className="text-[10px] text-slate-400 uppercase tracking-tighter block md:hidden">
+                                                {g.templateType}
+                                            </div>
+                                        </div>
+
+                                        <div className="w-36 text-right">
+                                            <span className="bg-indigo-50 text-indigo-600 px-5 py-2 rounded-full text-xs font-black inline-block group-hover:bg-indigo-600 group-hover:text-white transition-all tracking-wide">
+                                                ▶ {g.playCount || 0} plays
+                                            </span>
                                         </div>
                                     </div>
+                                ))
+                            )
+                        ) : (
+                            students.length === 0 ? (
+                                <p className="text-center py-10 text-slate-400 font-bold">Belum ada data siswa teraktif.</p>
+                            ) : (
+                                students.map((s: any, index: number) => (
+                                    <div
+                                        key={s.id}
+                                        className="flex items-center px-4 py-4 hover:bg-slate-50 rounded-[1.5rem] transition-all group"
+                                    >
+                                        <div className="w-16 flex justify-center">
+                                            <span className={`w-10 h-10 rounded-full flex items-center justify-center font-black text-lg shadow-sm
+                                                ${index === 0 ? "bg-amber-100 text-amber-600 border border-amber-200" :
+                                                    index === 1 ? "bg-slate-200 text-slate-600 border border-slate-300" :
+                                                    index === 2 ? "bg-orange-100 text-orange-600 border border-orange-200" :
+                                                        "bg-white text-slate-400 border border-slate-100"}`}
+                                            >
+                                                {index + 1}
+                                            </span>
+                                        </div>
 
-                                    <div className="w-32 text-right">
-                                        <span className="bg-indigo-50 text-indigo-600 px-5 py-2 rounded-full text-sm font-black inline-block group-hover:bg-indigo-600 group-hover:text-white transition-all">
-                                            ▶ {g.playCount || 0}
-                                        </span>
+                                        <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-slate-200 ml-2 bg-slate-100 flex-shrink-0">
+                                            <img
+                                                src={getImageUrl(s.photoUrl)}
+                                                alt={s.name}
+                                                className="w-full h-full object-cover"
+                                            />
+                                        </div>
+
+                                        <div className="flex-1 font-black text-slate-700 text-lg md:text-xl truncate px-4 group-hover:text-indigo-600 transition-colors uppercase italic">
+                                            {s.name}
+                                        </div>
+
+                                        <div className="w-36 text-right">
+                                            <span className="bg-indigo-50 text-indigo-600 px-5 py-2 rounded-full text-xs font-black inline-block group-hover:bg-indigo-600 group-hover:text-white transition-all tracking-wide">
+                                                🌟 {s.profile?.totalPoints || 0} XP
+                                            </span>
+                                        </div>
                                     </div>
-                                </div>
-                            ))
+                                ))
+                            )
                         )}
                     </div>
                 </div>

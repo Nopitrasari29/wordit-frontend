@@ -177,7 +177,23 @@ export default function HostSessionPage() {
                     <span className={`w-10 h-10 flex items-center justify-center text-white font-black rounded-xl text-sm italic ${index === 0 ? 'bg-amber-500' : 'bg-indigo-600'}`}>
                       #{index + 1}
                     </span>
-                    <span className="text-white font-black text-xl tracking-tight uppercase italic">{player.name}</span>
+                    <div>
+                      <span className="text-white font-black text-xl tracking-tight uppercase italic block">{player.name}</span>
+                      {sessionState === 'PLAYING' && (
+                        <div className="flex items-center gap-2 mt-1">
+                          {player.progress && (
+                            <span className="bg-indigo-500/20 text-indigo-300 text-[9px] font-black px-2 py-0.5 rounded-md border border-indigo-500/30 uppercase tracking-wider">
+                              Soal: {player.progress}
+                            </span>
+                          )}
+                          {player.accuracy !== undefined && (
+                            <span className="bg-emerald-500/20 text-emerald-300 text-[9px] font-black px-2 py-0.5 rounded-md border border-emerald-500/30 uppercase tracking-wider">
+                              Akurasi: {player.accuracy}%
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </div>
                   <div className="flex items-center gap-4">
                     {sessionState === 'WAITING' && (

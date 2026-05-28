@@ -68,7 +68,7 @@ export async function approveUser(id: string, action: "APPROVE" | "REJECT") {
 /* ============================== */
 
 export async function updateUser(id: string, data: any) {
-  const res = await api.patch(`/users/${id}`, data);
+  const res = await api.patch(`/users/${id}/role`, data);
   if (res.data.status !== "success" && !res.data.success) {
     throw new Error(res.data.message || "Failed to update user");
   }
@@ -83,6 +83,17 @@ export async function deleteUser(id: string) {
   const res = await api.delete(`/users/${id}`);
   if (res.data.status !== "success" && !res.data.success) {
     throw new Error(res.data.message || "Failed to delete user");
+  }
+  return res.data.data;
+}
+
+/* ============================== */
+/* GET STUDENT LEADERBOARD */
+/* ============================== */
+export async function getStudentLeaderboard() {
+  const res = await api.get("/users/leaderboard");
+  if (res.data.status !== "success" && !res.data.success) {
+    throw new Error(res.data.message || "Failed to fetch student leaderboard");
   }
   return res.data.data;
 }

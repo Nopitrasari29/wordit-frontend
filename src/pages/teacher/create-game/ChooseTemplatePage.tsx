@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import api from "../../services/api";
 import { toast } from "react-hot-toast";
+import { templateIcons } from "../../../data/templateIcons";
 
 export default function ChooseTemplatePage() {
   const [searchParams] = useSearchParams();
@@ -79,12 +80,7 @@ export default function ChooseTemplatePage() {
 
             <div className="text-5xl mb-8 group-hover:scale-110 group-hover:-rotate-12 transition-transform duration-500">
               {/* Mapping Icon dinamis */}
-              {t.type === 'FLASHCARD' && '🎴'}
-              {t.type === 'ANAGRAM' && '🧩'}
-              {t.type === 'HANGMAN' && '🧗'}
-              {t.type === 'WORD_SEARCH' && '🔍'}
-              {t.type === 'MAZE_CHASE' && '🏃'}
-              {t.type === 'SPIN_THE_WHEEL' && '🎡'}
+              {templateIcons[t.type] || "🎮"}
             </div>
 
             <h3 className="text-2xl font-black text-slate-800 mb-2 tracking-tight">{t.label}</h3>

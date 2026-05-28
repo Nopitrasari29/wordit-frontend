@@ -21,4 +21,23 @@ api.interceptors.request.use(
     (error) => Promise.reject(error)
 );
 
+// 🔥 REVISI: Response interceptor untuk mendeteksi token expired (401 Unauthorized)
+api.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        if (error.response && error.response.status === 401) {
+            console.warn("🔐 Sesi login kedaluwarsa atau tidak valid. Melakukan logout otomatis...");
+            localStorage.removeItem("token");
+            localStorage.removeItem("user");
+            sessionStorage.removeItem("playerName");
+            sessionStorage.removeItem("gameCode");
+            sessionStorage.removeItem("activeGameRoom");
+            sessionStorage.removeItem("activeGameId");
+            // Redirect ke login dengan parameter status
+            window.location.href = "/login?expired=true";
+        }
+        return Promise.reject(error);
+    }
+);
+
 export default api;
