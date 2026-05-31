@@ -24,36 +24,57 @@ export default function SystemLogsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [limit, setLimit] = useState(10);
   const [timeRange, setTimeRange] = useState("ALL");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
 
-  const handleExportCSV = () => {
-    if (logs.length === 0) {
-      toast.error("Tidak ada log untuk diekspor!");
-      return;
+  const handleExportCSV = async () => {
+    try {
+      toast.loading("Menyiapkan data ekspor...");
+      const res = await api.get("/analytics/admin/logs", {
+        params: {
+          page: 1,
+          limit: 9999,
+          action: filterAction || undefined,
+          search: searchQuery || undefined,
+          timeRange: timeRange !== "ALL" ? timeRange : undefined,
+          dateFrom: dateFrom || undefined,
+          dateTo: dateTo || undefined,
+        },
+      });
+      const allLogs = res.data.data.logs || [];
+      if (allLogs.length === 0) {
+        toast.dismiss();
+        toast.error("Tidak ada log untuk diekspor!");
+        return;
+      }
+      const headers = ["Waktu", "Aksi/Aktivitas", "Detail", "User"];
+      const rows = allLogs.map((l: any) => [
+        new Date(l.createdAt).toLocaleString("id-ID"),
+        l.action,
+        l.details || "-",
+        l.userName || "-",
+      ]);
+      const csvContent = [headers, ...rows]
+        .map((e) => e.map((val: any) => `"${String(val).replace(/"/g, '""')}"`).join(","))
+        .join("\n");
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      const filterLabel = filterAction ? `_${filterAction.toLowerCase()}` : "";
+      const dateLabel = dateFrom ? `_${dateFrom}` : "";
+      link.setAttribute("download", `wordit-logs${filterLabel}${dateLabel}_${new Date().toISOString().slice(0, 10)}.csv`);
+      link.style.visibility = "hidden";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      toast.dismiss();
+      toast.success(`${allLogs.length} log berhasil diekspor ke CSV!`);
+    } catch (e) {
+      toast.dismiss();
+      toast.error("Gagal mengekspor log!");
     }
-    const headers = ["Waktu", "Aksi/Aktivitas", "Detail", "User"];
-    const rows = logs.map((l: any) => [
-      new Date(l.createdAt).toLocaleString("id-ID"),
-      l.action,
-      l.details || "-",
-      l.userName || "-",
-    ]);
-
-    const csvContent = [headers, ...rows]
-      .map((e) => e.map((val) => `"${String(val).replace(/"/g, '""')}"`).join(","))
-      .join("\n");
-
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("download", `wordit-system-logs-${new Date().toISOString().slice(0, 10)}.csv`);
-    link.style.visibility = "hidden";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    toast.success("Log sistem berhasil diekspor ke CSV!");
   };
-
   async function fetchQuotaStatus() {
     try {
       const res = await api.get("/ai/quota-status");
@@ -73,6 +94,8 @@ export default function SystemLogsPage() {
           action: filterAction || undefined,
           search: searchQuery || undefined,
           timeRange: timeRange !== "ALL" ? timeRange : undefined,
+          dateFrom: dateFrom || undefined,
+          dateTo: dateTo || undefined,
         },
       });
       if (res.data.status === "success") {
@@ -90,7 +113,7 @@ export default function SystemLogsPage() {
   useEffect(() => {
     fetchQuotaStatus();
     fetchLogs(page);
-  }, [page, filterAction, limit, timeRange]);
+}, [page, filterAction, limit, timeRange, dateFrom, dateTo]);
 
   useEffect(() => {
     socket.emit("join_admin_room");
@@ -411,6 +434,33 @@ export default function SystemLogsPage() {
               <option value="2months">2 Bulan</option>
             </select>
 
+            {/* Custom Date Range */}
+            <div className="flex items-center gap-1.5">
+              <input
+                type="date"
+                value={dateFrom}
+                onChange={(e) => {
+                  setDateFrom(e.target.value);
+                  setTimeRange("ALL");
+                  setPage(1);
+                }}
+                className="bg-slate-50 border border-slate-200 text-slate-700 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 font-bold cursor-pointer"
+                title="Dari Tanggal"
+              />
+              <span className="text-slate-400 text-xs font-bold">—</span>
+              <input
+                type="date"
+                value={dateTo}
+                onChange={(e) => {
+                  setDateTo(e.target.value);
+                  setTimeRange("ALL");
+                  setPage(1);
+                }}
+                className="bg-slate-50 border border-slate-200 text-slate-700 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 font-bold cursor-pointer"
+                title="Sampai Tanggal"
+              />
+            </div>
+
             {/* Filter Limit */}
             <select
               value={limit}
@@ -438,12 +488,16 @@ export default function SystemLogsPage() {
             {(filterAction ||
               searchQuery ||
               timeRange !== "ALL" ||
+              dateFrom ||
+              dateTo ||
               limit !== 10) && (
               <button
                 onClick={() => {
                   setFilterAction("");
                   setSearchQuery("");
                   setTimeRange("ALL");
+                  setDateFrom("");
+                  setDateTo("");
                   setLimit(10);
                   setPage(1);
                 }}
