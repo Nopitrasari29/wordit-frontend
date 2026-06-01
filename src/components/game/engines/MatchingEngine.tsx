@@ -90,7 +90,30 @@ export default function MatchingEngine(props: { data: any, onGameOver?: any, onI
                 matchesHistoryRef.current.push(newMatchRecord);
                 setMatchedIds(prev => [...prev, selectedLeft.uniqueId, selectedRight.uniqueId]);
 
-                if (roomCode) socket.emit("updateScore", { code: roomCode, score: newScore });
+                if (roomCode) {
+                const currentAccuracy =
+                    Math.round(
+                        (
+                            matchesHistoryRef.current
+                                .filter(
+                                    m => m.isCorrect
+                                ).length
+                            /
+                            pairs.length
+                        ) * 100
+                    );
+
+                socket.emit(
+                    "updateScore",
+                    {
+                        code: roomCode,
+                        score: newScore,
+                        accuracy:
+                            currentAccuracy,
+                        progress:
+                            `${matchedIds.length / 2}/${pairs.length}`,
+                    }
+                );
 
                 submitAnswer(realGameId, selectedLeft.originalIndex, JSON.stringify({
                     leftItem: selectedLeft.text,
@@ -121,7 +144,8 @@ export default function MatchingEngine(props: { data: any, onGameOver?: any, onI
                 setSelectedRight(null);
             }, 400);
         }
-    }, [selectedLeft, selectedRight]); // 🛠️ Hanya dependensi seleksi!
+    }
+}, [selectedLeft, selectedRight]); // 🛠️ Hanya dependensi seleksi!
 
     const handleFinish = async (finalMatches: any[], finalScore: number) => {
         if (isFinished) return;
@@ -156,12 +180,35 @@ export default function MatchingEngine(props: { data: any, onGameOver?: any, onI
         sessionStorage.setItem("lastAccuracy", realAccuracy.toString());
         sessionStorage.setItem("lastBreakdown", JSON.stringify(completeHistory));
 
-        try {
-            await finishGame(realGameId, payload);
-        } catch (e) { console.error("Gagal simpan skor"); }
+        if (onGameOver) {
+            onGameOver(
+                finalScore,
+                realAccuracy,
+                completeHistory
+            );
+            return;
+        }
 
-        if (onGameOver) onGameOver(finalScore, realAccuracy, completeHistory);
-        else navigate("/student/result", { state: { ...payload, accuracy: realAccuracy } });
+        try {
+            await finishGame(
+                realGameId,
+                payload
+            );
+        } catch (e) {
+            console.error(
+                "Gagal simpan skor"
+            );
+        }
+
+        navigate(
+            "/student/result",
+            {
+                state: {
+                    ...payload,
+                    accuracy: realAccuracy
+                }
+            }
+        );
     };
 
     if (pairs.length === 0) return <div className="p-10 text-center animate-pulse">Menyiapkan... 🔗</div>;

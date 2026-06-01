@@ -64,6 +64,7 @@ export default function EssayEngine({
   const historyRef = useRef<any[]>([]);
   const currentIndexRef = useRef(0);
   const scoreRef = useRef(0);
+  const isSavingRef = useRef(false);
   const isFinishedRef = useRef(false);
 
   useEffect(() => {
@@ -185,7 +186,16 @@ export default function EssayEngine({
     }
 
     if (roomCode)
-      socket.emit("updateScore", { code: roomCode, score: newScore });
+      socket.emit(
+        "updateScore",
+        {
+            code: roomCode,
+            score: newScore,
+            accuracy: 0,
+            progress:
+                `${currentIndex + 1}/${questions.length}`,
+        }
+    );
     submitAnswer(realGameId, currentIndex, answerToSubmit, newScore).catch(
       () => {},
     );
@@ -231,6 +241,11 @@ export default function EssayEngine({
   };
 
   const handleFinish = async (finalHistory: any[], finalScore: number) => {
+    if (isSavingRef.current)
+    return;
+
+    isSavingRef.current =
+    true;
     if (isFinishedRef.current) return;
     isFinishedRef.current = true;
     setIsFinished(true);
@@ -342,7 +357,7 @@ export default function EssayEngine({
   }
 
   const currentQ = questions[currentIndex];
-  const progressPercent = (currentIndex / questions.length) * 100;
+  const progressPercent = ((currentIndex + 1) / questions.length) * 100;
   const timeWarning = timeLeft <= 30;
 
   return (

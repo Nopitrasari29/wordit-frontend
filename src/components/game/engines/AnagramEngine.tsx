@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom"
 import socket from "../../../hooks/useSocket"
 import { submitAnswer, finishGame } from "../../../pages/services/game.service"
 
-export default function AnagramEngine({ data, onIntermission }: { data: any, onIntermission?: () => void }) {
+export default function AnagramEngine({ data, onIntermission, onGameOver }: { data: any, onIntermission?: () => void, onGameOver?: (score: number, accuracy: number, breakdown: any[]) => void }) {
     const navigate = useNavigate()
     const quizWords = data?.gameJson?.words || []
     const gameId = data?.id || ""
@@ -150,12 +150,33 @@ export default function AnagramEngine({ data, onIntermission }: { data: any, onI
             sessionStorage.setItem("lastBreakdown", JSON.stringify(finalBreakdown));
 
             // ✅ SIMPAN SKOR FINAL KE DATABASE (1x di akhir game)
-            if (gameId) {
-                finishGame(gameId, payload).catch(e => console.error("finishGame error:", e));
+            if (onGameOver) {
+                onGameOver(
+                    score,
+                    accuracy,
+                    finalBreakdown
+                );
+                return;
             }
 
-            navigate("/student/result", { state: payload });
-        }
+            if (gameId) {
+                finishGame(
+                    gameId,
+                    payload
+                ).catch(e =>
+                    console.error(
+                        "finishGame error:",
+                        e
+                    )
+                );
+            }
+
+            navigate(
+                "/student/result",
+                {
+                    state: payload,
+                }
+            );
     }
 
     if (!quizWords || quizWords.length === 0) {
@@ -194,7 +215,24 @@ export default function AnagramEngine({ data, onIntermission }: { data: any, onI
             });
 
             if (roomCode) {
-                socket.emit("updateScore", { code: roomCode, score: newScore });
+                const runningAccuracy =
+                    Math.round(
+                        (correctCountRef.current /
+                            (currentIndex + 1)) *
+                        100
+                    );
+
+                socket.emit(
+                    "updateScore",
+                    {
+                        code: roomCode,
+                        score: newScore,
+                        accuracy:
+                            runningAccuracy,
+                        progress:
+                            `${currentIndex + 1}/${quizWords.length}`,
+                    }
+                );
             }
 
             if (gameId) {
@@ -344,4 +382,5 @@ export default function AnagramEngine({ data, onIntermission }: { data: any, onI
             </div>
         </div>
     )
+    }
 }

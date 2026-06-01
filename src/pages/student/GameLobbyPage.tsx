@@ -7,73 +7,242 @@ export default function GameLobbyPage() {
   const { sessionId } = useParams();
   const navigate = useNavigate();
   const [players, setPlayers] = useState<string[]>([]);
+  const [waitingApproval, setWaitingApproval] = useState(false);
+  const [isApproved, setIsApproved] = useState(false);
 
   useEffect(() => {
     if (!sessionId) return;
 
-    // 🎯 1. Ambil Nama dari Storage (Yang diisi di EnterPlayerPage)
-    const savedName = sessionStorage.getItem("playerName") || "Guest Player";
+    const savedName =
+      sessionStorage.getItem("playerName") ||
+      "Guest Player";
 
-    // 📡 2. JOIN LOBBY: Kirim objek lengkap { code, playerName }
-    // Backend kamu (socket.ts) menunggu objek ini!
-    socket.emit("joinLobby", {
-      code: sessionId,
-      playerName: savedName,
-    });
+    sessionStorage.setItem(
+      "playerName",
+      savedName
+    );
 
-    // 👥 3. LISTEN: Gunakan "updatePlayerList" agar sama dengan Backend & Host
+    const emitJoinLobby = () => {
+      console.log("=================================");
+      console.log("JOIN LOBBY EMIT");
+      console.log("ROOM:", sessionId);
+      console.log("PLAYER:", savedName);
+      console.log("CONNECTED:", socket.connected);
+      console.log("=================================");
+
+      socket.emit("joinLobby", {
+        code: sessionId,
+        playerName: savedName,
+      });
+    };
+
+    if (socket.connected) {
+      emitJoinLobby();
+    } else {
+      socket.once("connect", emitJoinLobby);
+    }
+
     socket.on("updatePlayerList", (list: any[]) => {
-      console.log("Daftar pemain terbaru:", list);
-      // Karena list dari BE adalah array of object [{name, score}], kita ambil namanya saja
-      const namesOnly = list.map((p) => p.name);
+      console.log(
+        "UPDATE PLAYER LIST RAW:",
+        JSON.stringify(list)
+      );
+
+      const namesOnly = Array.isArray(list)
+        ? list
+            .filter((p) => p?.name)
+            .map((p) => p.name)
+        : [];
+
+      console.log(
+        "UPDATE PLAYER LIST NAMES:",
+        namesOnly
+      );
+
       setPlayers(namesOnly);
     });
 
-    // 🚀 4. AUTO-START: Pindah saat Guru klik Start
-    socket.on("gameStarted", (gameId: string) => {
-      toast.success("Game Dimulai! Siap-siap...");
-      navigate(`/play/${gameId}`);
-    });
-
-    // 🕒 5. LATE JOINER: Cek jika game sudah berjalan saat masuk lobby (Revisi BE-13)
     socket.on(
-      "lobbyInfo",
-      ({ status, gameId }: { status: string; gameId: string }) => {
-        if (status === "playing" && gameId) {
-          toast.success("Game sedang berlangsung! Langsung terjun...");
-          navigate(`/play/${gameId}`);
-        }
-      },
+      "gameStarted",
+      (gameId: string) => {
+        toast.success(
+          "Game Dimulai!"
+        );
+
+        navigate(`/play/${gameId}`);
+      }
     );
 
-    // 👢 6. KICKED FROM LOBBY: Siswa dikeluarkan oleh guru/host
-    socket.on("kickedFromLobby", () => {
-      toast.error("Kamu telah dikeluarkan dari lobby oleh Host. 👢");
-      navigate("/student/join");
+    socket.on(
+      "lobbyInfo",
+      ({
+        status,
+        gameId,
+      }: {
+        status: string;
+        gameId: string;
+      }) => {
+        console.log(
+          "LOBBY INFO:",
+          status,
+          gameId
+        );
+
+        if (
+          status === "playing" &&
+          gameId &&
+          !waitingApproval &&
+          !isApproved
+        ) {
+          toast.success(
+            "Game sedang berlangsung!"
+          );
+
+          navigate(`/play/${gameId}`);
+        }
+      }
+    );
+
+    socket.on("playerKicked", () => {
+      toast.error(
+        "Anda telah dikeluarkan oleh guru."
+      );
+
+      setPlayers([]);
+
+      sessionStorage.removeItem(
+        "playerName"
+      );
+
+      sessionStorage.removeItem(
+        "activeGameRoom"
+      );
+
+      sessionStorage.removeItem(
+        "activeGameId"
+      );
+
+      toast.error(
+        "Anda telah dikeluarkan oleh guru."
+      );
+
+      navigate(
+        "/student/join",
+        { replace: true }
+      );
     });
 
-    // ❌ 7. ROOM ERROR: Kode kuis salah atau room tidak aktif
-    socket.on("roomError", (message: string) => {
-      toast.error(message || "Kode kuis tidak aktif atau tidak ditemukan. 🛑");
-      navigate("/student/join");
-    });
+    socket.on(
+      "roomError",
+      (message: string) => {
+        console.error(
+          "ROOM ERROR:",
+          message
+        );
 
-    // 🛑 8. HOST DISCONNECTED: Guru keluar / mati koneksinya
-    socket.on("hostDisconnected", () => {
-      toast.error("Host terputus dari lobby. 🛑");
-      navigate("/student/join");
-    });
+        toast.error(
+          message ||
+            "Kode kuis tidak aktif."
+        );
 
-    // Cleanup agar tidak ada memory leak
+        navigate("/student/join");
+      }
+    );
+
+    socket.on(
+      "hostDisconnected",
+      () => {
+        toast.error(
+          "Host terputus."
+        );
+
+        navigate("/student/join");
+      }
+    );
+
+    socket.on(
+      "waitingApproval",
+      () => {
+        console.log(
+          "WAITING APPROVAL"
+        );
+
+        setWaitingApproval(true);
+
+        toast(
+          "Menunggu persetujuan guru..."
+        );
+      }
+    );
+
+    socket.on(
+      "joinApproved",
+      (roomCode: string) => {
+        console.log(
+          "JOIN APPROVED:",
+          roomCode
+        );
+
+        setIsApproved(true);
+
+        toast.success(
+          "Guru menerima Anda."
+        );
+
+        navigate(`/play/${roomCode}`);
+      }
+    );
+
+    socket.on(
+      "joinRejected",
+      () => {
+        console.log(
+          "JOIN REJECTED"
+        );
+
+        toast.error(
+          "Permintaan ditolak."
+        );
+
+        navigate("/student/join");
+      }
+    );
+
     return () => {
-      socket.off("updatePlayerList");
-      socket.off("gameStarted");
-      socket.off("lobbyInfo");
-      socket.off("kickedFromLobby");
-      socket.off("roomError");
-      socket.off("hostDisconnected");
+      socket.off(
+        "updatePlayerList"
+      );
+      socket.off(
+        "gameStarted"
+      );
+      socket.off(
+        "lobbyInfo"
+      );
+      socket.off(
+        "playerKicked"
+      );
+      socket.off(
+        "roomError"
+      );
+      socket.off(
+        "hostDisconnected"
+      );
+      socket.off(
+        "waitingApproval"
+      );
+      socket.off(
+        "joinApproved"
+      );
+      socket.off(
+        "joinRejected"
+      );
     };
-  }, [sessionId, navigate]);
+  }, [
+    sessionId,
+    navigate,
+    waitingApproval,
+    isApproved,
+  ]);
 
   return (
     <div className="min-h-screen bg-indigo-900 flex flex-col relative overflow-hidden font-sans text-center">
@@ -88,6 +257,17 @@ export default function GameLobbyPage() {
         </div>
 
         <div className="space-y-4 mb-12">
+          {waitingApproval && (
+            <div className="bg-yellow-500/20 border border-yellow-500 rounded-3xl px-8 py-5 mb-8">
+              <h3 className="font-black text-yellow-300">
+                Menunggu Persetujuan Guru
+              </h3>
+
+              <p className="text-yellow-200 text-sm mt-2">
+                Guru sedang meninjau permintaan Anda.
+              </p>
+            </div>
+          )}
           <h2 className="text-4xl md:text-7xl font-black text-white tracking-tighter drop-shadow-xl italic">
             WAR <span className="text-blue-400">ROOM</span>
           </h2>

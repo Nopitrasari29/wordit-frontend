@@ -36,6 +36,7 @@ export default function SpinWheelEngine({ data, onIntermission, onGameOver }: { 
 
     const isBusy = useRef(false);
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const transitionRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const startTimer = useCallback(() => {
         if (timerRef.current) clearInterval(timerRef.current);
@@ -66,7 +67,7 @@ export default function SpinWheelEngine({ data, onIntermission, onGameOver }: { 
         const finalRotation = rotation + (extraSpins * 360) + (randomIndex * degreePerItem);
 
         setRotation(finalRotation);
-        setTimeout(() => {
+        transitionRef.current = setTimeout(() => {
             setSpinning(false);
             setSelectedQuestion(questions[randomIndex]);
             startTimer();
@@ -85,12 +86,34 @@ export default function SpinWheelEngine({ data, onIntermission, onGameOver }: { 
         if (isCorrect) {
             setScore(newScore);
             toast.success("BENAR! +100 Skor 🌟");
-            if (roomCode) socket.emit("updateScore", { code: roomCode, score: newScore });
+            if (roomCode) {
+            const currentAccuracy =
+                Math.round(
+                    (
+                        newScore /
+                        (
+                            (completedCount + 1)
+                            * 100
+                        )
+                    ) * 100
+                );
+
+            socket.emit(
+                "updateScore",
+                {
+                    code: roomCode,
+                    score: newScore,
+                    accuracy:
+                        currentAccuracy,
+                    progress:
+                        `${completedCount + 1}/${questions.length}`,
+                }
+            );
         } else {
             setLives(newLives);
             toast.error(finalInput === "TIMEOUT" ? "Waktu Habis! ⏰" : "Salah Jawaban! ❌");
         }
-
+        const isSavingRef = useRef(false);
         const currentHistoryItem = { word: finalInput, isCorrect, time: 15 - timeLeft };
         const updatedHistory = [...history, currentHistoryItem];
         setHistory(updatedHistory);
@@ -100,6 +123,12 @@ export default function SpinWheelEngine({ data, onIntermission, onGameOver }: { 
         setTimeout(() => {
             const isGameOver = newLives <= 0 || completedCount + 1 >= questions.length;
             if (isGameOver) {
+                if (
+                    isSavingRef.current
+                ) return;
+
+                isSavingRef.current =
+                true;
                 const accuracy = Math.round((newScore / (questions.length * 100)) * 100);
                 const payload = {
                     scoreValue: newScore,
@@ -113,9 +142,26 @@ export default function SpinWheelEngine({ data, onIntermission, onGameOver }: { 
                 sessionStorage.setItem("lastAccuracy", accuracy.toString());
                 sessionStorage.setItem("lastBreakdown", JSON.stringify(updatedHistory));
 
-                finishGame(realGameId, payload).catch(() => { });
-                if (onGameOver) onGameOver(newScore, accuracy, updatedHistory);
-                else navigate("/student/result", { state: payload });
+                if (onGameOver) {
+                    onGameOver(
+                        newScore,
+                        accuracy,
+                        updatedHistory
+                    );
+                    return;
+                }
+
+                finishGame(
+                    realGameId,
+                    payload
+                ).catch(() => { });
+
+                navigate(
+                    "/student/result",
+                    {
+                        state: payload,
+                    }
+                );
             } else {
                 if (onIntermission) onIntermission();
                 setCompletedCount(prev => prev + 1);
@@ -127,7 +173,23 @@ export default function SpinWheelEngine({ data, onIntermission, onGameOver }: { 
     };
 
     useEffect(() => {
-        return () => { if (timerRef.current) clearInterval(timerRef.current); };
+        return () => {
+
+            if (timerRef.current) {
+                clearInterval(
+                    timerRef.current
+                );
+            }
+
+            if (
+                transitionRef.current
+            ) {
+                clearTimeout(
+                    transitionRef.current
+                );
+            }
+
+        };
     }, []);
 
     // 🎨 DINAMIS: Membuat warna roda berdasarkan jumlah soal & status selesai
@@ -224,4 +286,5 @@ export default function SpinWheelEngine({ data, onIntermission, onGameOver }: { 
             )}
         </div>
     );
+}
 }

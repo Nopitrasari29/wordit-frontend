@@ -143,7 +143,7 @@ export default function MultipleChoiceEngine({ data, onGameOver, onIntermission 
         const payload = {
             scoreValue: finalScore,
             maxScore: questions.length * 100,
-            accuracy: finalScore, // Dikirim skor agar kalkulasi backend menghasilkan angka yang identik
+            accuracy: realAccuracy, // Dikirim skor agar kalkulasi backend menghasilkan angka yang identik
             timeSpent: totalTimeSpent,
             answersDetail: completeHistory,
         };
@@ -153,24 +153,36 @@ export default function MultipleChoiceEngine({ data, onGameOver, onIntermission 
         sessionStorage.setItem("lastAccuracy", realAccuracy.toString());
         sessionStorage.setItem("lastBreakdown", JSON.stringify(completeHistory));
 
-        try {
-            // 🚀 Kirim payload yang sudah disinkronkan agar Backend menyimpan skor dengan benar
-            await finishGame(realGameId, payload);
-        } catch (e) {
-            console.error("Gagal simpan skor ke DB");
+        if (onGameOver) {
+            onGameOver(
+                finalScore,
+                realAccuracy,
+                completeHistory
+            );
+            return;
         }
 
-        if (onGameOver) {
-            onGameOver(finalScore, realAccuracy, completeHistory);
-        } else {
-            // Navigasi dengan membawa data tampilan yang benar (realAccuracy dalam %)
-            navigate("/student/result", {
+        try {
+            await finishGame(
+                realGameId,
+                payload
+            );
+        } catch (e) {
+            console.error(
+                "Gagal simpan skor ke DB"
+            );
+        }
+
+        navigate(
+            "/student/result",
+            {
                 state: {
                     ...payload,
-                    accuracy: realAccuracy
-                }
-            });
-        }
+                    accuracy:
+                        realAccuracy,
+                },
+            }
+        );
     };
 
     // UI Fallbacks

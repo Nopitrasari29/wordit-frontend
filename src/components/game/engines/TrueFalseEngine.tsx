@@ -40,6 +40,7 @@ export default function TrueFalseEngine({
   const [score, setScore] = useState(0);
   const [timeLeft, setTimeLeft] = useState(questions.length * 10);
   const [isFinished, setIsFinished] = useState(false);
+  const isSavingRef = useRef(false);
 
   // 🛠️ FIX: Gunakan useRef untuk menjamin ketersediaan data saat finish tiba-tiba
   const historyRef = useRef<any[]>([]);
@@ -131,6 +132,8 @@ export default function TrueFalseEngine({
   };
 
   const handleFinish = async (finalHistory: any[], finalScore: number) => {
+    if (isSavingRef.current) return;
+    isSavingRef.current = true;
     if (isFinished) return;
     setIsFinished(true);
     if (timerRef.current) clearInterval(timerRef.current);
@@ -190,19 +193,35 @@ export default function TrueFalseEngine({
     sessionStorage.setItem("lastAccuracy", realAccuracy.toString());
     sessionStorage.setItem("lastBreakdown", JSON.stringify(completeHistory));
 
-    try {
-      await finishGame(realGameId, payload);
-    } catch (e) {
-      console.error("Gagal simpan skor ke DB");
+    if (onGameOver) {
+        onGameOver(
+            finalScore,
+            realAccuracy,
+            completeHistory
+        );
+        return;
     }
 
-    if (onGameOver) {
-      onGameOver(finalScore, realAccuracy, completeHistory);
-    } else {
-      navigate("/student/result", {
-        state: { ...payload, accuracy: realAccuracy },
-      });
+    try {
+        await finishGame(
+            realGameId,
+            payload
+        );
+    } catch (e) {
+        console.error(
+            "Gagal simpan skor ke DB"
+        );
     }
+
+    navigate(
+        "/student/result",
+        {
+            state: {
+                ...payload,
+                accuracy: realAccuracy,
+            },
+        }
+    );
   };
 
   if (questions.length === 0)

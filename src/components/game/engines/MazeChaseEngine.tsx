@@ -20,6 +20,7 @@ export default function MazeChaseEngine({ data, onGameOver, onIntermission }: { 
 
     const isBusy = useRef(false);
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const transitionRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const startTimeRef = useRef<number>(Date.now());
     const currentQ = questions[currentIdx];
 
@@ -90,7 +91,24 @@ export default function MazeChaseEngine({ data, onGameOver, onIntermission }: { 
             toast.success("Tepat Sekali! 🌟");
 
             // 📡 SINKRONISASI KE TEACHER (REAL-TIME)
-            if (roomCode) socket.emit("updateScore", { code: roomCode, score: newScore });
+            const currentAccuracy =
+                Math.round(
+                    (newScore /
+                        ((currentIdx + 1) * 100)
+                    ) * 100
+                );
+
+            socket.emit(
+                "updateScore",
+                {
+                    code: roomCode,
+                    score: newScore,
+                    accuracy:
+                        currentAccuracy,
+                    progress:
+                        `${currentIdx + 1}/${questions.length}`,
+                }
+            );
             submitAnswer(realGameId, currentIdx, cell.text, newScore).catch(() => { });
         } else {
             setLives(newLives);
@@ -102,9 +120,37 @@ export default function MazeChaseEngine({ data, onGameOver, onIntermission }: { 
         const updatedHistory = [...history, currentHistoryItem];
         setHistory(updatedHistory);
 
-        setTimeout(() => {
+        transitionRef.current = setTimeout(() => {
+            useEffect(() => {
+                return () => {
+
+                    if (
+                        timerRef.current
+                    ) {
+                        clearInterval(
+                            timerRef.current
+                        );
+                    }
+
+                    if (
+                        transitionRef.current
+                    ) {
+                        clearTimeout(
+                            transitionRef.current
+                        );
+                    }
+
+                };
+            }, []);
+            const isSavingRef = useRef(false);
             const isGameOver = newLives <= 0 || currentIdx + 1 >= questions.length;
             if (isGameOver) {
+                if (
+                    isSavingRef.current
+                ) return;
+
+                isSavingRef.current =
+                true;
                 // 🎯 GUNAKAN VARIABEL LOKAL (newScore & updatedHistory) AGAR TIDAK 0
                 const accuracy = Math.round((newScore / (questions.length * 100)) * 100);
                 const timeSpent = Math.round((Date.now() - startTimeRef.current) / 1000);
@@ -121,9 +167,26 @@ export default function MazeChaseEngine({ data, onGameOver, onIntermission }: { 
                 sessionStorage.setItem("lastAccuracy", accuracy.toString());
                 sessionStorage.setItem("lastBreakdown", JSON.stringify(updatedHistory));
 
-                finishGame(realGameId, payload).catch(() => { });
-                if (onGameOver) onGameOver(newScore, accuracy, updatedHistory);
-                else navigate("/student/result", { state: payload });
+                if (onGameOver) {
+                    onGameOver(
+                        newScore,
+                        accuracy,
+                        updatedHistory
+                    );
+                    return;
+                }
+
+                finishGame(
+                    realGameId,
+                    payload
+                ).catch(() => { });
+
+                navigate(
+                    "/student/result",
+                    {
+                        state: payload
+                    }
+                );
             } else {
                 if (onIntermission) onIntermission();
                 setCurrentIdx(prev => prev + 1);

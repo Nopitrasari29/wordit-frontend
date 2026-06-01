@@ -18,6 +18,7 @@ export default function PlayGamePage() {
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
   const [overlayCountdown, setOverlayCountdown] = useState(3);
 
+  const [isFinishing, setIsFinishing] = useState(false);
   // State untuk local score (Guest & Teacher)
   const [localScoreResult, setLocalScoreResult] = useState<any>(null);
 
@@ -26,6 +27,12 @@ export default function PlayGamePage() {
   const playerName = sessionStorage.getItem("playerName") || "Player";
 
   useEffect(() => {
+    const playerName =
+      sessionStorage.getItem(
+        "playerName"
+      ) || "Player";
+
+
     const loadGameArena = async () => {
       if (!gameId) return;
 
@@ -73,30 +80,120 @@ export default function PlayGamePage() {
   }, [gameId, navigate, isStudent]);
 
   useEffect(() => {
+    const joinRoom = (shareCode: string) => {
+      socket.emit("joinGame", { code: shareCode, playerName });
+    };
+
     const handleGameFinished = () => {
-      toast.error("Sesi telah berakhir.", { icon: "🛑" });
-      handleGameOver();
+
+      sessionStorage.removeItem(
+        "activeGameRoom"
+      );
+
+      sessionStorage.removeItem(
+        "activeGameId"
+      );
+
+      toast.error(
+        "Sesi telah berakhir.",
+        {
+          icon: "🛑"
+        }
+      );
+
+      navigate(
+        "/student/result",
+        {
+          state: {
+            score:
+              Number(
+                sessionStorage.getItem(
+                  "lastScore"
+                )
+              ) || 0,
+
+            accuracy:
+              Number(
+                sessionStorage.getItem(
+                  "lastAccuracy"
+                )
+              ) || 0,
+
+            breakdown:
+              JSON.parse(
+                sessionStorage.getItem(
+                  "lastBreakdown"
+                ) || "[]"
+              ),
+          },
+        }
+      );
     };
 
     const handleUpdatePlayerList = (newList: any[]) => {
       setLeaderboard(newList);
     };
 
+    const handlePlayerKicked = () => {
+      toast.error(
+        "Anda telah dikeluarkan oleh guru."
+      );
+
+      navigate("/student/join");
+    };
+
+    const handleHostDisconnected = () => {
+      toast.error(
+        "Guru mengakhiri sesi."
+      );
+
+      navigate("/student/join");
+    };
+
+    const handleConnect = () => {
+      if (game?.shareCode) {
+        joinRoom(game.shareCode);
+      }
+    };
+
     socket.on("gameFinished", handleGameFinished);
     socket.on("updatePlayerList", handleUpdatePlayerList);
+    socket.on("playerKicked", handlePlayerKicked);
+    socket.on("hostDisconnected", handleHostDisconnected);
+    socket.on("connect", handleConnect);
 
     return () => {
       socket.off("gameFinished", handleGameFinished);
       socket.off("updatePlayerList", handleUpdatePlayerList);
+      socket.off("playerKicked", handlePlayerKicked);
+      socket.off("hostDisconnected", handleHostDisconnected);
+      socket.off("connect", handleConnect);
     };
-  }, [navigate, gameId, game]); // Menambahkan dependensi agar state terpantau
+  }, [navigate, gameId, game, playerName]); // Menambahkan dependensi agar state terpantau
 
     const handleGameOver = async (scoreOverride?: number, accuracyOverride?: number, breakdownOverride?: any[]) => {
+        if (isFinishing) return; // Cegah multiple trigger
+        setIsFinishing(true);
         const realGameId = game?.id || game?._id || gameId;
         const score = scoreOverride !== undefined ? scoreOverride : parseInt(sessionStorage.getItem("lastScore") || "0");
         const accuracyRaw = accuracyOverride !== undefined ? accuracyOverride : parseInt(sessionStorage.getItem("lastAccuracy") || "0");
         const rawBreakdown = breakdownOverride ? JSON.stringify(breakdownOverride) : sessionStorage.getItem("lastBreakdown");
-        let breakdown = rawBreakdown ? JSON.parse(rawBreakdown) : [];
+        let breakdown = [];
+
+        try {
+
+          breakdown =
+            rawBreakdown
+              ? JSON.parse(
+                  rawBreakdown
+                )
+              : [];
+
+        } catch {
+
+          breakdown = [];
+
+        }
 
         // 🎯 REVISI QA: Auto-fill soal yang belum terjawab agar muncul di Result (Riwayat)
         const totalQuestions = game?.gameJson?.questions?.length || game?.gameJson?.words?.length || game?.gameJson?.pairs?.length || 0;
@@ -166,7 +263,14 @@ export default function PlayGamePage() {
     </div>
   );
 
-  const sortedLeaderboard = [...leaderboard].sort((a, b) => b.score - a.score);
+  const sortedLeaderboard =
+  [...leaderboard]
+  .sort(
+  (a,b)=>
+  (b.score || 0)
+  -
+  (a.score || 0)
+  );
   const myRankIndex = sortedLeaderboard.findIndex(p => p.name === playerName);
 
   // 🎯 FIX: Jika ranking dari socket belum update, paksa tampilkan skor dari sessionStorage 
@@ -286,3 +390,5 @@ export default function PlayGamePage() {
     </div>
   );
 }
+
+

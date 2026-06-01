@@ -4,7 +4,19 @@ import socket from "../../../hooks/useSocket";
 import { submitAnswer, finishGame } from "../../../pages/services/game.service";
 import { toast } from "react-hot-toast";
 
-export default function HangmanEngine({ data, onIntermission }: { data: any, onIntermission?: () => void }) {
+export default function HangmanEngine({
+    data,
+    onIntermission,
+    onGameOver,
+}: {
+    data: any,
+    onIntermission?: () => void,
+    onGameOver?: (
+        score?: number,
+        accuracy?: number,
+        breakdown?: any[]
+    ) => void
+}) {
     const navigate = useNavigate();
     const realGameId = data?.id || data?._id;
     const roomCode = data?.shareCode || "";
@@ -24,8 +36,9 @@ export default function HangmanEngine({ data, onIntermission }: { data: any, onI
     const [breakdown, setBreakdown] = useState<any[]>([]);
     const [timeLeft, setTimeLeft] = useState(30);
     const [feedback, setFeedback] = useState<'none' | 'correct' | 'incorrect' | 'timeout' | 'lose'>('none');
-
+    const timerRef = useRef<any>(null);
     const totalTimeRef = useRef(0);
+    const isSavingRef = useRef(false);
     const isBusy = useRef(false);
 
     const currentData = quizWords[currentIndex];
@@ -38,7 +51,9 @@ export default function HangmanEngine({ data, onIntermission }: { data: any, onI
         const timer = setInterval(() => {
             setTimeLeft(prev => {
                 if (prev <= 1) {
-                    clearInterval(timer);
+                    if (timerRef.current) {
+                        clearInterval(timerRef.current);
+                    }
                     handleEndTurn('timeout');
                     return 0;
                 }
@@ -47,7 +62,13 @@ export default function HangmanEngine({ data, onIntermission }: { data: any, onI
             totalTimeRef.current += 1;
         }, 1000);
 
-        return () => clearInterval(timer);
+        timerRef.current = timer;
+
+        return () => {
+            if (timerRef.current) {
+                clearInterval(timerRef.current);
+            }
+        };
     }, [currentIndex, feedback, isFinished, quizWords.length]);
 
     const handleEndTurn = (status: 'correct' | 'timeout' | 'lose') => {
@@ -65,7 +86,31 @@ export default function HangmanEngine({ data, onIntermission }: { data: any, onI
             setScore(newScore);
 
             // 📡 Update Teacher via Socket (Agar sinkron real-time)
-            if (roomCode) socket.emit("updateScore", { code: roomCode, score: newScore });
+            if (roomCode) {
+
+            const currentAccuracy =
+                Math.round(
+                    (
+                        (breakdown.filter(
+                            b => b.isCorrect
+                        ).length + 1)
+                        /
+                        (currentIndex + 1)
+                    ) * 100
+                );
+
+            socket.emit(
+                "updateScore",
+                {
+                    code: roomCode,
+                    score: newScore,
+                    accuracy:
+                        currentAccuracy,
+                    progress:
+                        `${currentIndex + 1}/${quizWords.length}`,
+                }
+            );
+        }
 
             // 📡 Simpan ke DB (Update skor akumulasi)
             submitAnswer(realGameId, currentIndex, word, newScore).catch(() => { });
@@ -106,9 +151,21 @@ export default function HangmanEngine({ data, onIntermission }: { data: any, onI
     };
 
     const handleFinish = async (finalScore: number, finalBreakdown: any[]) => {
+        if (
+            isSavingRef.current
+        ) return;
+
+        isSavingRef.current =
+        true;
         setIsFinished(true);
         const correctCount = finalBreakdown.filter(b => b.isCorrect).length;
-        const accuracy = Math.round((correctCount / quizWords.length) * 100);
+        const accuracy =
+        quizWords.length > 0
+        ? Math.round(
+            (correctCount /
+            quizWords.length) * 100
+        )
+        : 0;
 
         const finalPayload = {
             scoreValue: finalScore,
@@ -119,17 +176,51 @@ export default function HangmanEngine({ data, onIntermission }: { data: any, onI
         };
 
         // Redundansi simpan ke storage
-        sessionStorage.setItem("lastScore", finalScore.toString());
-        sessionStorage.setItem("lastAccuracy", accuracy.toString());
-        sessionStorage.setItem("lastBreakdown", JSON.stringify(finalBreakdown));
+        sessionStorage.setItem(
+            "lastScore",
+            finalScore.toString()
+        );
 
-        try {
-            await finishGame(realGameId, finalPayload);
-        } catch (e) {
-            console.error("Gagal simpan skor akhir");
+        sessionStorage.setItem(
+            "lastAccuracy",
+            accuracy.toString()
+        );
+
+        sessionStorage.setItem(
+            "lastBreakdown",
+            JSON.stringify(
+                finalBreakdown
+            )
+        );
+
+        if (onGameOver) {
+
+            onGameOver(
+                finalScore,
+                accuracy,
+                finalBreakdown
+            );
+
+            return;
         }
 
-        navigate("/student/result", { state: finalPayload });
+        try {
+            await finishGame(
+                realGameId,
+                finalPayload
+            );
+        } catch (e) {
+            console.error(
+                "Gagal simpan skor akhir"
+            );
+        }
+
+        navigate(
+            "/student/result",
+            {
+                state: finalPayload
+            }
+        );
     };
 
     const submitGuess = () => {

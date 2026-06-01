@@ -21,6 +21,7 @@ export default function WordSearchEngine({ data, onGameOver, onIntermission }: {
     const [lives, setLives] = useState(3);
     const [timeLeft, setTimeLeft] = useState(120);
     const [isFinished, setIsFinished] = useState(false);
+    const isSavingRef = useRef(false);
     const [history, setHistory] = useState<any[]>([]);
     const [selection, setSelection] = useState<string[]>([]);
     const [isDragging, setIsDragging] = useState(false);
@@ -135,7 +136,24 @@ export default function WordSearchEngine({ data, onGameOver, onIntermission }: {
             setHistory(newHistory);
             toast.success(`Ditemukan: ${foundWord}! ✨`);
 
-            if (roomCode) socket.emit("updateScore", { code: roomCode, score: newScore });
+            if (roomCode) {
+            const accuracy =
+                Math.round(
+                    (newFound.length /
+                        wordsToFind.length) *
+                    100
+                );
+
+            socket.emit(
+                "updateScore",
+                {
+                    code: roomCode,
+                    score: newScore,
+                    accuracy,
+                    progress:
+                        `${newFound.length}/${wordsToFind.length}`,
+                }
+            );
             submitAnswer(realGameId, wordsToFind.indexOf(foundWord), foundWord, newScore).catch(() => { });
 
             if (newFound.length === wordsToFind.length) {
@@ -153,13 +171,26 @@ export default function WordSearchEngine({ data, onGameOver, onIntermission }: {
         setSelection([]);
     };
 
-    const handleFinish = async (finalFound: string[], finalScore: number, finalHistory: any[]) => {
+    async function handleFinish(finalFound: string[], finalScore: number, finalHistory: any[]) {
+        if (
+            isSavingRef.current
+        ) return;
+
+        isSavingRef.current =
+        true;
         if (isFinished) return;
         if (onIntermission) onIntermission();
         setIsFinished(true);
         if (timerRef.current) clearInterval(timerRef.current);
 
-        const accuracy = Math.round((finalFound.length / wordsToFind.length) * 100);
+        const accuracy =
+        wordsToFind.length > 0
+        ? Math.round(
+            (finalFound.length /
+            wordsToFind.length) *
+            100
+        )
+        : 0;
         const payload = {
             scoreValue: finalScore,
             maxScore: wordsToFind.length * 100,
@@ -172,18 +203,32 @@ export default function WordSearchEngine({ data, onGameOver, onIntermission }: {
         sessionStorage.setItem("lastAccuracy", accuracy.toString());
         sessionStorage.setItem("lastBreakdown", JSON.stringify(payload.answersDetail));
 
-        try {
-            await finishGame(realGameId, payload);
-        } catch (e) {
-            console.error("Gagal simpan skor ke DB, menggunakan fallback navigasi.");
-        }
+    if (onGameOver) {
+        onGameOver(
+            finalScore,
+            accuracy,
+            payload.answersDetail
+        );
+        return;
+    }
 
-        if (onGameOver) {
-            onGameOver(finalScore, accuracy, payload.answersDetail);
-        } else {
-            navigate("/student/result", { state: payload });
+    try {
+        await finishGame(
+            realGameId,
+            payload
+        );
+    } catch (e) {
+        console.error(
+            "Gagal simpan skor ke DB"
+        );
+    }
+
+    navigate(
+        "/student/result",
+        {
+            state: payload,
         }
-    };
+    );
 
     if (isFinished) return <div className="p-20 text-center font-black animate-pulse uppercase tracking-widest text-indigo-600">Menyimpan Skor... 🏆</div>;
 
@@ -252,4 +297,10 @@ export default function WordSearchEngine({ data, onGameOver, onIntermission }: {
 
         </div>
     );
+}
+    }
+}
+
+function handleFinish(_foundWords: string[], _score: number, _arg2: never[]) {
+    throw new Error("Function not implemented.");
 }

@@ -18,6 +18,8 @@ export default function FlashcardEngine({ data, onGameOver }: { data: any, onGam
     const [timeLeft, setTimeLeft] = useState(15);
     const isBusy = useRef(false);
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const transitionRef = useRef<any>(null);
+    const isFinishing = useRef(false);
 
     const card = cards[index];
 
@@ -53,12 +55,29 @@ export default function FlashcardEngine({ data, onGameOver }: { data: any, onGam
 
         // 📡 KIRIM KE TEACHER & BACKEND
         if (data.shareCode) {
-            socket.emit("updateScore", { code: data.shareCode, score: newScore });
+            const currentAccuracy =
+            Math.round(
+                (newCorrectCount /
+                    (index + 1)) *
+                100
+            );
+
+            socket.emit(
+                "updateScore",
+                {
+                    code: data.shareCode,
+                    score: newScore,
+                    accuracy:
+                        currentAccuracy,
+                    progress:
+                        `${index + 1}/${cards.length}`,
+                }
+            );
         }
         submitAnswer(realGameId, index, isCorrect ? "HAFAL" : "LUPA", newScore).catch(() => { });
 
         // ⏱️ TRANSISI SOAL
-        setTimeout(() => {
+        transitionRef.current = setTimeout(() => {
             if (index < cards.length - 1) {
                 setIndex(prev => prev + 1);
                 isBusy.current = false;
@@ -90,31 +109,118 @@ export default function FlashcardEngine({ data, onGameOver }: { data: any, onGam
         return () => { if (timerRef.current) clearInterval(timerRef.current); };
     }, [index, handleEvaluation]);
 
-    const handleFinish = async (finalScore: number, finalBreakdown: any[], finalCorrect: number) => {
-        const accuracy = Math.round((finalCorrect / cards.length) * 100);
+    const handleFinish = async (
+        finalScore: number,
+        finalBreakdown: any[],
+        finalCorrect: number
+    ) => {
+
+        if (isFinishing.current) return;
+
+        isFinishing.current = true;
+
+        const accuracy =
+            cards.length > 0
+                ? Math.round(
+                    (finalCorrect / cards.length) * 100
+                )
+                : 0;
+
         const payload = {
             scoreValue: finalScore,
             maxScore: cards.length * 20,
-            accuracy: accuracy,
-            timeSpent: timeSpent,
+            accuracy,
+            timeSpent,
             answersDetail: finalBreakdown,
         };
 
-        // Simpan ke sessionStorage agar Result Page bisa baca data terbaru
-        sessionStorage.setItem("lastScore", finalScore.toString());
-        sessionStorage.setItem("lastAccuracy", accuracy.toString());
-        sessionStorage.setItem("lastBreakdown", JSON.stringify(finalBreakdown));
+        sessionStorage.setItem(
+            "lastScore",
+            finalScore.toString()
+        );
 
-        try {
-            await finishGame(realGameId, payload);
-        } catch (e) { }
+        sessionStorage.setItem(
+            "lastAccuracy",
+            accuracy.toString()
+        );
 
+        sessionStorage.setItem(
+            "lastBreakdown",
+            JSON.stringify(finalBreakdown)
+        );
+
+        // 🔥 Jika menggunakan PlayGamePage
         if (onGameOver) {
-            onGameOver(finalScore, accuracy, finalBreakdown);
-        } else {
-            navigate("/student/result", { state: payload });
+            onGameOver(
+                finalScore,
+                accuracy,
+                finalBreakdown
+            );
+            return;
         }
+
+        // 🔥 Fallback jika engine dijalankan standalone
+        try {
+            await finishGame(
+                realGameId,
+                payload
+            );
+        } catch (e) {
+            console.error(e);
+        }
+
+        navigate("/student/result", {
+            state: payload,
+        });
     };
+
+    useEffect(() => {
+        return () => {
+
+            if (timerRef.current) {
+                clearInterval(
+                    timerRef.current
+                );
+            }
+
+            if (
+                transitionRef.current
+            ) {
+                clearTimeout(
+                    transitionRef.current
+                );
+            }
+
+            try {
+                if (
+                    "speechSynthesis" in
+                    window
+                ) {
+                    window.speechSynthesis.cancel();
+                }
+            } catch {}
+        };
+    }, []);
+
+    if (
+        !cards ||
+        cards.length === 0
+    ) {
+        return (
+            <div className="flex items-center justify-center h-full">
+                <div className="text-center">
+                    <h2 className="text-2xl font-black">
+                        Tidak ada Flashcard
+                    </h2>
+
+                    <p>
+                        Data kartu
+                        belum tersedia.
+                    </p>
+                </div>
+            </div>
+        );
+    }
 
     if (!card) return null;
 

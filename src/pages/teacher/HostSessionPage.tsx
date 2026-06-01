@@ -11,6 +11,8 @@ export default function HostSessionPage() {
   const [loading, setLoading] = useState(true);
 
   const [participants, setParticipants] = useState<any[]>([]);
+  const [pendingStudents, setPendingStudents] = useState<any[]>([]);
+  const [allowLateJoin, setAllowLateJoin] = useState(true);
   // 🎯 STATE: WAITING -> PLAYING -> ENDED
   const [sessionState, setSessionState] = useState<'WAITING' | 'PLAYING' | 'ENDED'>('WAITING');
 
@@ -41,34 +43,83 @@ export default function HostSessionPage() {
     if (socket.connected) {
       joinAsHost();
     } else {
+      socket.on(
+        "pendingStudent",
+        (student) => {
+
+          setPendingStudents(
+            (prev) => {
+
+              const exists =
+                prev.some(
+                  (s) =>
+                    s.id === student.id
+                );
+
+              if (exists) {
+                return prev;
+              }
+
+              return [
+                ...prev,
+                student,
+              ];
+            }
+          );
+        }
+      );
+
+      socket.on(
+        "pendingStudents",
+        (list) => {
+          setPendingStudents(list);
+        }
+      );
       socket.on("connect", joinAsHost);
     }
 
     // 🎯 BE-13: Sinkronisasi Skor Real-time
     // Mendengarkan semua kemungkinan event update ranking dari backend
     const handleRankingUpdate = (newList: any[]) => {
-      console.log("📊 [SOCKET] Data ranking diterima:", newList);
-      // Validasi data adalah array untuk mencegah crash
-      if (Array.isArray(newList)) {
-        setParticipants(newList);
-      }
+      if (!Array.isArray(newList)) return;
+
+      console.log(
+        "HOST RECEIVED PLAYER LIST:",
+        newList
+      );
+
+      setParticipants(newList);
     };
 
     socket.on("ranking_update", handleRankingUpdate);
     socket.on("updatePlayerList", handleRankingUpdate);
-    socket.on("playerJoined", joinAsHost); // Re-join jika ada trigger pemain baru
+    socket.on("playerJoined", joinAsHost);
+
+    socket.on("pendingStudent", (student) => {
+      setPendingStudents((prev) => {
+        const exists = prev.some((s) => s.id === student.id);
+        return exists ? prev : [...prev, student];
+      });
+    });
 
     return () => {
       socket.off("connect", joinAsHost);
       socket.off("ranking_update", handleRankingUpdate);
       socket.off("updatePlayerList", handleRankingUpdate);
       socket.off("playerJoined", joinAsHost);
+      socket.off("pendingStudent");
+      socket.off("pendingStudents");
     };
   }, [game?.shareCode]);
 
   // 🎯 FUNGSI START GAME
   const handleStartGame = () => {
-    if (participants.length === 0) {
+      const validPlayers =
+    participants.filter(
+      (p) => !p.isDisconnected
+    );
+
+  if (validPlayers.length === 0) {
       return toast.error("Belum ada pemain yang bergabung di arena. 🌵");
     }
 
@@ -77,6 +128,27 @@ export default function HostSessionPage() {
     setSessionState('PLAYING');
     toast.success("Game Dimulai!");
   };
+  const handleApproveStudent = (studentId: string) => {
+  socket.emit("approveStudent", {
+    roomCode: game?.shareCode,
+    studentId,
+  });
+
+  setPendingStudents((prev) =>
+    prev.filter((s) => s.id !== studentId)
+  );
+};
+
+const handleRejectStudent = (studentId: string) => {
+  socket.emit("rejectStudent", {
+    roomCode: game?.shareCode,
+    studentId,
+  });
+
+  setPendingStudents((prev) =>
+    prev.filter((s) => s.id !== studentId)
+  );
+};
 
   // 🎯 FUNGSI END SESSION (STOP GAME)
   const handleEndSession = () => {
@@ -158,6 +230,42 @@ export default function HostSessionPage() {
         {/* 🏆 LIVE RANKING (FE-16) */}
         <div className="w-full max-w-2xl bg-white/5 backdrop-blur-xl rounded-[3.5rem] p-10 border border-white/10 shadow-2xl relative">
           <div className="flex items-center justify-between mb-10 relative z-10 px-2">
+          {pendingStudents.length > 0 && (
+          <div className="w-full max-w-2xl bg-yellow-500/10 border border-yellow-500 rounded-3xl p-6">
+            <h3 className="font-black text-lg mb-4">
+              ⏳ Siswa Menunggu Persetujuan
+            </h3>
+
+            {pendingStudents.map((student) => (
+              <div
+                key={student.id}
+                className="flex justify-between items-center mb-3"
+              >
+                <span>{student.name}</span>
+
+                <div className="flex gap-2">
+                  <button
+                    onClick={() =>
+                      handleApproveStudent(student.id)
+                    }
+                    className="bg-green-500 px-4 py-2 rounded-xl"
+                  >
+                    Terima
+                  </button>
+
+                  <button
+                    onClick={() =>
+                      handleRejectStudent(student.id)
+                    }
+                    className="bg-red-500 px-4 py-2 rounded-xl"
+                  >
+                    Tolak
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
             <div>
               <h3 className="text-white font-black text-xl uppercase italic tracking-tighter underline decoration-indigo-500 underline-offset-8">Live Ranking</h3>
               <p className="text-indigo-400/50 text-[8px] font-black uppercase tracking-[0.3em] mt-4">Real-time participation status</p>
@@ -171,7 +279,7 @@ export default function HostSessionPage() {
 
           <div className="space-y-4 max-h-72 overflow-y-auto pr-2 custom-scrollbar relative z-10">
             {participants.length > 0 ? (
-              [...participants].sort((a, b) => b.score - a.score).map((player, index) => (
+              [...participants].sort((a, b) =>(b.score || 0) -(a.score || 0)).map((player, index) => (
                 <div key={index} className="bg-white/5 p-6 rounded-[1.8rem] flex items-center justify-between border border-white/5 hover:bg-white/10 transition-all">
                   <div className="flex items-center gap-5">
                     <span className={`w-10 h-10 flex items-center justify-center text-white font-black rounded-xl text-sm italic ${index === 0 ? 'bg-amber-500' : 'bg-indigo-600'}`}>
@@ -199,8 +307,28 @@ export default function HostSessionPage() {
                     {sessionState === 'WAITING' && (
                       <button
                         onClick={() => {
-                          if (window.confirm(`Kick ${player.name} dari lobby?`)) {
-                            socket.emit("kickPlayer", { code: game?.shareCode, playerId: player.id });
+                          if (
+                            window.confirm(
+                              `Kick ${player.name} dari lobby?`
+                            )
+                          ) {
+
+                            console.log(
+                              "KICK PLAYER",
+                              {
+                                code: game?.shareCode,
+                                playerId: player.id,
+                                player
+                              }
+                            );
+
+                            socket.emit(
+                              "kickPlayer",
+                              {
+                                code: game?.shareCode,
+                                playerId: player.id,
+                              }
+                            );
                           }
                         }}
                         className="bg-rose-500 hover:bg-rose-600 text-white text-[10px] font-black px-3.5 py-2 rounded-xl transition-all"
@@ -225,9 +353,34 @@ export default function HostSessionPage() {
 
           {/* 🎯 TOMBOL DINAMIS */}
           {sessionState === 'WAITING' && (
-            <button onClick={handleStartGame} className="w-full mt-12 bg-white text-indigo-600 py-6 rounded-[2.5rem] font-black text-2xl shadow-2xl hover:bg-indigo-50 transition-all active:scale-95 uppercase italic tracking-tighter">
-              Start Game ▶️
-            </button>
+            <>
+              <div className="mb-4 flex justify-center">
+                <button
+                  onClick={() => {
+                    const newValue = !allowLateJoin;
+
+                    setAllowLateJoin(newValue);
+
+                    socket.emit("setLateJoin", {
+                      roomCode: game?.shareCode,
+                      allowLateJoin: newValue,
+                    });
+                  }}
+                  className={`px-6 py-3 rounded-full font-black ${
+                    allowLateJoin
+                      ? "bg-green-500"
+                      : "bg-red-500"
+                  }`}
+                >
+                  {allowLateJoin
+                    ? "Late Join Aktif"
+                    : "Late Join Nonaktif"}
+                </button>
+              </div>
+              <button onClick={handleStartGame} className="w-full mt-12 bg-white text-indigo-600 py-6 rounded-[2.5rem] font-black text-2xl shadow-2xl hover:bg-indigo-50 transition-all active:scale-95 uppercase italic tracking-tighter">
+                Start Game ▶️
+              </button>
+            </>
           )}
 
           {sessionState === 'PLAYING' && (
