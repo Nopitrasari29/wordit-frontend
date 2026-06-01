@@ -93,10 +93,13 @@ export default function GameBuilderPage() {
 
   // 🔥 HANDLER 3: Save to Backend
   const handleSave = async (publishStatus: boolean) => {
-    if (!gamePayload.title.trim())
-      return toast.error("Judul game wajib diisi! ✍️");
 
-    // Tentukan kategori template
+  console.log("PUBLISH STATUS:", publishStatus);
+  console.log("TITLE:", gamePayload.title);
+  console.log("CLASS:", classGrade);
+  console.log("SUBJECT:", subject);
+
+  // Tentukan kategori template untuk validasi dan format data
     const isQuestionBased = [
       TemplateType.MAZE_CHASE,
       TemplateType.SPIN_THE_WHEEL,
@@ -118,8 +121,42 @@ export default function GameBuilderPage() {
           ? gamePayload.cards
           : gamePayload.words;
 
-    if (currentItems.length === 0) {
-      return toast.error("Minimal harus ada 1 soal! 🧩");
+    // Validasi hanya saat Publish
+    if (publishStatus) {
+
+      const titleValue = String(
+        gamePayload.title || ""
+      ).trim();
+
+      const classValue = String(
+        classGrade || ""
+      ).trim();
+
+      const subjectValue = String(
+        subject || ""
+      ).trim();
+
+      console.log("TITLE CHECK:", titleValue);
+      console.log("CLASS CHECK:", classValue);
+      console.log("SUBJECT CHECK:", subjectValue);
+
+      if (!gamePayload.title.trim()) {
+        return toast.error(
+          "Judul Aktivitas wajib diisi"
+        );
+      }
+
+      if (!classGrade.trim()) {
+        return toast.error(
+          "Kelas / Grade wajib diisi"
+        );
+      }
+
+      if (!subject.trim()) {
+        return toast.error(
+          "Mata Pelajaran wajib diisi"
+        );
+      }
     }
 
     setIsSubmitting(true);
@@ -189,6 +226,9 @@ export default function GameBuilderPage() {
         gameJson: quizContent,
       };
 
+      console.log("TITLE:", gamePayload.title);
+      console.log("CLASS:", classGrade);
+      console.log("SUBJECT:", subject);
       console.log("📤 SENDING PAYLOAD:", finalPayload);
 
       await createGame(finalPayload);
@@ -199,10 +239,16 @@ export default function GameBuilderPage() {
       navigate("/teacher/dashboard");
     } catch (err: any) {
       console.error("❌ BACKEND ERROR:", err.response?.data);
+
+      const errors = err.response?.data?.errors;
+
       const msg =
-        err.response?.data?.errors?.gameJson?.[0] ||
-        err.response?.data?.message;
-      toast.error(msg || "Gagal menyimpan. Cek format data.");
+        errors?.title?.[0] ||
+        errors?.gameJson?.[0] ||
+        err.response?.data?.message ||
+        "Gagal menyimpan.";
+
+      toast.error(msg);
     } finally {
       setIsSubmitting(false);
     }
@@ -361,7 +407,10 @@ export default function GameBuilderPage() {
                 </Button>
 
                 <Button
-                  onClick={() => handleSave(true)}
+                  onClick={() => {
+                    console.log("🔥 PUBLISH CLICKED");
+                    handleSave(true);
+                  }}
                   disabled={isSubmitting}
                   className="bg-indigo-600 hover:bg-indigo-500 shadow-indigo-500/20 flex-1 md:flex-none"
                 >
