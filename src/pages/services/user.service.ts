@@ -17,20 +17,12 @@ export async function updateProfile(data: {
   if (data.name) formData.append("name", data.name);
   if (data.email) formData.append("email", data.email);
   if (data.bio !== undefined) formData.append("bio", data.bio);
-
-  if (data.currentPassword)
-    formData.append("currentPassword", data.currentPassword);
-
-  if (data.newPassword)
-    formData.append("newPassword", data.newPassword);
-
-  if (data.photo)
-    formData.append("profile_picture", data.photo);
+  if (data.currentPassword) formData.append("currentPassword", data.currentPassword);
+  if (data.newPassword) formData.append("newPassword", data.newPassword);
+  if (data.photo) formData.append("profile_picture", data.photo);
 
   const res = await api.patch("/users/profile", formData, {
-    headers: {
-      "Content-Type": "multipart/form-data",
-    },
+    headers: { "Content-Type": "multipart/form-data" },
   });
 
   if (res.data.status !== "success" && !res.data.success) {

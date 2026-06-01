@@ -13,7 +13,6 @@ export default function EditProfilePage() {
   const [currentPassword, setCurrentPassword] = useState("")
   const [newPassword, setNewPassword] = useState("")
   const [photo, setPhoto] = useState<File | null>(null)
-  const [educationLevels, setEducationLevels] = useState<string[]>(user?.educationLevels || [])
 
   const [preview, setPreview] = useState(getImageUrl(user?.photoUrl))
   const [saving, setSaving] = useState(false)
@@ -37,7 +36,6 @@ export default function EditProfilePage() {
         currentPassword: currentPassword || undefined,
         newPassword: newPassword || undefined,
         photo: photo || undefined,
-        educationLevels: user?.role === "TEACHER" ? educationLevels : undefined,
       })
 
       updateUser(updatedData)
@@ -117,43 +115,29 @@ export default function EditProfilePage() {
             </div>
 
 
-            {/* Jenjang Pendidikan — hanya tampil untuk TEACHER */}
-            {user?.role === "TEACHER" && (
-              <div className="pt-4 border-t border-slate-100">
-                <p className="text-xs font-black text-indigo-400 uppercase tracking-[0.2em] mb-4">Jenjang Pendidikan</p>
-                <div className="grid grid-cols-2 gap-3">
-                  {["SD", "SMP", "SMA", "UNIVERSITY"].map((level) => (
-                    <label
-                      key={level}
-                      className={`flex items-center gap-3 p-3 rounded-2xl border-2 cursor-pointer transition-all ${
-                        educationLevels.includes(level)
-                          ? "border-indigo-500 bg-indigo-50"
-                          : "border-slate-200 bg-white hover:border-slate-300"
-                      }`}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={educationLevels.includes(level)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setEducationLevels([...educationLevels, level]);
-                          } else {
-                            setEducationLevels(educationLevels.filter((l) => l !== level));
-                          }
-                        }}
-                        className="w-4 h-4 accent-indigo-600"
-                      />
-                      <span className={`text-sm font-bold ${educationLevels.includes(level) ? "text-indigo-700" : "text-slate-600"}`}>
-                        {level === "SD" ? "🧒 SD" : level === "SMP" ? "📘 SMP" : level === "SMA" ? "🎒 SMA" : "🎓 University"}
-                      </span>
-                    </label>
-                  ))}
-                </div>
-                {educationLevels.length === 0 && (
-                  <p className="text-xs text-rose-500 font-bold mt-2">⚠️ Pilih minimal 1 jenjang pendidikan</p>
-                )}
-              </div>
-            )}
+   {/* Jenjang Pendidikan — hanya tampil untuk TEACHER */}
+{user?.role === "TEACHER" && (
+  <div className="pt-4 border-t border-slate-100">
+    <p className="text-xs font-black text-indigo-400 uppercase tracking-[0.2em] mb-4">Jenjang Pendidikan</p>
+    <div className="flex flex-wrap gap-2">
+      {(user?.educationLevels || []).length > 0 ? (
+        (user?.educationLevels || []).map((level: string) => (
+          <span
+            key={level}
+            className="bg-indigo-50 text-indigo-600 border border-indigo-100 px-4 py-2 rounded-full text-sm font-bold"
+          >
+            {level === "SD" ? "🧒 SD" : level === "SMP" ? "📘 SMP" : level === "SMA" ? "🎒 SMA" : "🎓 University"}
+          </span>
+        ))
+      ) : (
+        <p className="text-xs text-slate-400 font-bold">Belum ada jenjang yang dipilih</p>
+      )}
+    </div>
+    <p className="text-[10px] text-slate-400 font-bold mt-2">
+      * Untuk mengubah jenjang, hubungi admin
+    </p>
+  </div>
+)}
 
             <div className="pt-4 border-t border-slate-100 mt-6">
               <p className="text-xs font-black text-indigo-400 uppercase tracking-[0.2em] mb-4">Ubah Password</p>
