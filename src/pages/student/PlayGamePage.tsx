@@ -7,7 +7,6 @@ import { toast } from "react-hot-toast";
 import RankingOverlay from "../../components/game/common/RankingOverlay";
 import { useAuth } from "../../hooks/useAuth";
 
-
 export default function PlayGamePage() {
   const { gameId } = useParams<{ gameId: string }>();
   const navigate = useNavigate();
@@ -27,11 +26,7 @@ export default function PlayGamePage() {
   const playerName = sessionStorage.getItem("playerName") || "Player";
 
   useEffect(() => {
-    const playerName =
-      sessionStorage.getItem(
-        "playerName"
-      ) || "Player";
-
+    const playerName = sessionStorage.getItem("playerName") || "Player";
 
     const loadGameArena = async () => {
       if (!gameId) return;
@@ -51,7 +46,8 @@ export default function PlayGamePage() {
         // 🧠 Panggil endpoint /play untuk start session game & dapatkan rekomendasi difficulty (Hanya untuk Student)
         if (isStudent) {
           try {
-            const sessionData = await playGame(finalData.id || finalData._id);
+            const savedPlayerName = sessionStorage.getItem("playerName") || "Player";
+            const sessionData = await playGame(finalData.id || finalData._id, savedPlayerName);
             if (sessionData && sessionData.recommendedDifficulty) {
               finalData.recommendedDifficulty = sessionData.recommendedDifficulty;
             }
@@ -85,49 +81,18 @@ export default function PlayGamePage() {
     };
 
     const handleGameFinished = () => {
+      sessionStorage.removeItem("activeGameRoom");
+      sessionStorage.removeItem("activeGameId");
 
-      sessionStorage.removeItem(
-        "activeGameRoom"
-      );
+      toast.error("Sesi telah berakhir.", { icon: "🛑" });
 
-      sessionStorage.removeItem(
-        "activeGameId"
-      );
-
-      toast.error(
-        "Sesi telah berakhir.",
-        {
-          icon: "🛑"
-        }
-      );
-
-      navigate(
-        "/student/result",
-        {
-          state: {
-            score:
-              Number(
-                sessionStorage.getItem(
-                  "lastScore"
-                )
-              ) || 0,
-
-            accuracy:
-              Number(
-                sessionStorage.getItem(
-                  "lastAccuracy"
-                )
-              ) || 0,
-
-            breakdown:
-              JSON.parse(
-                sessionStorage.getItem(
-                  "lastBreakdown"
-                ) || "[]"
-              ),
-          },
-        }
-      );
+      navigate("/student/result", {
+        state: {
+          score: Number(sessionStorage.getItem("lastScore")) || 0,
+          accuracy: Number(sessionStorage.getItem("lastAccuracy")) || 0,
+          breakdown: JSON.parse(sessionStorage.getItem("lastBreakdown") || "[]"),
+        },
+      });
     };
 
     const handleUpdatePlayerList = (newList: any[]) => {
@@ -135,18 +100,12 @@ export default function PlayGamePage() {
     };
 
     const handlePlayerKicked = () => {
-      toast.error(
-        "Anda telah dikeluarkan oleh guru."
-      );
-
+      toast.error("Anda telah dikeluarkan oleh guru.");
       navigate("/student/join");
     };
 
     const handleHostDisconnected = () => {
-      toast.error(
-        "Guru mengakhiri sesi."
-      );
-
+      toast.error("Guru mengakhiri sesi.");
       navigate("/student/join");
     };
 
@@ -169,77 +128,78 @@ export default function PlayGamePage() {
       socket.off("hostDisconnected", handleHostDisconnected);
       socket.off("connect", handleConnect);
     };
-  }, [navigate, gameId, game, playerName]); // Menambahkan dependensi agar state terpantau
+  }, [navigate, gameId, game, playerName]);
 
-    const handleGameOver = async (scoreOverride?: number, accuracyOverride?: number, breakdownOverride?: any[]) => {
-        if (isFinishing) return; // Cegah multiple trigger
-        setIsFinishing(true);
-        const realGameId = game?.id || game?._id || gameId;
-        const score = scoreOverride !== undefined ? scoreOverride : parseInt(sessionStorage.getItem("lastScore") || "0");
-        const accuracyRaw = accuracyOverride !== undefined ? accuracyOverride : parseInt(sessionStorage.getItem("lastAccuracy") || "0");
-        const rawBreakdown = breakdownOverride ? JSON.stringify(breakdownOverride) : sessionStorage.getItem("lastBreakdown");
-        let breakdown = [];
+      const handleGameOver = async (scoreOverride?: number, accuracyOverride?: number, breakdownOverride?: any[]) => {
+      // 🛠️ PERBAIKAN: Gunakan local variable tracking alih-alih mengandalkan state blocking instan
+      if ((window as any)._worditFinishing) return; 
+      (window as any)._worditFinishing = true;
 
-        try {
+      const realGameId = game?.id || game?._id || gameId;
+      const score = scoreOverride !== undefined ? scoreOverride : parseInt(sessionStorage.getItem("lastScore") || "0");
+      const accuracyRaw = accuracyOverride !== undefined ? accuracyOverride : parseInt(sessionStorage.getItem("lastAccuracy") || "0");
+      const rawBreakdown = breakdownOverride ? JSON.stringify(breakdownOverride) : sessionStorage.getItem("lastBreakdown");
+      let breakdown = [];
 
-          breakdown =
-            rawBreakdown
-              ? JSON.parse(
-                  rawBreakdown
-                )
-              : [];
+      try {
+        breakdown = rawBreakdown ? JSON.parse(rawBreakdown) : [];
+      } catch {
+        breakdown = [];
+      }
 
-        } catch {
+      const totalQuestions = game?.gameJson?.questions?.length || game?.gameJson?.words?.length || game?.gameJson?.pairs?.length || 0;
+      
+      if (totalQuestions > breakdown.length) {
+          const remainingCount = totalQuestions - breakdown.length;
+          for (let i = 0; i < remainingCount; i++) {
+              breakdown.push({
+                  question: "Tidak terjawab (Waktu habis)",
+                  isCorrect: false,
+                  selectedAnswer: null,
+                  correctAnswer: "Waktu Habis"
+              });
+          }
+      }
 
-          breakdown = [];
+      const finalAccuracy = totalQuestions > 0 ? Math.round((breakdown.filter((b: any) => b.isCorrect).length / totalQuestions) * 100) : accuracyRaw;
 
-        }
+      if (!isStudent) {
+          setLocalScoreResult({ score, accuracy: finalAccuracy, breakdown });
+          (window as any)._worditFinishing = false;
+          return;
+      }
 
-        // 🎯 REVISI QA: Auto-fill soal yang belum terjawab agar muncul di Result (Riwayat)
-        const totalQuestions = game?.gameJson?.questions?.length || game?.gameJson?.words?.length || game?.gameJson?.pairs?.length || 0;
-        
-        if (totalQuestions > breakdown.length) {
-            const remainingCount = totalQuestions - breakdown.length;
-            for (let i = 0; i < remainingCount; i++) {
-                breakdown.push({
-                    question: "Tidak terjawab (Waktu habis)",
-                    isCorrect: false,
-                    selectedAnswer: null,
-                    correctAnswer: "Waktu Habis"
-                });
-            }
-        }
+      sessionStorage.removeItem("activeGameRoom");
+      sessionStorage.removeItem("activeGameId");
 
-        // Hitung ulang akurasi berdasarkan total soal yang sebenarnya
-        const finalAccuracy = totalQuestions > 0 ? Math.round((breakdown.filter((b: any) => b.isCorrect).length / totalQuestions) * 100) : accuracyRaw;
+      try {
+          // 🛠️ SINKRONISASI MUTLAK: Ambil response data kembalian dari database server WordIT
+          const response = await finishGame(realGameId!, {
+              scoreValue: score,
+              maxScore: totalQuestions * 100,
+              accuracy: finalAccuracy,
+              timeSpent: 0,
+              answersDetail: breakdown
+          });
 
-        // Jika bukan Student (misal Guru atau Tamu), tampilkan popup skor lokal
-        if (!isStudent) {
-            setLocalScoreResult({ score, accuracy: finalAccuracy, breakdown });
-            return;
-        }
+          // Ekstrak hasil perhitungan poin kecepatan (PTS/XP) resmi backend
+          const savedScore = response?.data?.result?.scoreValue || response?.result?.scoreValue || score;
+          const savedAccuracy = response?.data?.result?.accuracy || response?.result?.accuracy || finalAccuracy;
 
-        // Hapus penanda room kuis aktif karena game sudah selesai
-        sessionStorage.removeItem("activeGameRoom");
-        sessionStorage.removeItem("activeGameId");
-
-        try {
-            await finishGame(realGameId!, {
-                scoreValue: score,
-                maxScore: totalQuestions * 100,
-                accuracy: finalAccuracy,
-                timeSpent: 0,
-                answersDetail: breakdown
-            });
-        } catch (e) {
-            console.warn("Autosave gagal, melanjutkan ke halaman hasil.");
-        }
-
-        navigate("/student/result", {
-            state: { score, accuracy: finalAccuracy, breakdown }
-        });
-    };
-
+          (window as any)._worditFinishing = false;
+          
+          // Alihkan halaman membawa skor ter-sinkronisasi 1650 XP murni
+          navigate("/student/result", {
+              state: { score: Number(savedScore), accuracy: Number(savedAccuracy), breakdown }
+          });
+      } catch (e) {
+          console.warn("Autosave gagal, menggunakan fallback local state.");
+          (window as any)._worditFinishing = false;
+          navigate("/student/result", {
+              state: { score, accuracy: finalAccuracy, breakdown }
+          });
+      }
+  };
 
   const handleIntermission = () => {
     setShowOverlay(true);
@@ -263,18 +223,8 @@ export default function PlayGamePage() {
     </div>
   );
 
-  const sortedLeaderboard =
-  [...leaderboard]
-  .sort(
-  (a,b)=>
-  (b.score || 0)
-  -
-  (a.score || 0)
-  );
+  const sortedLeaderboard = [...leaderboard].sort((a, b) => (b.score || 0) - (a.score || 0));
   const myRankIndex = sortedLeaderboard.findIndex(p => p.name === playerName);
-
-  // 🎯 FIX: Jika ranking dari socket belum update, paksa tampilkan skor dari sessionStorage 
-  // agar pop-up ranking tidak menunjukkan 0 PTS saat intermission soal.
   const myRank = myRankIndex !== -1 ? myRankIndex + 1 : "-";
 
   return (
@@ -329,14 +279,12 @@ export default function PlayGamePage() {
       {localScoreResult && (
         <div className="fixed inset-0 bg-slate-900/90 backdrop-blur-md flex items-center justify-center z-50 p-4">
           <div className="bg-slate-800 text-white w-full max-w-md rounded-[3rem] p-8 border border-white/10 text-center flex flex-col shadow-2xl relative overflow-hidden animate-in fade-in zoom-in duration-200">
-            {/* Background elements */}
             <div className="absolute -right-10 -top-10 w-40 h-40 bg-indigo-500/10 rounded-full blur-2xl"></div>
             
             <span className="text-6xl mb-4 block animate-bounce">🏆</span>
             <h2 className="text-3xl font-black tracking-tight leading-none mb-1">Game Selesai!</h2>
             <p className="text-indigo-400 text-xs font-black uppercase tracking-widest mb-6">Mode Demo / Latihan</p>
             
-            {/* Score circle */}
             <div className="bg-slate-700/50 border border-white/5 rounded-2xl p-6 mb-6 grid grid-cols-2 gap-4">
               <div>
                 <span className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Skor Kamu</span>
@@ -390,5 +338,3 @@ export default function PlayGamePage() {
     </div>
   );
 }
-
-

@@ -78,9 +78,11 @@ export const publishGame = async (id: string) => {
 /**
  * 🎯 PLAY GAME (Start session)
  */
-export const playGame = async (id: string) => {
-  const res = await api.post(`/games/${id}/play`);
-  return res.data.data;
+// 🛠️ PERBAIKAN: Tambahkan parameter kedua playerName (opsional dengan '?')
+export const playGame = async (gameId: string, playerName?: string) => {
+  // Kirim playerName di dalam object body request POST ke backend
+  const response = await api.post(`/games/${gameId}/play`, { playerName });
+  return response.data.data;
 };
 
 /**

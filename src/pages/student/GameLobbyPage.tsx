@@ -105,14 +105,14 @@ export default function GameLobbyPage() {
 
     socket.on("playerKicked", () => {
       toast.error(
-        "Anda telah dikeluarkan oleh guru."
+        "Anda telah dikeluarkan oleh guru.",
+        { icon: "🛑" }
       );
 
       setPlayers([]);
 
-      sessionStorage.removeItem(
-        "playerName"
-      );
+      // 🛠️ FIX REVISI: Jangan hapus "playerName" agar siswa bisa mengetik ulang kode room untuk masuk lagi
+      // sessionStorage.removeItem("playerName");
 
       sessionStorage.removeItem(
         "activeGameRoom"
@@ -120,10 +120,6 @@ export default function GameLobbyPage() {
 
       sessionStorage.removeItem(
         "activeGameId"
-      );
-
-      toast.error(
-        "Anda telah dikeluarkan oleh guru."
       );
 
       navigate(
