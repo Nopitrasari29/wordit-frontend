@@ -294,26 +294,40 @@ export default function UserManagementPage() {
 
                     {/* Approval Status Badge */}
                     <td className="py-4 px-4">
-                      <span
-                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[9px] font-black border ${
-                          u.approvalStatus === "APPROVED"
-                            ? "bg-emerald-50 text-emerald-600 border-emerald-100"
-                            : u.approvalStatus === "PENDING"
-                            ? "bg-amber-50 text-amber-600 border-amber-100 animate-pulse"
-                            : "bg-rose-50 text-rose-600 border-rose-100"
-                        }`}
-                      >
+                      <div className="flex flex-col gap-1 text-left">
                         <span
-                          className={`w-1 h-1 rounded-full ${
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[9px] font-black border w-max ${
                             u.approvalStatus === "APPROVED"
-                              ? "bg-emerald-500"
+                              ? "bg-emerald-50 text-emerald-600 border-emerald-100"
                               : u.approvalStatus === "PENDING"
-                              ? "bg-amber-500"
-                              : "bg-rose-500"
+                              ? "bg-amber-50 text-amber-600 border-amber-100 animate-pulse"
+                              : "bg-rose-50 text-rose-600 border-rose-100"
                           }`}
-                        />
-                        {u.approvalStatus}
-                      </span>
+                        >
+                          <span
+                            className={`w-1 h-1 rounded-full ${
+                              u.approvalStatus === "APPROVED"
+                                ? "bg-emerald-500"
+                                : u.approvalStatus === "PENDING"
+                                ? "bg-amber-500"
+                                : "bg-rose-500"
+                            }`}
+                          />
+                          {u.approvalStatus}
+                        </span>
+
+                        {/* Sinkronisasi Visual: Deteksi Ajuan Jenjang Baru */}
+                        {u.role === "TEACHER" && u.approvalStatus === "PENDING" && u.profile?.bio?.includes("||PENDING_REQ_LEVELS||") && (
+                          <div className="mt-1 bg-amber-50/60 border border-amber-200/70 p-2 rounded-xl max-w-[180px] space-y-0.5">
+                            <span className="text-[9px] text-amber-800 font-black uppercase tracking-wider block">
+                              Ajuan Jenjang Baru:
+                            </span>
+                            <span className="text-[10px] text-indigo-600 font-extrabold block tracking-wide uppercase">
+                              {JSON.parse(u.profile.bio.split("||PENDING_REQ_LEVELS||")[1] || "[]").join(", ")}
+                            </span>
+                          </div>
+                        )}
+                      </div>
                     </td>
 
                     {/* Role Dropdown */}
@@ -415,7 +429,8 @@ export default function UserManagementPage() {
                   Bio / Deskripsi
                 </h4>
                 <p className="text-sm font-semibold text-slate-700 bg-slate-50 p-3.5 rounded-2xl border border-slate-100 min-h-[60px] whitespace-pre-wrap">
-                  {selectedUser.profile?.bio || "Pengguna belum menulis bio."}
+                  {/* Tampilkan teks bio asli dengan menyaring kode pembatas jika ada */}
+                  {selectedUser.profile?.bio ? selectedUser.profile.bio.split("||PENDING_REQ_LEVELS||")[0]?.trim() : "Pengguna belum menulis bio."}
                 </p>
               </div>
 

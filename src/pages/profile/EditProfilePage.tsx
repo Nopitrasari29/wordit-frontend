@@ -14,6 +14,9 @@ export default function EditProfilePage() {
   const [newPassword, setNewPassword] = useState("")
   const [photo, setPhoto] = useState<File | null>(null)
 
+  // 🛠️ STATE TAMBAHAN: Menyimpan array jenjang mengajar guru
+  const [educationLevels, setEducationLevels] = useState<string[]>(user?.educationLevels || [])
+
   const [preview, setPreview] = useState(getImageUrl(user?.photoUrl))
   const [saving, setSaving] = useState(false)
 
@@ -36,10 +39,21 @@ export default function EditProfilePage() {
         currentPassword: currentPassword || undefined,
         newPassword: newPassword || undefined,
         photo: photo || undefined,
+        // 🛠️ SINKRONISASI PAYLOAD SELEKSI: Pastikan array dilempar masuk ke dalam fungsi service
+        educationLevels: user?.role === "TEACHER" ? educationLevels : undefined,
       })
 
+      // =======================================================================
+      // 🛠️ FIX FRONTEEND STATE CONTROL:
+      // Jika status dari backend adalah PENDING, paksa data jenjang di browser kembali ke jenjang lama.
+      // Dengan begini, visual profile & pembuatan game tidak akan berubah sebelum disetujui Admin!
+      // =======================================================================
+      if (updatedData && updatedData.approvalStatus === "PENDING") {
+        updatedData.educationLevels = user?.educationLevels || [];
+      }
+
       updateUser(updatedData)
-      alert("Profile updated successfully!")
+      alert("Profil berhasil diperbarui! Pengajuan perubahan jenjang Anda telah dikirim ke Admin untuk ditinjau (Maksimal 2-3 hari kerja).")
       window.location.href = "/profile"
     } catch (err: any) {
       alert(err.message || "Update failed")
@@ -49,10 +63,9 @@ export default function EditProfilePage() {
   }
 
   return (
-    // bg-white/gradient agar background penuh ke pinggir layar
     <div className="min-h-screen bg-white py-12 px-6 font-sans relative overflow-hidden pt-28 selection:bg-indigo-100 selection:text-indigo-900">
 
-      {/* Dekorasi Background Blob Lembut (Sinkron dengan ProfilePage) */}
+      {/* Dekorasi Background Blob Lembut */}
       <div className="absolute top-20 -left-10 w-96 h-96 bg-indigo-50 rounded-full blur-3xl opacity-60 animate-blob"></div>
       <div className="absolute bottom-10 -right-10 w-96 h-96 bg-blue-50 rounded-full blur-3xl opacity-60 animate-blob" style={{ animationDelay: '2s' }}></div>
 
@@ -61,7 +74,7 @@ export default function EditProfilePage() {
 
         <form onSubmit={submit} className="bg-white p-8 md:p-10 rounded-[2.5rem] shadow-sm border border-slate-100 space-y-6">
 
-          {/* Avatar Upload Section (Sinkron dengan ProfilePage) */}
+          {/* Avatar Upload Section */}
           <div className="flex flex-col items-center gap-4 mb-8">
             <div className="relative group cursor-pointer">
               <img
@@ -101,7 +114,7 @@ export default function EditProfilePage() {
             />
 
             <div className="flex flex-col gap-2">
-              <label className="text-sm font-bold text-slate-600">Bio Description</label>
+              <label className="text-sm font-bold text-slate-600 text-left">Bio Description</label>
               <textarea
                 value={bio}
                 onChange={(e) => setBio(e.target.value)}
@@ -114,32 +127,57 @@ export default function EditProfilePage() {
               </span>
             </div>
 
+            {/* Jenjang Pendidikan — Alur Ajukan Perubahan dengan Noted SLA */}
+            {user?.role === "TEACHER" && (
+              <div className="pt-4 border-t border-slate-100 text-left">
+                <p className="text-xs font-black text-slate-700 uppercase tracking-[0.2em] mb-4">
+                  Ajukan Perubahan Jenjang Mengajar
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {["SD", "SMP", "SMA", "UNIVERSITY"].map((level) => {
+                    const isChecked = educationLevels.includes(level);
+                    return (
+                      <button
+                        key={level}
+                        type="button"
+                        onClick={() => {
+                          if (isChecked) {
+                            if (educationLevels.length > 1) {
+                              setEducationLevels(educationLevels.filter((l) => l !== level));
+                            } else {
+                              alert("Minimal harus memilih satu jenjang pengajaran!");
+                            }
+                          } else {
+                            setEducationLevels([...educationLevels, level]);
+                          }
+                        }}
+                        className={`px-5 py-2.5 rounded-full text-xs font-black transition-all border uppercase tracking-wider ${
+                          isChecked
+                            ? "bg-amber-500 text-white border-amber-500 shadow-md shadow-amber-100"
+                            : "bg-slate-50 text-slate-400 border-slate-200 hover:bg-slate-100"
+                        }`}
+                      >
+                        {level === "SD" ? "🧒 SD" : level === "SMP" ? "📘 SMP" : level === "SMA" ? "🎒 SMA" : "🎓 University"}
+                      </button>
+                    );
+                  })}
+                </div>
 
-   {/* Jenjang Pendidikan — hanya tampil untuk TEACHER */}
-{user?.role === "TEACHER" && (
-  <div className="pt-4 border-t border-slate-100">
-    <p className="text-xs font-black text-indigo-400 uppercase tracking-[0.2em] mb-4">Jenjang Pendidikan</p>
-    <div className="flex flex-wrap gap-2">
-      {(user?.educationLevels || []).length > 0 ? (
-        (user?.educationLevels || []).map((level: string) => (
-          <span
-            key={level}
-            className="bg-indigo-50 text-indigo-600 border border-indigo-100 px-4 py-2 rounded-full text-sm font-bold"
-          >
-            {level === "SD" ? "🧒 SD" : level === "SMP" ? "📘 SMP" : level === "SMA" ? "🎒 SMA" : "🎓 University"}
-          </span>
-        ))
-      ) : (
-        <p className="text-xs text-slate-400 font-bold">Belum ada jenjang yang dipilih</p>
-      )}
-    </div>
-    <p className="text-[10px] text-slate-400 font-bold mt-2">
-      * Untuk mengubah jenjang, hubungi admin
-    </p>
-  </div>
-)}
+                {/* 📝 NOTED BLOCK: Banner Atensi Batas Waktu 2-3 Hari Kerja */}
+                <div className="mt-4 bg-amber-50 border border-amber-200 p-4 rounded-2xl flex flex-col gap-1">
+                  <p className="text-xs font-black text-amber-800 uppercase tracking-wide">
+                    ⚠️ Catatan Pengajuan Perubahan
+                  </p>
+                  <p className="text-[11px] text-amber-700 font-bold leading-relaxed">
+                    Menambah atau mengubah jenjang mengajar akan mengirimkan permohonan verifikasi ke Admin WordIT. 
+                    Akun Anda akan ditinjau kembali dengan waktu proses **maksimal 2-3 hari kerja**. 
+                    Selama masa tunggu, status akun diturunkan sementara menjadi peninjauan.
+                  </p>
+                </div>
+              </div>
+            )}
 
-            <div className="pt-4 border-t border-slate-100 mt-6">
+            <div className="pt-4 border-t border-slate-100 mt-6 text-left">
               <p className="text-xs font-black text-indigo-400 uppercase tracking-[0.2em] mb-4">Ubah Password</p>
               <div className="space-y-4">
                 <Input
@@ -157,7 +195,6 @@ export default function EditProfilePage() {
               </div>
             </div>
           </div>
-
 
           <button
             type="submit"

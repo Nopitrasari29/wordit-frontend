@@ -4,36 +4,81 @@ import { useAuth } from "../../context/AuthContext" // 🎯 Ambil data user logi
 import { getMyGames } from "../services/game.service"
 import { templateIcons } from "../../data/templateIcons"
 import AnalyticsClassPage from "./analytics/AnalyticsClassPage"
-
+import socket from "../../hooks/useSocket" // 🛠️ FIX INTEGRATION: Impor hook instance socket milikmu
+import api from "../services/api" // Impor instance axios/api untuk request data profil segar
+import { toast } from "react-hot-toast"
 
 export default function TeacherDashboard() {
   const navigate = useNavigate();
-  const { user } = useAuth(); // 🎯 Ambil state user dari AuthContext
+  const { user, updateUser } = useAuth(); // 🎯 Ambil state user dan fungsi sinkronisasi dari AuthContext
   const [games, setGames] = useState<any[]>([])
   const [, setLoading] = useState(true)
 
   // Ambil nama dari database, kalau kosong baru panggil "Teacher"
   const displayName = user?.name || "Teacher";
 
-  useEffect(() => {
-    async function loadGames() {
-      try {
-        setLoading(true)
-        const data = await getMyGames()
-        if (data && Array.isArray(data)) {
-          setGames(data)
-        } else {
-          setGames([])
-        }
-      } catch (err) {
-        console.error("Gagal memuat game:", err)
+  async function loadGames() {
+    try {
+      setLoading(true)
+      const data = await getMyGames()
+      if (data && Array.isArray(data)) {
+        setGames(data)
+      } else {
         setGames([])
-      } finally {
-        setLoading(false)
       }
+    } catch (err) {
+      console.error("Gagal memuat game:", err)
+      setGames([])
+    } finally {
+      setLoading(false)
     }
+  }
+
+  useEffect(() => {
     loadGames()
   }, [])
+
+  // =======================================================================
+  // 🛠️ FIX & REAL-TIME SINKRONISASI VIA SOCKET.IO (TOKEN REFRESH SINKRON)
+  // =======================================================================
+  useEffect(() => {
+    // Dengarkan sinyal broadcast 'admin_refresh' dari backend saat admin mengklik tombol APPROVE
+    socket.on("admin_refresh", async () => {
+      try {
+        console.log("📡 Menerima sinyal refresh dari Admin. Menarik sesi token terbaru...");
+        
+        // Tarik paket data profil datar baru beserta token segar dari backend
+        const res = await api.get("/users/profile");
+        
+        if (res.data?.success) {
+          const freshUserData = res.data.data;
+          
+          // 🛠️ TIMPA TOKEN LAMA: Amankan token baru pembawa hak akses "SMA" ke localStorage
+          if (freshUserData?.token) {
+            localStorage.setItem("token", freshUserData.token);
+          }
+          
+          // 🎉 JALANKAN PEMBARUAN STATE GLOBAL: Kirim flat object langsung ke AuthContext
+          // Layar visual, list menu drop-down pembuatan kuis otomatis langsung berkedip ganti data baru!
+          updateUser(freshUserData); 
+          
+          toast.success("Akun Anda telah diverifikasi oleh Admin! Jenjang mengajar baru telah diaktifkan secara real-time.", {
+            icon: "🎉",
+            duration: 5000
+          });
+
+          // Muat ulang daftar live game projects pengajar agar up-to-date
+          loadGames();
+        }
+      } catch (err) {
+        console.error("❌ Gagal melakukan sinkronisasi otomatis profil guru:", err);
+      }
+    });
+
+    return () => {
+      socket.off("admin_refresh");
+    };
+  }, [updateUser]);
 
   const totalPlays = games.reduce((a, g) => a + (g.playCount || 0), 0)
   const publishedGames = games.filter(g => g.isPublished).length
@@ -50,7 +95,6 @@ export default function TeacherDashboard() {
               WordIT Dashboard 👋
             </h1>
             <p className="text-indigo-100 font-semibold text-lg leading-relaxed">
-              {/* 🎯 Nama sekarang sudah dinamis mengikuti user yang login! */}
               Halo, {displayName}! Kelola materi pembelajaran interaktifmu dan pantau progres kuis IT-mu dalam satu layar cerdas.
             </p>
           </div>
@@ -133,7 +177,6 @@ export default function TeacherDashboard() {
                   <span className="group-hover:scale-125 transition-transform duration-500 z-10">
                     {templateIcons[game.templateType] || "🧩"}
                   </span>
-                  {/* Status Badge */}
                   <div className={`absolute top-4 right-4 px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest ${game.isPublished ? 'bg-emerald-100 text-emerald-600' : 'bg-amber-100 text-amber-600'}`}>
                     {game.isPublished ? 'Published' : 'Draft'}
                   </div>
@@ -144,7 +187,7 @@ export default function TeacherDashboard() {
                 </h3>
 
                 <div className="flex items-center gap-2 mb-8 px-2">
-                  <span className="bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest">
+                  <span className="bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wildest">
                     {game.templateType?.replace('_', ' ')}
                   </span>
                   <span className="text-slate-300 font-black">•</span>
@@ -153,7 +196,6 @@ export default function TeacherDashboard() {
                   </span>
                 </div>
 
-                {/* ACTION BUTTONS (Logic Host vs Edit) */}
                 <div className="mt-auto pt-6 border-t border-slate-50 flex items-center gap-3">
                   {game.isPublished ? (
                     <button
@@ -171,7 +213,6 @@ export default function TeacherDashboard() {
                     </Link>
                   )}
 
-                  {/* Tombol Preview Cepat */}
                   <Link
                     to={`/play/${game.id}`}
                     className="w-12 h-12 bg-slate-50 text-slate-400 rounded-2xl flex items-center justify-center hover:bg-indigo-50 hover:text-indigo-600 transition-all border border-slate-100"

@@ -1,7 +1,7 @@
 import api from "./api";
 
 /* ============================== */
-/* UPDATE PROFILE (SELF USER) */
+/* UPDATE PROFILE (SELF USER)     */
 /* ============================== */
 
 export async function updateProfile(data: {
@@ -11,6 +11,8 @@ export async function updateProfile(data: {
   newPassword?: string;
   photo?: File;
   bio?: string;
+  // 🛠️ FIX TYPE: Tambahkan properti array jenjang pendidikan mengajar guru disini
+  educationLevels?: string[]; 
 }) {
   const formData = new FormData();
 
@@ -20,6 +22,11 @@ export async function updateProfile(data: {
   if (data.currentPassword) formData.append("currentPassword", data.currentPassword);
   if (data.newPassword) formData.append("newPassword", data.newPassword);
   if (data.photo) formData.append("profile_picture", data.photo);
+  
+  // 🛠️ SINKRONISASI PAYLOAD FORMDATA: Ubah array menjadi JSON string agar aman dikirim ke backend Express
+  if (data.educationLevels) {
+    formData.append("educationLevels", JSON.stringify(data.educationLevels));
+  }
 
   const res = await api.patch("/users/profile", formData, {
     headers: { "Content-Type": "multipart/form-data" },
@@ -33,7 +40,7 @@ export async function updateProfile(data: {
 }
 
 /* ============================== */
-/* ADMIN GET USERS */
+/* ADMIN GET USERS                */
 /* ============================== */
 
 export async function getUsers() {
@@ -45,7 +52,7 @@ export async function getUsers() {
 }
 
 /* ============================== */
-/* ADMIN APPROVE/REJECT USER */
+/* ADMIN APPROVE/REJECT USER      */
 /* ============================== */
 export async function approveUser(id: string, action: "APPROVE" | "REJECT") {
   const res = await api.patch(`/users/${id}/approve`, { action });
@@ -56,7 +63,7 @@ export async function approveUser(id: string, action: "APPROVE" | "REJECT") {
 }
 
 /* ============================== */
-/* ADMIN UPDATE USER */
+/* ADMIN UPDATE USER              */
 /* ============================== */
 
 export async function updateUser(id: string, data: any) {
@@ -68,7 +75,7 @@ export async function updateUser(id: string, data: any) {
 }
 
 /* ============================== */
-/* ADMIN DELETE USER */
+/* ADMIN DELETE USER              */
 /* ============================== */
 
 export async function deleteUser(id: string) {
@@ -80,7 +87,7 @@ export async function deleteUser(id: string) {
 }
 
 /* ============================== */
-/* GET STUDENT LEADERBOARD */
+/* GET STUDENT LEADERBOARD        */
 /* ============================== */
 export async function getStudentLeaderboard() {
   const res = await api.get("/users/leaderboard");

@@ -8,9 +8,22 @@ export interface User {
   name: string;
   email: string;
   role: Role;
-  approvalStatus: ApprovalStatus; // Tambahkan ini
-  educationLevels?: EducationLevel[]; // Tambahkan ini
+  approvalStatus: ApprovalStatus;
+  educationLevels?: EducationLevel[];
   photoUrl?: string | null;
   createdAt: string;
   updatedAt?: string;
+
+  // 🛠️ FIX UTAMA: Daftarkan objek relasi profile agar dikenali di tabel Admin Frontend
+  profile?: {
+    bio?: string | null;
+    totalPoints?: number;
+    badges?: string[];
+  };
+
+  // 🛠️ TAMBAHAN: Daftarkan properti agregat count untuk kalkulasi jumlah kuis terbuat
+  _count?: {
+    gamesCreated?: number;
+    sessions?: number;
+  };
 }
