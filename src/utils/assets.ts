@@ -9,7 +9,7 @@ export const getImageUrl = (path: string | null | undefined) => {
   if (path.startsWith("http")) return path;
 
   // Pastikan URL Backend sesuai dengan yang ada di EditProfilePage
-  const BASE_URL = "http://localhost:3000";
+  const BASE_URL = (import.meta as unknown as { env: { VITE_API_URL?: string } }).env.VITE_API_URL || "http://localhost:3000";
   
   // Hapus slash di depan jika ada agar tidak double slash
   const cleanPath = path.startsWith("/") ? path.substring(1) : path;

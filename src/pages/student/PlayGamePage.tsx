@@ -17,7 +17,6 @@ export default function PlayGamePage() {
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
   const [overlayCountdown, setOverlayCountdown] = useState(3);
 
-  const [isFinishing, setIsFinishing] = useState(false);
   // State untuk local score (Guest & Teacher)
   const [localScoreResult, setLocalScoreResult] = useState<any>(null);
 

@@ -19,7 +19,7 @@ export default function VerifyEmailPage() {
           return;
         }
 
-        const apiUrl = (import.meta as unknown as { env: { VITE_API_URL: string } }).env.VITE_API_URL;
+        const apiUrl = (import.meta as unknown as { env: { VITE_API_URL?: string } }).env.VITE_API_URL || "http://localhost:3000";
         const response = await fetch(
           `${apiUrl}/api/auth/verify-email?token=${token}`
         );
