@@ -5,9 +5,10 @@ import { submitAnswer, finishGame } from "../../../pages/services/game.service"
 
 export default function AnagramEngine({ data, onIntermission, onGameOver }: { data: any, onIntermission?: () => void, onGameOver?: (score: number, accuracy: number, breakdown: any[]) => void }) {
     const navigate = useNavigate()
-    const quizWords = data?.gameJson?.words || []
-    const gameId = data?.id || ""
-    const roomCode = data?.shareCode || data?.code || ""
+    const gameConfig = Array.isArray(data?.gameJson) ? data.gameJson[0] : data?.gameJson;
+    const quizWords = gameConfig?.words || [];
+    const gameId = data?.id || "";
+    const roomCode = data?.shareCode || data?.code || "";
     
     const [currentIndex, setCurrentIndex] = useState(0)
     const [answer, setAnswer] = useState("")
@@ -72,7 +73,7 @@ export default function AnagramEngine({ data, onIntermission, onGameOver }: { da
     };
     
     // Timer & UX State
-    const [timeLeft, setTimeLeft] = useState(data?.gameJson?.timeLimit ? Number(data.gameJson.timeLimit) : 15)
+    const [timeLeft, setTimeLeft] = useState(gameConfig?.timeLimit ? Number(gameConfig.timeLimit) : 15)
     const [feedback, setFeedback] = useState<'none' | 'correct' | 'incorrect' | 'timeout'>('none')
     const correctCountRef = useRef(0)
 
@@ -116,7 +117,7 @@ export default function AnagramEngine({ data, onIntermission, onGameOver }: { da
         playSound('timeout');
         setFeedback('timeout');
         setUsedIndices([]);
-        setBreakdown(prev => [...prev, { word: targetWord, isCorrect: false, time: data?.gameJson?.timeLimit ? Number(data.gameJson.timeLimit) : 15 }]);
+        setBreakdown(prev => [...prev, { word: targetWord, isCorrect: false, time: gameConfig?.timeLimit ? Number(gameConfig.timeLimit) : 15 }]);
         setTimeout(() => {
             if (onIntermission && currentIndex < quizWords.length - 1) onIntermission();
             setTimeout(() => moveToNext(), onIntermission ? 3000 : 0);
@@ -129,7 +130,7 @@ export default function AnagramEngine({ data, onIntermission, onGameOver }: { da
             setAnswer("");
             setUsedIndices([]);
             setFeedback('none');
-            setTimeLeft(data?.gameJson?.timeLimit ? Number(data.gameJson.timeLimit) : 15);
+            setTimeLeft(gameConfig?.timeLimit ? Number(gameConfig.timeLimit) : 15);
         } else {
             setIsFinished(true);
             const accuracy = Math.round((correctCountRef.current / quizWords.length) * 100);
@@ -205,7 +206,7 @@ export default function AnagramEngine({ data, onIntermission, onGameOver }: { da
             const runningAccuracy = Math.round((correctCountRef.current / quizWords.length) * 100);
             sessionStorage.setItem("lastAccuracy", runningAccuracy.toString());
 
-            const currentTimeSpent = (data?.gameJson?.timeLimit ? Number(data.gameJson.timeLimit) : 15) - timeLeft;
+            const currentTimeSpent = (gameConfig?.timeLimit ? Number(gameConfig.timeLimit) : 15) - timeLeft;
             setBreakdown(prev => {
                 const newBd = [...prev, { word: targetWord, isCorrect: true, time: currentTimeSpent }];
                 if (currentIndex === quizWords.length - 1) {

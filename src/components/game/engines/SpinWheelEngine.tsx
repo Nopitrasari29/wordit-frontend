@@ -5,7 +5,8 @@ import { toast } from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 
 export default function SpinWheelEngine({ data, onIntermission, onGameOver }: { data: any, onIntermission?: any, onGameOver?: any }) {
-    const questions = data?.gameJson?.questions || [];
+    const gameConfig = Array.isArray(data?.gameJson) ? data.gameJson[0] : data?.gameJson;
+    const questions = gameConfig?.questions || [];
     const realGameId = data?.id || data?._id;
     const roomCode = data?.shareCode || "";
     const navigate = useNavigate();
@@ -18,7 +19,7 @@ export default function SpinWheelEngine({ data, onIntermission, onGameOver }: { 
     const [lives, setLives] = useState(3);
     const [completedCount, setCompletedCount] = useState(0);
     const [rotation, setRotation] = useState(0);
-    const [timeLeft, setTimeLeft] = useState(data?.gameJson?.timeLimit ? Number(data.gameJson.timeLimit) : 15);
+    const [timeLeft, setTimeLeft] = useState(gameConfig?.timeLimit ? Number(gameConfig.timeLimit) : 15);
     const [history, setHistory] = useState<any[]>([]);
 
     const choices = useMemo(() => {
@@ -35,12 +36,21 @@ export default function SpinWheelEngine({ data, onIntermission, onGameOver }: { 
     }, [selectedQuestion, questions]);
 
     const isBusy = useRef(false);
+    const isSavingRef = useRef(false);
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const transitionRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+    // Cleanup timers on unmount
+    useEffect(() => {
+        return () => {
+            if (timerRef.current) clearInterval(timerRef.current);
+            if (transitionRef.current) clearTimeout(transitionRef.current);
+        };
+    }, []);
+
     const startTimer = useCallback(() => {
         if (timerRef.current) clearInterval(timerRef.current);
-        setTimeLeft(data?.gameJson?.timeLimit ? Number(data.gameJson.timeLimit) : 15);
+        setTimeLeft(gameConfig?.timeLimit ? Number(gameConfig.timeLimit) : 15);
         timerRef.current = setInterval(() => {
             setTimeLeft((prev) => {
                 if (prev <= 1) {
@@ -113,8 +123,7 @@ export default function SpinWheelEngine({ data, onIntermission, onGameOver }: { 
             setLives(newLives);
             toast.error(finalInput === "TIMEOUT" ? "Waktu Habis! ⏰" : "Salah Jawaban! ❌");
         }
-        const isSavingRef = useRef(false);
-        const currentHistoryItem = { word: finalInput, isCorrect, time: (data?.gameJson?.timeLimit ? Number(data.gameJson.timeLimit) : 15) - timeLeft };
+        const currentHistoryItem = { word: finalInput, isCorrect, time: (gameConfig?.timeLimit ? Number(gameConfig.timeLimit) : 15) - timeLeft };
         const updatedHistory = [...history, currentHistoryItem];
         setHistory(updatedHistory);
 
@@ -123,12 +132,8 @@ export default function SpinWheelEngine({ data, onIntermission, onGameOver }: { 
         setTimeout(() => {
             const isGameOver = newLives <= 0 || completedCount + 1 >= questions.length;
             if (isGameOver) {
-                if (
-                    isSavingRef.current
-                ) return;
-
-                isSavingRef.current =
-                true;
+                if (isSavingRef.current) return;
+                isSavingRef.current = true;
                 const accuracy = Math.round((newScore / (questions.length * 100)) * 100);
                 const payload = {
                     scoreValue: newScore,

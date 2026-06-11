@@ -6,7 +6,8 @@ import { useNavigate } from "react-router-dom";
 
 export default function MazeChaseEngine({ data, onGameOver, onIntermission }: { data: any, onGameOver?: any, onIntermission?: any }) {
     const navigate = useNavigate();
-    const questions = data?.gameJson?.questions || [];
+    const gameConfig = Array.isArray(data?.gameJson) ? data.gameJson[0] : data?.gameJson;
+    const questions = gameConfig?.questions || [];
     const realGameId = data?.id || data?._id;
     const roomCode = data?.shareCode || ""; // 🎯 Ambil room code untuk socket
 
@@ -16,13 +17,22 @@ export default function MazeChaseEngine({ data, onGameOver, onIntermission }: { 
     const [lives, setLives] = useState(3);
     const [grid, setGrid] = useState<any[][]>([]);
     const [history, setHistory] = useState<any[]>([]);
-    const [timeLeft, setTimeLeft] = useState(data?.gameJson?.timeLimit ? Number(data.gameJson.timeLimit) : 15);
+    const [timeLeft, setTimeLeft] = useState(gameConfig?.timeLimit ? Number(gameConfig.timeLimit) : 15);
 
     const isBusy = useRef(false);
+    const isSavingRef = useRef(false);
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const transitionRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const startTimeRef = useRef<number>(Date.now());
     const currentQ = questions[currentIdx];
+
+    // Cleanup timer & transition on unmount
+    useEffect(() => {
+        return () => {
+            if (timerRef.current) clearInterval(timerRef.current);
+            if (transitionRef.current) clearTimeout(transitionRef.current);
+        };
+    }, []);
 
     const initLevel = useCallback(() => {
         if (!currentQ) return;
@@ -116,41 +126,15 @@ export default function MazeChaseEngine({ data, onGameOver, onIntermission }: { 
             submitAnswer(realGameId, currentIdx, type === "TIMEOUT" ? "TIMEOUT" : cell?.text, newScore).catch(() => { });
         }
 
-        const currentHistoryItem = { word: cell?.text || "TIMEOUT", isCorrect, time: (data?.gameJson?.timeLimit ? Number(data.gameJson.timeLimit) : 15) - timeLeft };
+        const currentHistoryItem = { word: cell?.text || "TIMEOUT", isCorrect, time: (gameConfig?.timeLimit ? Number(gameConfig.timeLimit) : 15) - timeLeft };
         const updatedHistory = [...history, currentHistoryItem];
         setHistory(updatedHistory);
 
         transitionRef.current = setTimeout(() => {
-            useEffect(() => {
-                return () => {
-
-                    if (
-                        timerRef.current
-                    ) {
-                        clearInterval(
-                            timerRef.current
-                        );
-                    }
-
-                    if (
-                        transitionRef.current
-                    ) {
-                        clearTimeout(
-                            transitionRef.current
-                        );
-                    }
-
-                };
-            }, []);
-            const isSavingRef = useRef(false);
             const isGameOver = newLives <= 0 || currentIdx + 1 >= questions.length;
             if (isGameOver) {
-                if (
-                    isSavingRef.current
-                ) return;
-
-                isSavingRef.current =
-                true;
+                if (isSavingRef.current) return;
+                isSavingRef.current = true;
                 // 🎯 GUNAKAN VARIABEL LOKAL (newScore & updatedHistory) AGAR TIDAK 0
                 const accuracy = Math.round((newScore / (questions.length * 100)) * 100);
                 const timeSpent = Math.round((Date.now() - startTimeRef.current) / 1000);
@@ -242,7 +226,7 @@ export default function MazeChaseEngine({ data, onGameOver, onIntermission }: { 
             </div>
 
             <div className="bg-white p-8 rounded-[3rem] shadow-xl border-2 border-indigo-100 w-full text-center relative overflow-hidden">
-                <div className="absolute bottom-0 left-0 h-1 bg-indigo-500 transition-all duration-1000" style={{ width: `${(timeLeft / (data?.gameJson?.timeLimit ? Number(data.gameJson.timeLimit) : 15)) * 100}%` }} />
+                <div className="absolute bottom-0 left-0 h-1 bg-indigo-500 transition-all duration-1000" style={{ width: `${(timeLeft / (gameConfig?.timeLimit ? Number(gameConfig.timeLimit) : 15)) * 100}%` }} />
                 <h2 className="text-2xl font-black text-slate-800 tracking-tight">{currentQ.question}</h2>
             </div>
 

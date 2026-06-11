@@ -7,7 +7,8 @@ export default function FlashcardEngine({ data, onGameOver }: { data: any, onGam
     const navigate = useNavigate();
     const realGameId = data?.id || data?._id;
 
-    const cards = data?.gameJson?.cards || [];
+    const gameConfig = Array.isArray(data?.gameJson) ? data.gameJson[0] : data?.gameJson;
+    const cards = gameConfig?.cards || [];
     const [index, setIndex] = useState(0);
     const [show, setShow] = useState(false);
     const [score, setScore] = useState(0);
@@ -15,7 +16,7 @@ export default function FlashcardEngine({ data, onGameOver }: { data: any, onGam
     const [breakdown, setBreakdown] = useState<any[]>([]);
     const [timeSpent, setTimeSpent] = useState(0);
 
-    const [timeLeft, setTimeLeft] = useState(data?.gameJson?.timeLimit ? Number(data.gameJson.timeLimit) : 15);
+    const [timeLeft, setTimeLeft] = useState(gameConfig?.timeLimit ? Number(gameConfig.timeLimit) : 15);
     const isBusy = useRef(false);
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const transitionRef = useRef<any>(null);
@@ -90,7 +91,7 @@ export default function FlashcardEngine({ data, onGameOver }: { data: any, onGam
     // 3. 🎯 TIMER HITUNG MUNDUR (Reset Instan)
     useEffect(() => {
         // Reset waktu ke 15 seketika saat index berubah
-        setTimeLeft(data?.gameJson?.timeLimit ? Number(data.gameJson.timeLimit) : 15);
+        setTimeLeft(gameConfig?.timeLimit ? Number(gameConfig.timeLimit) : 15);
         isBusy.current = false;
 
         if (timerRef.current) clearInterval(timerRef.current);
