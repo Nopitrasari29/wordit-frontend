@@ -25,7 +25,7 @@ export default function MultipleChoiceEngine({ data, onGameOver, onIntermission 
     const [currentIndex, setCurrentIndex] = useState(0);
     const [score, setScore] = useState(0);
     // Waktu dinamis: 15 detik per soal
-    const [timeLeft, setTimeLeft] = useState(questions.length * 15);
+    const [timeLeft, setTimeLeft] = useState(gameConfig?.timeLimit ? Number(gameConfig.timeLimit) : questions.length * 15);
     const [isFinished, setIsFinished] = useState(false);
 
     // 🛠️ FIX: Gunakan useRef untuk history agar sinkron saat dipanggil di handleFinish

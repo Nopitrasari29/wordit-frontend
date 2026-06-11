@@ -122,9 +122,11 @@ export default function AnalyticsClassPage({
   const handleExportIndividualCSV = () => {
     const students = analyticsData?.allStudentsData || [];
     if (students.length === 0) return alert("Tidak ada data siswa.");
-    let csvContent = "Nama Join Siswa,Kelompok/Kelas,Nama Game,Skor Akhir,Akurasi (%)\n";
+    let csvContent = "Nama Join Siswa,Kelompok/Kelas,Nama Game,Skor Akhir,Akurasi (%),Durasi Bermain\n";
     students.forEach((s: any) => {
-      csvContent += `"${s.name}","${s.className}","${s.gameName}",${s.score},${s.accuracy}%\n`;
+      const min = Math.floor((s.timeSpent || 0) / 60);
+      const sec = (s.timeSpent || 0) % 60;
+      csvContent += `"${s.name}","${s.className}","${s.gameName}",${s.score},${s.accuracy}%,${min}m ${sec}s\n`;
     });
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
@@ -274,6 +276,7 @@ export default function AnalyticsClassPage({
                 <th className="p-4 rounded-l-2xl">Nama Join Siswa</th>
                 <th className="p-4 text-center">Kelompok/Kelas</th>
                 <th className="p-4 text-center">Akurasi</th>
+                <th className="p-4 text-center">Durasi Bermain</th>
                 <th className="p-4 text-center rounded-r-2xl">Skor Akhir</th>
               </tr>
             </thead>
@@ -288,12 +291,15 @@ export default function AnalyticsClassPage({
                       </span>
                     </td>
                     <td className="p-4 text-center text-emerald-500">{student.accuracy}%</td>
+                    <td className="p-4 text-center text-slate-500 font-semibold">
+                      {student.timeSpent ? `${Math.floor(student.timeSpent / 60)}m ${student.timeSpent % 60}s` : "-"}
+                    </td>
                     <td className="p-4 text-center text-indigo-600 font-black text-base">{student.score} XP</td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan={4} className="p-8 text-center text-slate-400 font-medium">Tidak ada riwayat pengerjaan nilai yang cocok.</td>
+                  <td colSpan={5} className="p-8 text-center text-slate-400 font-medium">Tidak ada riwayat pengerjaan nilai yang cocok.</td>
                 </tr>
               )}
             </tbody>

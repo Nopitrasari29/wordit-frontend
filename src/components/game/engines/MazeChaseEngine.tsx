@@ -16,7 +16,7 @@ export default function MazeChaseEngine({ data, onGameOver, onIntermission }: { 
     const [lives, setLives] = useState(3);
     const [grid, setGrid] = useState<any[][]>([]);
     const [history, setHistory] = useState<any[]>([]);
-    const [timeLeft, setTimeLeft] = useState(15);
+    const [timeLeft, setTimeLeft] = useState(data?.gameJson?.timeLimit ? Number(data.gameJson.timeLimit) : 15);
 
     const isBusy = useRef(false);
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -53,7 +53,7 @@ export default function MazeChaseEngine({ data, onGameOver, onIntermission }: { 
 
         setGrid(newGrid);
         setPlayerPos({ r: 2, c: 2 });
-        setTimeLeft(15);
+        setTimeLeft(data?.gameJson?.timeLimit ? Number(data.gameJson.timeLimit) : 15);
         isBusy.current = false;
     }, [currentQ, questions]);
 
@@ -116,7 +116,7 @@ export default function MazeChaseEngine({ data, onGameOver, onIntermission }: { 
             submitAnswer(realGameId, currentIdx, type === "TIMEOUT" ? "TIMEOUT" : cell?.text, newScore).catch(() => { });
         }
 
-        const currentHistoryItem = { word: cell?.text || "TIMEOUT", isCorrect, time: 15 - timeLeft };
+        const currentHistoryItem = { word: cell?.text || "TIMEOUT", isCorrect, time: (data?.gameJson?.timeLimit ? Number(data.gameJson.timeLimit) : 15) - timeLeft };
         const updatedHistory = [...history, currentHistoryItem];
         setHistory(updatedHistory);
 
@@ -242,7 +242,7 @@ export default function MazeChaseEngine({ data, onGameOver, onIntermission }: { 
             </div>
 
             <div className="bg-white p-8 rounded-[3rem] shadow-xl border-2 border-indigo-100 w-full text-center relative overflow-hidden">
-                <div className="absolute bottom-0 left-0 h-1 bg-indigo-500 transition-all duration-1000" style={{ width: `${(timeLeft / 15) * 100}%` }} />
+                <div className="absolute bottom-0 left-0 h-1 bg-indigo-500 transition-all duration-1000" style={{ width: `${(timeLeft / (data?.gameJson?.timeLimit ? Number(data.gameJson.timeLimit) : 15)) * 100}%` }} />
                 <h2 className="text-2xl font-black text-slate-800 tracking-tight">{currentQ.question}</h2>
             </div>
 

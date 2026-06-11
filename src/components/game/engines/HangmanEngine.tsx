@@ -34,7 +34,7 @@ export default function HangmanEngine({
     const [score, setScore] = useState(0);
     const [isFinished, setIsFinished] = useState(false);
     const [breakdown, setBreakdown] = useState<any[]>([]);
-    const [timeLeft, setTimeLeft] = useState(30);
+    const [timeLeft, setTimeLeft] = useState(data?.gameJson?.timeLimit ? Number(data.gameJson.timeLimit) : 30);
     const [feedback, setFeedback] = useState<'none' | 'correct' | 'incorrect' | 'timeout' | 'lose'>('none');
     const timerRef = useRef<any>(null);
     const totalTimeRef = useRef(0);
@@ -125,7 +125,7 @@ export default function HangmanEngine({
             isCorrect: isCorrect,
             // Menentukan label tampilan di Riwayat Jawaban
             userAnswer: isCorrect ? word : (status === 'timeout' ? "Waktu Habis ⏰" : "Salah ❌"),
-            time: 30 - timeLeft
+            time: (data?.gameJson?.timeLimit ? Number(data.gameJson.timeLimit) : 30) - timeLeft
         };
 
         // Langsung masukkan ke array breakdown
@@ -141,7 +141,7 @@ export default function HangmanEngine({
                 setGuess("");
                 setLives(6);
                 setFeedback('none');
-                setTimeLeft(30);
+                setTimeLeft(data?.gameJson?.timeLimit ? Number(data.gameJson.timeLimit) : 30);
                 isBusy.current = false;
             } else {
                 // Kirim breakdown terbaru yang sudah lengkap ke handleFinish

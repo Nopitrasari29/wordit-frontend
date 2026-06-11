@@ -15,7 +15,7 @@ export default function FlashcardEngine({ data, onGameOver }: { data: any, onGam
     const [breakdown, setBreakdown] = useState<any[]>([]);
     const [timeSpent, setTimeSpent] = useState(0);
 
-    const [timeLeft, setTimeLeft] = useState(15);
+    const [timeLeft, setTimeLeft] = useState(data?.gameJson?.timeLimit ? Number(data.gameJson.timeLimit) : 15);
     const isBusy = useRef(false);
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const transitionRef = useRef<any>(null);
@@ -90,7 +90,7 @@ export default function FlashcardEngine({ data, onGameOver }: { data: any, onGam
     // 3. 🎯 TIMER HITUNG MUNDUR (Reset Instan)
     useEffect(() => {
         // Reset waktu ke 15 seketika saat index berubah
-        setTimeLeft(15);
+        setTimeLeft(data?.gameJson?.timeLimit ? Number(data.gameJson.timeLimit) : 15);
         isBusy.current = false;
 
         if (timerRef.current) clearInterval(timerRef.current);

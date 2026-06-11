@@ -19,7 +19,7 @@ export default function WordSearchEngine({ data, onGameOver, onIntermission }: {
     const [foundCells, setFoundCells] = useState<string[]>([]);
     const [score, setScore] = useState(0);
     const [lives, setLives] = useState(3);
-    const [timeLeft, setTimeLeft] = useState(120);
+    const [timeLeft, setTimeLeft] = useState(gameConfig?.timeLimit ? Number(gameConfig.timeLimit) : 120);
     const [isFinished, setIsFinished] = useState(false);
     const isSavingRef = useRef(false);
     const [history, setHistory] = useState<any[]>([]);
@@ -195,7 +195,7 @@ export default function WordSearchEngine({ data, onGameOver, onIntermission }: {
             scoreValue: finalScore,
             maxScore: wordsToFind.length * 100,
             accuracy: accuracy,
-            timeSpent: 120 - timeLeft,
+            timeSpent: (gameConfig?.timeLimit ? Number(gameConfig.timeLimit) : 120) - timeLeft,
             answersDetail: finalHistory.length > 0 ? finalHistory : finalFound.map(w => ({ word: w, isCorrect: true })),
         };
 

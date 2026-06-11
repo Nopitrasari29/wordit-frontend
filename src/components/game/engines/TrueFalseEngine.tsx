@@ -38,7 +38,7 @@ export default function TrueFalseEngine({
   // 🎮 Game State
   const [currentIndex, setCurrentIndex] = useState(0);
   const [score, setScore] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(questions.length * 10);
+  const [timeLeft, setTimeLeft] = useState(gameConfig?.timeLimit ? Number(gameConfig.timeLimit) : questions.length * 10);
   const [isFinished, setIsFinished] = useState(false);
   const isSavingRef = useRef(false);
 

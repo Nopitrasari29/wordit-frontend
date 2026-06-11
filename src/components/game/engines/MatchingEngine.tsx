@@ -38,7 +38,7 @@ export default function MatchingEngine(props: { data: any, onGameOver?: any, onI
     const [matchedIds, setMatchedIds] = useState<string[]>([]);
     const [score, setScore] = useState(0);
     const scoreRef = useRef(0);
-    const [timeLeft, setTimeLeft] = useState(pairs.length * 20);
+    const [timeLeft, setTimeLeft] = useState(gameConfig?.timeLimit ? Number(gameConfig.timeLimit) : pairs.length * 20);
     const [isFinished, setIsFinished] = useState(false);
 
     // 🛠️ FIX: Gunakan Ref untuk history agar tidak memicu re-render looping

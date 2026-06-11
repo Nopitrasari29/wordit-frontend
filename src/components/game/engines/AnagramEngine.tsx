@@ -72,7 +72,7 @@ export default function AnagramEngine({ data, onIntermission, onGameOver }: { da
     };
     
     // Timer & UX State
-    const [timeLeft, setTimeLeft] = useState(15)
+    const [timeLeft, setTimeLeft] = useState(data?.gameJson?.timeLimit ? Number(data.gameJson.timeLimit) : 15)
     const [feedback, setFeedback] = useState<'none' | 'correct' | 'incorrect' | 'timeout'>('none')
     const correctCountRef = useRef(0)
 
@@ -116,7 +116,7 @@ export default function AnagramEngine({ data, onIntermission, onGameOver }: { da
         playSound('timeout');
         setFeedback('timeout');
         setUsedIndices([]);
-        setBreakdown(prev => [...prev, { word: targetWord, isCorrect: false, time: 15 }]);
+        setBreakdown(prev => [...prev, { word: targetWord, isCorrect: false, time: data?.gameJson?.timeLimit ? Number(data.gameJson.timeLimit) : 15 }]);
         setTimeout(() => {
             if (onIntermission && currentIndex < quizWords.length - 1) onIntermission();
             setTimeout(() => moveToNext(), onIntermission ? 3000 : 0);
@@ -129,7 +129,7 @@ export default function AnagramEngine({ data, onIntermission, onGameOver }: { da
             setAnswer("");
             setUsedIndices([]);
             setFeedback('none');
-            setTimeLeft(15);
+            setTimeLeft(data?.gameJson?.timeLimit ? Number(data.gameJson.timeLimit) : 15);
         } else {
             setIsFinished(true);
             const accuracy = Math.round((correctCountRef.current / quizWords.length) * 100);
@@ -205,7 +205,7 @@ export default function AnagramEngine({ data, onIntermission, onGameOver }: { da
             const runningAccuracy = Math.round((correctCountRef.current / quizWords.length) * 100);
             sessionStorage.setItem("lastAccuracy", runningAccuracy.toString());
 
-            const currentTimeSpent = 15 - timeLeft;
+            const currentTimeSpent = (data?.gameJson?.timeLimit ? Number(data.gameJson.timeLimit) : 15) - timeLeft;
             setBreakdown(prev => {
                 const newBd = [...prev, { word: targetWord, isCorrect: true, time: currentTimeSpent }];
                 if (currentIndex === quizWords.length - 1) {
