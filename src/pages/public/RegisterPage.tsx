@@ -111,10 +111,29 @@ export default function RegisterPage() {
         <div className="p-8 md:p-12 w-full md:w-7/12 bg-white">
           <h1 className="text-2xl font-black text-slate-800 mb-6 tracking-tight">Register Akun Baru</h1>
 
+          <div className="mb-6 bg-indigo-50 border border-indigo-100 p-4 rounded-2xl flex items-start gap-3">
+            <span className="text-xl">📧</span>
+            <p className="text-xs text-indigo-800 font-bold leading-relaxed text-left">
+              Setelah mendaftar, sistem akan mengirimkan **link verifikasi ke email asli Anda**. Mohon periksa kotak masuk (inbox) atau folder spam untuk mengaktifkan akun.
+            </p>
+          </div>
+
           <form onSubmit={handleSubmit} className="space-y-5">
             <Input label="Full Name" placeholder="Budi Santoso" value={name} onChange={(e) => setName(e.target.value)} required />
-            <Input label="Email" type="email" placeholder="budi@sekolah.com" value={email} onChange={(e) => handleEmailChange(e.target.value)} error={emailError} required />
-            <Input label="Password" type="password" placeholder="••••••••" value={password} onChange={(e) => handlePasswordChange(e.target.value)} error={passwordError} required />
+            
+            <div>
+              <Input label="Email" type="email" placeholder="budi@sekolah.com" value={email} onChange={(e) => handleEmailChange(e.target.value)} error={emailError} required />
+              <p className="text-[10px] text-slate-400 font-bold ml-2 mt-1.5 text-left">
+                ⚠️ Gunakan email asli yang aktif untuk menerima tautan verifikasi akun.
+              </p>
+            </div>
+
+            <div>
+              <Input label="Password" type="password" placeholder="••••••••" value={password} onChange={(e) => handlePasswordChange(e.target.value)} error={passwordError} required />
+              <p className="text-[10px] text-slate-400 font-bold ml-2 mt-1.5 text-left">
+                🔒 Password harus terdiri dari minimal 8 karakter.
+              </p>
+            </div>
 
             <div className="w-full flex flex-col gap-2">
               <label className="text-sm font-bold text-slate-700 ml-2">Daftar Sebagai</label>

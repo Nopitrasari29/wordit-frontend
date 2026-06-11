@@ -38,21 +38,10 @@ export default function AnalyticsClassPage({
   }, [levelFilter]);
 
   useEffect(() => {
-    if (games && games.length > 0) {
-      const filtered = games.filter((g) => {
-        if (levelFilter !== "ALL" && g.educationLevel !== levelFilter) return false;
-        if (gradeFilter !== "ALL") {
-          const gGrade = String(g.classGrade || "").toLowerCase();
-          const selGrade = String(gradeFilter).toLowerCase();
-          if (!gGrade.includes(selGrade) && !selGrade.includes(gGrade)) return false;
-        }
-        return true;
-      });
-      if (filtered.length > 0) {
-        setSelectedGameId(filtered[0].id);
-      } else {
-        setSelectedGameId("");
-      }
+    // 🛠️ FIX REVISI: Biarkan selectedGameId defaultnya tetap "" agar menampilkan analitik semua kelas / semua game secara langsung
+    // Jangan menimpa selectedGameId dengan game pertama secara otomatis.
+    if (!selectedGameId) {
+      setSelectedGameId("");
     }
   }, [games, levelFilter, gradeFilter]);
 
@@ -186,7 +175,7 @@ export default function AnalyticsClassPage({
               <option value="UNIVERSITY">Universitas / Umum</option>
             </select>
             <select value={selectedGameId} onChange={(e) => setSelectedGameId(e.target.value)} className="bg-white border-2 border-indigo-100 rounded-xl px-4 py-3 font-bold text-slate-700 outline-none focus:border-indigo-400 min-w-[200px]">
-              <option value="">-- Pilih Game --</option>
+              <option value="">Semua Game (Global)</option>
               {games.filter(g => (levelFilter === "ALL" || g.educationLevel === levelFilter)).map(g => (
                 <option key={g.id} value={g.id}>{g.title}</option>
               ))}
