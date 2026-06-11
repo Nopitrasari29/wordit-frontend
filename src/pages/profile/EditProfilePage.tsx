@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { useNavigate } from "react-router-dom"
 import { useAuth } from "../../hooks/useAuth"
 import { getImageUrl } from "../../utils/assets"
 import Input from "../../components/ui/Input"
@@ -7,6 +8,7 @@ import { toast } from "react-hot-toast"
 
 export default function EditProfilePage() {
   const { user, updateUser } = useAuth()
+  const navigate = useNavigate()
 
   const [name, setName] = useState(user?.name || "")
   const [email, setEmail] = useState(user?.email || "")
@@ -55,7 +57,7 @@ export default function EditProfilePage() {
 
       updateUser(updatedData)
       toast.success("Profil berhasil diperbarui! Pengajuan perubahan jenjang Anda telah dikirim ke Admin untuk ditinjau (Maksimal 2-3 hari kerja).")
-      window.location.href = "/profile"
+      navigate("/profile")
     } catch (err: any) {
       toast.error(err.message || "Update failed")
     } finally {
