@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { getGameById } from "../services/game.service";
 import socket from "../../hooks/useSocket";
 import { toast } from "react-hot-toast";
+import ConfirmModal from "../../components/ui/ConfirmModal";
 
 export default function HostSessionPage() {
   const { gameId } = useParams();
@@ -15,6 +16,34 @@ export default function HostSessionPage() {
   const [allowLateJoin, setAllowLateJoin] = useState(true);
   // 🎯 STATE: WAITING -> PLAYING -> ENDED
   const [sessionState, setSessionState] = useState<'WAITING' | 'PLAYING' | 'ENDED'>('WAITING');
+
+  const [confirmConfig, setConfirmConfig] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: () => {},
+  });
+
+  const showConfirm = (title: string, message: string, onConfirm: () => void) => {
+    setConfirmConfig({
+      isOpen: true,
+      title,
+      message,
+      onConfirm: () => {
+        onConfirm();
+        closeConfirm();
+      },
+    });
+  };
+
+  const closeConfirm = () => {
+    setConfirmConfig((prev) => ({ ...prev, isOpen: false }));
+  };
 
   useEffect(() => {
     const fetchGameInfo = async () => {
@@ -152,12 +181,16 @@ const handleRejectStudent = (studentId: string) => {
 
   // 🎯 FUNGSI END SESSION (STOP GAME)
   const handleEndSession = () => {
-    if (window.confirm("Yakin ingin menghentikan permainan? Semua siswa akan dipaksa selesai.")) {
-      console.log(`🛑 [GAME] Menghentikan permainan di room: ${game?.shareCode}`);
-      socket.emit("finishGame", game?.shareCode);
-      setSessionState('ENDED');
-      toast.success("Game Dihentikan!");
-    }
+    showConfirm(
+      "Akhiri Permainan",
+      "Yakin ingin menghentikan permainan? Semua siswa akan dipaksa selesai.",
+      () => {
+        console.log(`🛑 [GAME] Menghentikan permainan di room: ${game?.shareCode}`);
+        socket.emit("finishGame", game?.shareCode);
+        setSessionState('ENDED');
+        toast.success("Game Dihentikan!");
+      }
+    );
   };
 
   if (loading) return (
@@ -178,10 +211,14 @@ const handleRejectStudent = (studentId: string) => {
         <button
           onClick={() => {
             if (sessionState === 'PLAYING') {
-              if (window.confirm("Game sedang berjalan! Akhiri sesi?")) {
-                socket.emit("finishGame", game?.shareCode);
-                navigate("/teacher/projects");
-              }
+              showConfirm(
+                "Akhiri Sesi",
+                "Game sedang berjalan! Akhiri Sesi?",
+                () => {
+                  socket.emit("finishGame", game?.shareCode);
+                  navigate("/teacher/projects");
+                }
+              );
             } else {
               navigate("/teacher/projects");
             }
@@ -307,29 +344,28 @@ const handleRejectStudent = (studentId: string) => {
                     {sessionState === 'WAITING' && (
                       <button
                         onClick={() => {
-                          if (
-                            window.confirm(
-                              `Kick ${player.name} dari lobby?`
-                            )
-                          ) {
+                          showConfirm(
+                            "Kick Siswa",
+                            `Kick ${player.name} dari lobby?`,
+                            () => {
+                              console.log(
+                                "KICK PLAYER",
+                                {
+                                  code: game?.shareCode,
+                                  playerId: player.id,
+                                  player
+                                }
+                              );
 
-                            console.log(
-                              "KICK PLAYER",
-                              {
-                                code: game?.shareCode,
-                                playerId: player.id,
-                                player
-                              }
-                            );
-
-                            socket.emit(
-                              "kickPlayer",
-                              {
-                                code: game?.shareCode,
-                                playerId: player.id,
-                              }
-                            );
-                          }
+                              socket.emit(
+                                "kickPlayer",
+                                {
+                                  code: game?.shareCode,
+                                  playerId: player.id,
+                                }
+                              );
+                            }
+                          );
                         }}
                         className="bg-rose-500 hover:bg-rose-600 text-white text-[10px] font-black px-3.5 py-2 rounded-xl transition-all"
                         title="Kick Player"
@@ -396,6 +432,13 @@ const handleRejectStudent = (studentId: string) => {
           )}
         </div>
       </div>
+      <ConfirmModal
+        isOpen={confirmConfig.isOpen}
+        title={confirmConfig.title}
+        message={confirmConfig.message}
+        onConfirm={confirmConfig.onConfirm}
+        onCancel={closeConfirm}
+      />
     </div>
   );
 }

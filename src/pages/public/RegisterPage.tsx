@@ -17,6 +17,33 @@ export default function RegisterPage() {
   const [educationLevels, setEducationLevels] = useState<string[]>([])
   const [isLoading, setIsLoading] = useState(false)
 
+  const [emailError, setEmailError] = useState("")
+  const [passwordError, setPasswordError] = useState("")
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  const handleEmailChange = (val: string) => {
+    setEmail(val);
+    if (!val) {
+      setEmailError("Email wajib diisi");
+    } else if (!emailRegex.test(val)) {
+      setEmailError("Format email harus valid (contoh: nama@sekolah.com)");
+    } else {
+      setEmailError("");
+    }
+  };
+
+  const handlePasswordChange = (val: string) => {
+    setPassword(val);
+    if (!val) {
+      setPasswordError("Password wajib diisi");
+    } else if (val.length < 8) {
+      setPasswordError("Password harus minimal 8 karakter");
+    } else {
+      setPasswordError("");
+    }
+  };
+
   useEffect(() => {
     setEducationLevels([]);
   }, [role]);
@@ -24,8 +51,14 @@ export default function RegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (password.length < 6) {
-      return toast.error("Password minimal 6 karakter!");
+    if (!emailRegex.test(email)) {
+      setEmailError("Format email harus valid (contoh: nama@sekolah.com)");
+      return toast.error("Format email tidak valid!");
+    }
+
+    if (password.length < 8) {
+      setPasswordError("Password harus minimal 8 karakter");
+      return toast.error("Password minimal 8 karakter!");
     }
 
     if (role === "TEACHER" && educationLevels.length === 0) {
@@ -44,12 +77,8 @@ export default function RegisterPage() {
     try {
       await register(name, email, password, role, educationLevels);
 
-      if (role === "TEACHER") {
-        toast.success("Registrasi berhasil! Mohon tunggu approval Admin. ⏳");
-      } else {
-        toast.success("Akun Berhasil Dibuat! 🚀");
-      }
-      navigate("/login");
+      toast.success("Registrasi berhasil! Silakan verifikasi email Anda. 🚀");
+      navigate(`/verify-pending?email=${encodeURIComponent(email)}`);
     } catch (err: any) {
       const msg = err.response?.data?.message || "Register gagal. Cek koneksi server!";
       toast.error(msg);
@@ -84,8 +113,8 @@ export default function RegisterPage() {
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <Input label="Full Name" placeholder="Budi Santoso" value={name} onChange={(e) => setName(e.target.value)} required />
-            <Input label="Email" type="email" placeholder="budi@sekolah.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
-            <Input label="Password" type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required />
+            <Input label="Email" type="email" placeholder="budi@sekolah.com" value={email} onChange={(e) => handleEmailChange(e.target.value)} error={emailError} required />
+            <Input label="Password" type="password" placeholder="••••••••" value={password} onChange={(e) => handlePasswordChange(e.target.value)} error={passwordError} required />
 
             <div className="w-full flex flex-col gap-2">
               <label className="text-sm font-bold text-slate-700 ml-2">Daftar Sebagai</label>

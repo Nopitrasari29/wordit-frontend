@@ -11,6 +11,7 @@ import ExplorePage from "../pages/public/ExplorePage";
 import ForgotPasswordPage from "../pages/public/ForgotPasswordPage";
 import ResetPasswordPage from "../pages/public/ResetPasswordPage";
 import VerifyEmailPage from "../pages/public/VerifyEmailPage";
+import VerifyPendingPage from "../pages/public/VerifyPendingPage";
 import NotFoundPage from "../pages/public/NotFoundPage";
 import LtiLaunchPage from "../pages/public/LtiLaunchPage";
 
@@ -60,6 +61,7 @@ export default function Router() {
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/verify-email" element={<VerifyEmailPage />} />
+          <Route path="/verify-pending" element={<VerifyPendingPage />} />
           <Route path="/lti-launch" element={<LtiLaunchPage />} />
 
           {/* ================= GENERAL PROTECTED (Auth Only) ================= */}

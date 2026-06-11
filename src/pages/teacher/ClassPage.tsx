@@ -20,10 +20,39 @@ import {
 import api from "../services/api";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
+import ConfirmModal from "../../components/ui/ConfirmModal";
 
 export default function ClassPage() {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
+
+  const [confirmConfig, setConfirmConfig] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: () => {},
+  });
+
+  const showConfirm = (title: string, message: string, onConfirm: () => void) => {
+    setConfirmConfig({
+      isOpen: true,
+      title,
+      message,
+      onConfirm: () => {
+        onConfirm();
+        closeConfirm();
+      },
+    });
+  };
+
+  const closeConfirm = () => {
+    setConfirmConfig((prev) => ({ ...prev, isOpen: false }));
+  };
 
   // State untuk daftar kelas (auto-grouped berdasarkan prefix nama pemain)
   const [classes, setClasses] = useState<
@@ -71,27 +100,29 @@ export default function ClassPage() {
   }, []);
 
   const handleResetForRemedial = async (resultId: string, studentName: string) => {
-    if (!window.confirm(`Reset hasil kuis ${studentName} agar bisa melakukan tes ulang / remedial? Data nilai sebelumnya akan dihapus secara permanen.`)) {
-      return;
-    }
-    
-    try {
-      const response = await api.delete(`/analytics/remedial/${resultId}`);
-      if (response.data.status === "success") {
-        toast.success(`Berhasil! Sesi ${studentName} direset untuk remedial.`);
-        // Saring siswa dari state
-        setAtRiskStudents((prev) => prev.filter((s) => s.id !== resultId));
-        
-        // Refresh data kelas untuk memperbarui rata-rata skor
-        const classesResponse = await api.get("/analytics/teacher/classes");
-        if (classesResponse.data.status === "success") {
-          setClasses(classesResponse.data.data.classes);
+    showConfirm(
+      "Reset Nilai Kuis",
+      `Reset hasil kuis ${studentName} agar bisa melakukan tes ulang / remedial? Data nilai sebelumnya akan dihapus secara permanen.`,
+      async () => {
+        try {
+          const response = await api.delete(`/analytics/remedial/${resultId}`);
+          if (response.data.status === "success") {
+            toast.success(`Berhasil! Sesi ${studentName} direset untuk remedial.`);
+            // Saring siswa dari state
+            setAtRiskStudents((prev) => prev.filter((s) => s.id !== resultId));
+            
+            // Refresh data kelas untuk memperbarui rata-rata skor
+            const classesResponse = await api.get("/analytics/teacher/classes");
+            if (classesResponse.data.status === "success") {
+              setClasses(classesResponse.data.data.classes);
+            }
+          }
+        } catch (err: any) {
+          console.error("Gagal reset remedial:", err);
+          toast.error(err.response?.data?.message || "Gagal melakukan reset remedial.");
         }
       }
-    } catch (err: any) {
-      console.error("Gagal reset remedial:", err);
-      toast.error(err.response?.data?.message || "Gagal melakukan reset remedial.");
-    }
+    );
   };
 
   const handleExportCSV = () => {
@@ -416,6 +447,13 @@ export default function ClassPage() {
           </div>
         </>
       )}
+      <ConfirmModal
+        isOpen={confirmConfig.isOpen}
+        title={confirmConfig.title}
+        message={confirmConfig.message}
+        onConfirm={confirmConfig.onConfirm}
+        onCancel={closeConfirm}
+      />
     </div>
   );
 }

@@ -5,12 +5,41 @@ import { getMyGames, deleteGame, publishGame } from "../../services/game.service
 import { templateIcons } from "../../../data/templateIcons"
 import type { Game } from "../../../types/game"
 import { toast } from "react-hot-toast"
+import ConfirmModal from "../../../components/ui/ConfirmModal"
 
 export default function MyProjectsPage() {
     const { token } = useAuth()
     const navigate = useNavigate() // 🎯 Inisialisasi navigasi
     const [games, setGames] = useState<Game[]>([])
     const [loading, setLoading] = useState(true)
+
+    const [confirmConfig, setConfirmConfig] = useState<{
+        isOpen: boolean;
+        title: string;
+        message: string;
+        onConfirm: () => void;
+    }>({
+        isOpen: false,
+        title: "",
+        message: "",
+        onConfirm: () => {},
+    });
+
+    const showConfirm = (title: string, message: string, onConfirm: () => void) => {
+        setConfirmConfig({
+            isOpen: true,
+            title,
+            message,
+            onConfirm: () => {
+                onConfirm();
+                closeConfirm();
+            },
+        });
+    };
+
+    const closeConfirm = () => {
+        setConfirmConfig((prev) => ({ ...prev, isOpen: false }));
+    };
 
     useEffect(() => {
         async function load() {
@@ -26,15 +55,20 @@ export default function MyProjectsPage() {
         load()
     }, [token])
 
-    async function handleDelete(id: string) {
-        if (!confirm("Hapus game ini permanen?")) return
-        try {
-            await deleteGame(id)
-            setGames(games.filter(g => g.id !== id))
-            toast.success("Game berhasil dihapus!")
-        } catch (e: any) {
-            toast.error(e.message)
-        }
+    function handleDelete(id: string) {
+        showConfirm(
+            "Hapus Game",
+            "Apakah Anda yakin ingin menghapus game ini secara permanen?",
+            async () => {
+                try {
+                    await deleteGame(id)
+                    setGames(games.filter(g => g.id !== id))
+                    toast.success("Game berhasil dihapus!")
+                } catch (e: any) {
+                    toast.error(e.message)
+                }
+            }
+        );
     }
 
     async function handlePublish(id: string) {
@@ -184,6 +218,13 @@ export default function MyProjectsPage() {
                     </div>
                 )}
             </div>
+            <ConfirmModal
+                isOpen={confirmConfig.isOpen}
+                title={confirmConfig.title}
+                message={confirmConfig.message}
+                onConfirm={confirmConfig.onConfirm}
+                onCancel={closeConfirm}
+            />
         </div>
     )
 }

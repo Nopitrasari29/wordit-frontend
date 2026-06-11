@@ -5,8 +5,8 @@ import {
 } from "react-router-dom";
 
 import socket from "../../hooks/useSocket";
-
 import { getGameById } from "../services/game.service";
+import { toast } from "react-hot-toast";
 
 import GameRenderer from "../../components/game/GameRenderer";
 
@@ -77,18 +77,12 @@ export default function GameSessionPage() {
     };
 
     const handlePlayerKicked = () => {
-      alert(
-        "Anda telah dikeluarkan dari permainan oleh guru.",
-      );
-
+      toast.error("Anda telah dikeluarkan dari permainan oleh guru.");
       navigate("/student/join");
     };
 
     const handleHostDisconnected = () => {
-      alert(
-        "Guru mengakhiri sesi permainan.",
-      );
-
+      toast.error("Guru mengakhiri sesi permainan.");
       navigate("/student/join");
     };
 

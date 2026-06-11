@@ -13,6 +13,7 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { ArrowLeft, Loader2, Download } from "lucide-react";
 import api from "../../services/api";
+import { toast } from "react-hot-toast";
 
 export default function AnalyticsClassPage({
   data,
@@ -121,7 +122,7 @@ export default function AnalyticsClassPage({
 
   const handleExportIndividualCSV = () => {
     const students = analyticsData?.allStudentsData || [];
-    if (students.length === 0) return alert("Tidak ada data siswa.");
+    if (students.length === 0) return toast.error("Tidak ada data siswa.");
     let csvContent = "Nama Join Siswa,Kelompok/Kelas,Nama Game,Skor Akhir,Akurasi (%),Durasi Bermain\n";
     students.forEach((s: any) => {
       const min = Math.floor((s.timeSpent || 0) / 60);

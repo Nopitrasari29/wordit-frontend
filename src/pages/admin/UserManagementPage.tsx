@@ -9,6 +9,7 @@ import {
 import type { User } from "../../types/user";
 import { toast } from "react-hot-toast";
 import { Check, X, Trash2, Search, Download, Eye } from "lucide-react";
+import ConfirmModal from "../../components/ui/ConfirmModal";
 
 export default function UserManagementPage() {
   const [users, setUsers] = useState<User[]>([]);
@@ -18,6 +19,34 @@ export default function UserManagementPage() {
   const [loading, setLoading] = useState(true);
   const [pendingCount, setPendingCount] = useState(0);
   const [selectedUser, setSelectedUser] = useState<any>(null);
+
+  const [confirmConfig, setConfirmConfig] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: () => {},
+  });
+
+  const showConfirm = (title: string, message: string, onConfirm: () => void) => {
+    setConfirmConfig({
+      isOpen: true,
+      title,
+      message,
+      onConfirm: () => {
+        onConfirm();
+        closeConfirm();
+      },
+    });
+  };
+
+  const closeConfirm = () => {
+    setConfirmConfig((prev) => ({ ...prev, isOpen: false }));
+  };
 
   async function loadUsers() {
     try {
@@ -110,16 +139,21 @@ export default function UserManagementPage() {
     }
   }
 
-  async function removeUser(id: string) {
-    if (!confirm("Apakah Anda yakin ingin menghapus user ini?")) return;
-    try {
-      await deleteUser(id);
-      setUsers(users.filter((u) => u.id !== id));
-      toast.success("User berhasil dihapus");
-    } catch (err) {
-      console.error(err);
-      toast.error("Gagal menghapus user");
-    }
+  function removeUser(id: string) {
+    showConfirm(
+      "Hapus Pengguna",
+      "Apakah Anda yakin ingin menghapus user ini secara permanen?",
+      async () => {
+        try {
+          await deleteUser(id);
+          setUsers(users.filter((u) => u.id !== id));
+          toast.success("User berhasil dihapus");
+        } catch (err) {
+          console.error(err);
+          toast.error("Gagal menghapus user");
+        }
+      }
+    );
   }
 
   const handleExportCSV = () => {
@@ -502,6 +536,13 @@ export default function UserManagementPage() {
           </div>
         </div>
       )}
+      <ConfirmModal
+        isOpen={confirmConfig.isOpen}
+        title={confirmConfig.title}
+        message={confirmConfig.message}
+        onConfirm={confirmConfig.onConfirm}
+        onCancel={closeConfirm}
+      />
     </div>
   );
 }

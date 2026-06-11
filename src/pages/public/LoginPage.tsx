@@ -14,6 +14,33 @@ export default function LoginPage() {
   const [password, setPassword] = useState("")
   const [errorMsg, setErrorMsg] = useState("")
 
+  const [emailError, setEmailError] = useState("")
+  const [passwordError, setPasswordError] = useState("")
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  const handleEmailChange = (val: string) => {
+    setEmail(val);
+    if (!val) {
+      setEmailError("Email wajib diisi");
+    } else if (!emailRegex.test(val)) {
+      setEmailError("Format email harus valid (contoh: nama@sekolah.com)");
+    } else {
+      setEmailError("");
+    }
+  };
+
+  const handlePasswordChange = (val: string) => {
+    setPassword(val);
+    if (!val) {
+      setPasswordError("Password wajib diisi");
+    } else if (val.length < 8) {
+      setPasswordError("Password harus minimal 8 karakter");
+    } else {
+      setPasswordError("");
+    }
+  };
+
   useEffect(() => {
     if (searchParams.get("expired") === "true") {
       toast.error("Sesi Anda telah berakhir. Silakan masuk kembali.", { id: "session-expired" });
@@ -23,6 +50,16 @@ export default function LoginPage() {
   async function submit(e: any) {
     e.preventDefault()
     setErrorMsg("")
+
+    if (!emailRegex.test(email)) {
+      setEmailError("Format email harus valid (contoh: nama@sekolah.com)");
+      return;
+    }
+
+    if (password.length < 8) {
+      setPasswordError("Password harus minimal 8 karakter");
+      return;
+    }
 
     const result = await login(email, password)
 
@@ -85,7 +122,8 @@ export default function LoginPage() {
             type="email"
             placeholder="guru@sekolah.com"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(e) => handleEmailChange(e.target.value)}
+            error={emailError}
             required
           />
 
@@ -95,7 +133,8 @@ export default function LoginPage() {
               type="password"
               placeholder="••••••••"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e) => handlePasswordChange(e.target.value)}
+              error={passwordError}
               required
             />
             <div className="flex justify-end mt-3 mr-2">

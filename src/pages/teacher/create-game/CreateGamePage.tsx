@@ -1,8 +1,8 @@
 import { useState, useCallback } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import GameBuilderRouter from "../../../components/game/GameBuilderRouter";
-// 🎯 Pastikan createGame sudah ada di service kamu
 import { createGame } from "../../services/game.service"; 
+import { toast } from "react-hot-toast";
 
 export default function CreateGamePage() {
     const [searchParams] = useSearchParams();
@@ -23,7 +23,7 @@ export default function CreateGamePage() {
 
     // 🚀 Fungsi untuk mengirim kuis baru ke Database Docker (Paten!)
     const handleSave = async () => {
-        if (!title) return alert("Judul aktivitas wajib diisi! 😊");
+        if (!title) return toast.error("Judul aktivitas wajib diisi! 😊");
         
         try {
             setIsSaving(true);
@@ -35,11 +35,11 @@ export default function CreateGamePage() {
             };
             
             await createGame(payload);
-            alert("Kuis berhasil dipublikasikan! 🎉");
+            toast.success("Kuis berhasil dipublikasikan! 🎉");
             navigate("/teacher/projects");
         } catch (err: any) {
             console.error("Create Error:", err);
-            alert("Gagal membuat kuis: " + (err.response?.data?.message || err.message));
+            toast.error("Gagal membuat kuis: " + (err.response?.data?.message || err.message));
         } finally {
             setIsSaving(false);
         }

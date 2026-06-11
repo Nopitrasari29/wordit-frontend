@@ -3,6 +3,7 @@ import { useAuth } from "../../hooks/useAuth"
 import { getImageUrl } from "../../utils/assets"
 import Input from "../../components/ui/Input"
 import { updateProfile } from "../../pages/services/user.service"
+import { toast } from "react-hot-toast"
 
 export default function EditProfilePage() {
   const { user, updateUser } = useAuth()
@@ -53,10 +54,10 @@ export default function EditProfilePage() {
       }
 
       updateUser(updatedData)
-      alert("Profil berhasil diperbarui! Pengajuan perubahan jenjang Anda telah dikirim ke Admin untuk ditinjau (Maksimal 2-3 hari kerja).")
+      toast.success("Profil berhasil diperbarui! Pengajuan perubahan jenjang Anda telah dikirim ke Admin untuk ditinjau (Maksimal 2-3 hari kerja).")
       window.location.href = "/profile"
     } catch (err: any) {
-      alert(err.message || "Update failed")
+      toast.error(err.message || "Update failed")
     } finally {
       setSaving(false)
     }
@@ -145,7 +146,7 @@ export default function EditProfilePage() {
                             if (educationLevels.length > 1) {
                               setEducationLevels(educationLevels.filter((l) => l !== level));
                             } else {
-                              alert("Minimal harus memilih satu jenjang pengajaran!");
+                              toast.error("Minimal harus memilih satu jenjang pengajaran!");
                             }
                           } else {
                             setEducationLevels([...educationLevels, level]);
