@@ -96,3 +96,14 @@ export async function getStudentLeaderboard() {
   }
   return res.data.data;
 }
+
+/* ============================== */
+/* ADMIN BULK IMPORT USERS        */
+/* ============================== */
+export async function bulkImportUsers(users: any[]) {
+  const res = await api.post("/users/bulk-import", { users });
+  if (res.data.status !== "success" && !res.data.success) {
+    throw new Error(res.data.message || "Failed to bulk import users");
+  }
+  return res.data.data;
+}

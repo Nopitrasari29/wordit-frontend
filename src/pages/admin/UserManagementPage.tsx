@@ -5,10 +5,11 @@ import {
   updateUser,
   deleteUser,
   approveUser,
+  bulkImportUsers,
 } from "../services/user.service";
 import type { User } from "../../types/user";
 import { toast } from "react-hot-toast";
-import { Check, X, Trash2, Search, Download, Eye } from "lucide-react";
+import { Check, X, Trash2, Search, Download, Eye, Upload, RefreshCw } from "lucide-react";
 import ConfirmModal from "../../components/ui/ConfirmModal";
 
 export default function UserManagementPage() {
@@ -19,6 +20,17 @@ export default function UserManagementPage() {
   const [loading, setLoading] = useState(true);
   const [pendingCount, setPendingCount] = useState(0);
   const [selectedUser, setSelectedUser] = useState<any>(null);
+
+  // States for CSV Bulk Import
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [importUsers, setImportUsers] = useState<any[]>([]);
+  const [importResults, setImportResults] = useState<{
+    total: number;
+    success: number;
+    failed: number;
+    errors: string[];
+  } | null>(null);
+  const [isImporting, setIsImporting] = useState(false);
 
   const [confirmConfig, setConfirmConfig] = useState<{
     isOpen: boolean;
@@ -194,6 +206,118 @@ export default function UserManagementPage() {
     toast.success("Laporan pengguna berhasil diekspor ke CSV!");
   };
 
+  const parseCSV = (text: string) => {
+    const lines = text.split(/\r?\n/).filter((line) => line.trim() !== "");
+    if (lines.length < 2) return [];
+
+    const headers = lines[0].split(",").map((h) => h.trim().toLowerCase());
+    
+    const nameIdx = headers.findIndex((h) => h.includes("nama") || h.includes("name"));
+    const emailIdx = headers.findIndex((h) => h.includes("email") || h.includes("surel") || h.includes("pos"));
+    const passIdx = headers.findIndex((h) => h.includes("pass") || h.includes("sandi"));
+    const roleIdx = headers.findIndex((h) => h.includes("role") || h.includes("peran"));
+    const jenjangIdx = headers.findIndex((h) => h.includes("jenjang") || h.includes("level"));
+
+    const parsedUsers: any[] = [];
+
+    for (let i = 1; i < lines.length; i++) {
+      const cols = lines[i].split(",").map((c) => c.trim().replace(/^["']|["']$/g, ""));
+      
+      const name = nameIdx !== -1 ? cols[nameIdx] : "";
+      const email = emailIdx !== -1 ? cols[emailIdx] : "";
+      const passwordRaw = passIdx !== -1 ? cols[passIdx] : "";
+      
+      let rawRole = roleIdx !== -1 ? cols[roleIdx]?.toUpperCase() : "STUDENT";
+      if (rawRole.includes("GURU") || rawRole.includes("TEACHER")) {
+        rawRole = "TEACHER";
+      } else if (rawRole.includes("SISWA") || rawRole.includes("STUDENT")) {
+        rawRole = "STUDENT";
+      } else {
+        rawRole = "STUDENT";
+      }
+
+      const rawJenjang = jenjangIdx !== -1 ? cols[jenjangIdx] : "";
+      const educationLevels = rawJenjang
+        ? rawJenjang
+            .split(";")
+            .map((lvl) => lvl.trim().toUpperCase())
+            .filter((lvl) => ["SD", "SMP", "SMA", "UNIVERSITY"].includes(lvl))
+        : [];
+
+      if (name && email) {
+        parsedUsers.push({
+          name,
+          email,
+          passwordRaw,
+          role: rawRole,
+          educationLevels,
+        });
+      }
+    }
+
+    return parsedUsers;
+  };
+
+  const handleDownloadTemplate = () => {
+    const csvContent = "Nama,Email,Password,Role,Jenjang\nBudi Raharjo,budi@wordit.com,password123,STUDENT,\nBu Sari,sari@wordit.com,password123,TEACHER,SD;SMP";
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", "wordit-import-template.csv");
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.name.endsWith(".csv")) {
+      toast.error("Format file harus berupa CSV.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const text = event.target?.result as string;
+      try {
+        const parsed = parseCSV(text);
+        if (parsed.length === 0) {
+          toast.error("Gagal membaca data dari file CSV. Periksa format header.");
+          return;
+        }
+        setImportUsers(parsed);
+        toast.success(`Berhasil memuat ${parsed.length} baris data CSV!`);
+      } catch (err) {
+        console.error(err);
+        toast.error("Gagal mem-parsing berkas CSV.");
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  const handleBulkImportSubmit = async () => {
+    if (importUsers.length === 0) return;
+    setIsImporting(true);
+    try {
+      const result = await bulkImportUsers(importUsers);
+      setImportResults(result);
+      if (result.failed === 0) {
+        toast.success(`Semua ${result.success} user berhasil diimpor! 🎉`);
+      } else {
+        toast.error(`Berhasil mengimpor ${result.success} user, namun ada ${result.failed} yang gagal.`);
+      }
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.message || "Gagal melakukan impor massal.");
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="h-[60vh] flex flex-col items-center justify-center space-y-4">
@@ -262,6 +386,16 @@ export default function UserManagementPage() {
           >
             <Download size={14} />
             <span>Ekspor CSV</span>
+          </button>
+
+          {/* Import CSV Button */}
+          <button
+            onClick={() => setIsImportModalOpen(true)}
+            className="flex items-center gap-1.5 px-4.5 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 border border-emerald-100 rounded-xl text-xs font-black transition-all shrink-0 w-full sm:w-auto justify-center"
+            title="Impor Pengguna Massal"
+          >
+            <Upload size={14} />
+            <span>Impor CSV</span>
           </button>
         </div>
       </div>
@@ -536,6 +670,222 @@ export default function UserManagementPage() {
           </div>
         </div>
       )}
+      {/* ─── IMPORT USER MODAL ─── */}
+      {isImportModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 md:p-8 shadow-2xl relative border border-slate-100 animate-in zoom-in-95 duration-200 flex flex-col max-h-[85vh]">
+            {/* Close Button */}
+            <button
+              onClick={() => {
+                if (!isImporting) {
+                  setIsImportModalOpen(false);
+                  setImportUsers([]);
+                  setImportResults(null);
+                }
+              }}
+              className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-xl transition"
+              disabled={isImporting}
+            >
+              <X size={20} />
+            </button>
+
+            {/* Modal Header */}
+            <div className="border-b border-slate-100 pb-5 mb-5 shrink-0">
+              <h3 className="text-xl font-black text-slate-800 flex items-center gap-2">
+                <Upload size={20} className="text-emerald-600" />
+                Impor Pengguna secara Massal
+              </h3>
+              <p className="text-xs text-slate-400 mt-1 font-bold uppercase tracking-wider">
+                Upload berkas CSV untuk mendaftarkan banyak guru atau siswa sekaligus
+              </p>
+            </div>
+
+            {/* Modal Body */}
+            <div className="flex-1 overflow-y-auto space-y-5 pr-2 custom-scrollbar">
+              {!importResults ? (
+                <>
+                  {/* Instructions */}
+                  <div className="bg-slate-50 border border-slate-100 p-4.5 rounded-2xl space-y-2.5">
+                    <h4 className="text-xs font-black uppercase tracking-wider text-slate-700">
+                      📋 Petunjuk Format CSV
+                    </h4>
+                    <p className="text-xs text-slate-500 font-bold leading-relaxed">
+                      1. Pastikan kolom memiliki header berikut: <span className="text-indigo-600 font-mono font-black">Nama, Email, Password, Role, Jenjang</span><br />
+                      2. <span className="font-black text-slate-700">Role</span> berisi <span className="font-mono text-indigo-600">STUDENT</span> (siswa) atau <span className="font-mono text-indigo-600">TEACHER</span> (guru).<br />
+                      3. <span className="font-black text-slate-700">Jenjang</span> (khusus guru) dipisah titik koma jika lebih dari satu. Contoh: <span className="font-mono text-indigo-600">SD;SMP;SMA</span><br />
+                      4. Password minimal harus <span className="font-black text-slate-700">6 karakter</span>.
+                    </p>
+                    <button
+                      onClick={handleDownloadTemplate}
+                      className="text-xs font-black text-indigo-600 hover:underline flex items-center gap-1.5 pt-1.5"
+                    >
+                      <Download size={12} /> Unduh Template Contoh CSV
+                    </button>
+                  </div>
+
+                  {/* File Selector */}
+                  <div className="border-4 border-dashed border-slate-100 rounded-3xl p-8 text-center hover:border-indigo-200 transition relative">
+                    <input
+                      type="file"
+                      accept=".csv"
+                      onChange={handleFileChange}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    />
+                    <div className="space-y-2 pointer-events-none">
+                      <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto text-xl font-bold shadow-inner">
+                        📂
+                      </div>
+                      <p className="text-sm font-bold text-slate-700">
+                        Klik untuk pilih file atau seret file CSV ke sini
+                      </p>
+                      <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest">
+                        Hanya mendukung format .CSV
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Preview Table */}
+                  {importUsers.length > 0 && (
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center px-1">
+                        <span className="text-xs font-black uppercase tracking-wider text-slate-600">
+                          Pratinjau Data ({importUsers.length} Pengguna)
+                        </span>
+                        <button
+                          onClick={() => setImportUsers([])}
+                          className="text-[10px] text-rose-500 font-black uppercase hover:underline"
+                        >
+                          Hapus File
+                        </button>
+                      </div>
+                      <div className="border border-slate-100 rounded-2xl overflow-hidden max-h-56 overflow-y-auto">
+                        <table className="w-full text-left text-xs border-collapse">
+                          <thead className="bg-slate-50 border-b border-slate-100 sticky top-0">
+                            <tr className="text-slate-400 font-black uppercase text-[9px] tracking-wider">
+                              <th className="py-2.5 px-4">Nama</th>
+                              <th className="py-2.5 px-4">Email</th>
+                              <th className="py-2.5 px-4">Password</th>
+                              <th className="py-2.5 px-4">Role</th>
+                              <th className="py-2.5 px-4">Jenjang</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-50 font-bold text-slate-700 bg-white">
+                            {importUsers.map((u, index) => (
+                              <tr key={index}>
+                                <td className="py-2 px-4 truncate max-w-[120px]">{u.name}</td>
+                                <td className="py-2 px-4 truncate max-w-[140px]">{u.email}</td>
+                                <td className="py-2 px-4 font-mono text-slate-400">{u.passwordRaw}</td>
+                                <td className="py-2 px-4">
+                                  <span className={`text-[9px] px-1.5 py-0.5 rounded font-black border ${
+                                    u.role === 'TEACHER' ? 'bg-amber-50 text-amber-600 border-amber-100' : 'bg-blue-50 text-blue-600 border-blue-100'
+                                  }`}>
+                                    {u.role}
+                                  </span>
+                                </td>
+                                <td className="py-2 px-4">
+                                  {u.educationLevels.length > 0 ? u.educationLevels.join(", ") : "-"}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+                </>
+              ) : (
+                /* Import Results Feedback */
+                <div className="space-y-4">
+                  <div className="bg-slate-50 border border-slate-100 p-6 rounded-3xl text-center space-y-3">
+                    <div className="text-4xl">
+                      {importResults.failed === 0 ? "🎉" : "💡"}
+                    </div>
+                    <h4 className="text-lg font-black text-slate-800">
+                      Proses Impor Selesai!
+                    </h4>
+                    <div className="flex justify-center gap-6 text-xs mt-2">
+                      <div className="bg-emerald-50 text-emerald-700 border border-emerald-100 px-4 py-2 rounded-2xl text-center">
+                        <span className="text-xl font-black block">{importResults.success}</span>
+                        <span className="font-bold uppercase text-[9px] tracking-wider">Sukses</span>
+                      </div>
+                      <div className="bg-rose-50 text-rose-700 border border-rose-100 px-4 py-2 rounded-2xl text-center">
+                        <span className="text-xl font-black block">{importResults.failed}</span>
+                        <span className="font-bold uppercase text-[9px] tracking-wider">Gagal</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Errors details list */}
+                  {importResults.errors.length > 0 && (
+                    <div className="space-y-2">
+                      <h5 className="text-xs font-black uppercase tracking-wider text-rose-500 px-1">
+                        Detail Error Pendaftaran ({importResults.errors.length}):
+                      </h5>
+                      <div className="bg-rose-50/50 border border-rose-100 rounded-2xl p-4 max-h-48 overflow-y-auto space-y-1.5">
+                        {importResults.errors.map((err, index) => (
+                          <div key={index} className="text-xs text-rose-700 font-bold flex items-start gap-1.5">
+                            <span className="text-rose-400">•</span>
+                            <span>{err}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer Actions */}
+            <div className="mt-6 pt-5 border-t border-slate-100 flex justify-end gap-3 shrink-0">
+              {!importResults ? (
+                <>
+                  <button
+                    onClick={() => {
+                      setIsImportModalOpen(false);
+                      setImportUsers([]);
+                    }}
+                    className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition"
+                    disabled={isImporting}
+                  >
+                    Batal
+                  </button>
+                  <button
+                    onClick={handleBulkImportSubmit}
+                    disabled={importUsers.length === 0 || isImporting}
+                    className={`px-5 py-2.5 rounded-xl text-xs font-black text-white shadow-md transition flex items-center gap-1.5 ${
+                      importUsers.length === 0 || isImporting
+                        ? "bg-indigo-300 cursor-not-allowed shadow-none"
+                        : "bg-indigo-600 hover:bg-indigo-500"
+                    }`}
+                  >
+                    {isImporting ? (
+                      <>
+                        <RefreshCw size={14} className="animate-spin" />
+                        <span>Memproses...</span>
+                      </>
+                    ) : (
+                      <span>Mulai Impor ({importUsers.length} User)</span>
+                    )}
+                  </button>
+                </>
+              ) : (
+                <button
+                  onClick={() => {
+                    setIsImportModalOpen(false);
+                    setImportUsers([]);
+                    setImportResults(null);
+                    loadUsers(); // reload user list
+                  }}
+                  className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-black rounded-xl text-xs transition shadow-md"
+                >
+                  Selesai
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       <ConfirmModal
         isOpen={confirmConfig.isOpen}
         title={confirmConfig.title}
