@@ -11,69 +11,85 @@ export default function Hero() {
       <div className="absolute top-20 -left-10 w-72 h-72 bg-indigo-200 rounded-full blur-3xl opacity-30 animate-blob"></div>
       <div className="absolute bottom-10 -right-10 w-72 h-72 bg-blue-200 rounded-full blur-3xl opacity-30 animate-blob" style={{ animationDelay: '2s' }}></div>
 
-      <div className="max-w-7xl mx-auto px-6 relative z-10 text-center">
-        {/* HYBRID BADGE */}
-        <div className="inline-flex items-center gap-2 bg-slate-50 border border-slate-200 px-4 py-2 rounded-full mb-8">
-          <span className="bg-indigo-600 w-2 h-2 rounded-full animate-ping"></span>
-          <span className="text-slate-600 font-black text-[10px] uppercase tracking-widest">LMS Integrated Platform</span>
-        </div>
+      <div className="max-w-7xl mx-auto px-6 relative z-10 w-full">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+          {/* LEFT COLUMN: HERO CONTENT */}
+          <div className="lg:col-span-7 text-center lg:text-left flex flex-col items-center lg:items-start">
+            {/* HYBRID BADGE */}
+            <div className="inline-flex items-center gap-2 bg-slate-50 border border-slate-200 px-4 py-2 rounded-full mb-8">
+              <span className="bg-indigo-600 w-2 h-2 rounded-full animate-ping"></span>
+              <span className="text-slate-600 font-black text-[10px] uppercase tracking-widest">LMS Integrated Platform</span>
+            </div>
 
-        {/* MAIN TITLE - Ukuran dikecilkan agar proporsional */}
-        <h1 className="text-4xl md:text-6xl lg:text-7xl font-black text-slate-900 tracking-tighter leading-tight mb-8">
-          The Future of <br />
-          <span className="bg-gradient-to-r from-indigo-600 via-purple-500 to-indigo-600 bg-clip-text text-transparent animate-text-gradient italic">
-            Connected Education
-          </span>
-        </h1>
+            {/* MAIN TITLE */}
+            <h1 className="text-4xl md:text-6xl lg:text-7xl font-black text-slate-900 tracking-tighter leading-tight mb-8">
+              The Future of <br />
+              <span className="bg-gradient-to-r from-indigo-600 via-purple-500 to-indigo-600 bg-clip-text text-transparent animate-text-gradient italic">
+                Connected Education
+              </span>
+            </h1>
 
-        <p className="max-w-2xl mx-auto text-slate-500 font-bold text-lg md:text-xl leading-relaxed mb-12">
-          Ciptakan pengalaman belajar interaktif yang terhubung langsung dengan Moodle Classroom atau eksplorasi galeri publik.
-        </p>
+            <p className="text-slate-500 font-bold text-lg md:text-xl leading-relaxed mb-12 max-w-xl">
+              Ciptakan pengalaman belajar interaktif yang terhubung langsung dengan Moodle Classroom atau eksplorasi galeri publik.
+            </p>
 
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-          {user?.role === "ADMIN" && (
-            <>
-              <Link to="/admin/dashboard" className="bg-indigo-600 text-white px-8 py-4 rounded-full font-black text-lg shadow-xl shadow-indigo-100 hover:-translate-y-1 transition-all">
-                Masuk ke Admin Panel 🛡️
-              </Link>
-              <Link to="/admin/logs" className="bg-white text-slate-700 border-2 border-slate-100 px-8 py-4 rounded-full font-black text-lg hover:bg-slate-50 transition-all">
-                Lihat Log Sistem 📋
-              </Link>
-            </>
-          )}
+            <div className="flex flex-col sm:flex-row items-center gap-4 w-full justify-center lg:justify-start">
+              {user?.role === "ADMIN" && (
+                <>
+                  <Link to="/admin/dashboard" className="bg-indigo-600 text-white px-8 py-4 rounded-full font-black text-lg shadow-xl shadow-indigo-100 hover:-translate-y-1 transition-all">
+                    Masuk ke Admin Panel 🛡️
+                  </Link>
+                  <Link to="/admin/logs" className="bg-white text-slate-700 border-2 border-slate-100 px-8 py-4 rounded-full font-black text-lg hover:bg-slate-50 transition-all">
+                    Lihat Log Sistem 📋
+                  </Link>
+                </>
+              )}
 
-          {user?.role === "TEACHER" && (
-            <>
-              <Link to="/teacher/dashboard" className="bg-indigo-600 text-white px-8 py-4 rounded-full font-black text-lg shadow-xl shadow-indigo-100 hover:-translate-y-1 transition-all">
-                Mulai Buat Game 🚀
-              </Link>
-              <Link to="/explore" className="bg-white text-slate-700 border-2 border-slate-100 px-8 py-4 rounded-full font-black text-lg hover:bg-slate-50 transition-all">
-                Eksplor Galeri 🌐
-              </Link>
-            </>
-          )}
+              {user?.role === "TEACHER" && (
+                <>
+                  <Link to="/teacher/dashboard" className="bg-indigo-600 text-white px-8 py-4 rounded-full font-black text-lg shadow-xl shadow-indigo-100 hover:-translate-y-1 transition-all">
+                    Mulai Buat Game 🚀
+                  </Link>
+                  <Link to="/explore" className="bg-white text-slate-700 border-2 border-slate-100 px-8 py-4 rounded-full font-black text-lg hover:bg-slate-50 transition-all">
+                    Eksplor Galeri 🌐
+                  </Link>
+                </>
+              )}
 
-          {user?.role === "STUDENT" && (
-            <>
-              <Link to="/student/dashboard" className="bg-indigo-600 text-white px-8 py-4 rounded-full font-black text-lg shadow-xl shadow-indigo-100 hover:-translate-y-1 transition-all">
-                Mulai Bermain 🎮
-              </Link>
-              <Link to="/explore" className="bg-white text-slate-700 border-2 border-slate-100 px-8 py-4 rounded-full font-black text-lg hover:bg-slate-50 transition-all">
-                Eksplor Galeri 🌐
-              </Link>
-            </>
-          )}
+              {user?.role === "STUDENT" && (
+                <>
+                  <Link to="/student/dashboard" className="bg-indigo-600 text-white px-8 py-4 rounded-full font-black text-lg shadow-xl shadow-indigo-100 hover:-translate-y-1 transition-all">
+                    Mulai Bermain 🎮
+                  </Link>
+                  <Link to="/explore" className="bg-white text-slate-700 border-2 border-slate-100 px-8 py-4 rounded-full font-black text-lg hover:bg-slate-50 transition-all">
+                    Eksplor Galeri 🌐
+                  </Link>
+                </>
+              )}
 
-          {!user && (
-            <>
-              <Link to="/register" className="bg-indigo-600 text-white px-8 py-4 rounded-full font-black text-lg shadow-xl shadow-indigo-100 hover:-translate-y-1 transition-all">
-                Mulai Buat Game 🚀
-              </Link>
-              <Link to="/explore" className="bg-white text-slate-700 border-2 border-slate-100 px-8 py-4 rounded-full font-black text-lg hover:bg-slate-50 transition-all">
-                Eksplor Galeri 🌐
-              </Link>
-            </>
-          )}
+              {!user && (
+                <>
+                  <Link to="/register" className="bg-indigo-600 text-white px-8 py-4 rounded-full font-black text-lg shadow-xl shadow-indigo-100 hover:-translate-y-1 transition-all">
+                    Mulai Buat Game 🚀
+                  </Link>
+                  <Link to="/explore" className="bg-white text-slate-700 border-2 border-slate-100 px-8 py-4 rounded-full font-black text-lg hover:bg-slate-50 transition-all">
+                    Eksplor Galeri 🌐
+                  </Link>
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* RIGHT COLUMN: BIG ROBOT MASCOT */}
+          <div className="lg:col-span-5 flex justify-center items-center">
+            <div className="relative w-64 h-64 sm:w-80 sm:h-80 md:w-[400px] md:h-[400px] animate-robot-idle animate-robot-hover">
+              <img
+                src="/2.svg"
+                className="w-full h-full object-contain"
+                alt="WordIT Robot Mascot"
+              />
+            </div>
+          </div>
         </div>
       </div>
 
