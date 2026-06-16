@@ -82,7 +82,7 @@ export default function Hero() {
 
           {/* RIGHT COLUMN: BIG ROBOT MASCOT */}
           <div className="lg:col-span-5 flex justify-center items-center">
-            <div className="relative w-64 h-64 sm:w-80 sm:h-80 md:w-[400px] md:h-[400px] animate-robot-idle animate-robot-hover">
+            <div className="relative w-80 h-80 sm:w-96 sm:h-96 md:w-[450px] md:h-[450px] lg:w-[480px] lg:h-[480px] animate-robot-idle">
               <img
                 src="/2.svg"
                 className="w-full h-full object-contain"

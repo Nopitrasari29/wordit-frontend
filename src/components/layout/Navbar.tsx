@@ -78,7 +78,7 @@ export default function Navbar() {
         >
           <img
             src="/4.svg"
-            className="h-10 md:h-12 object-contain"
+            className="h-12 md:h-14 object-contain"
             alt="WordIT Logo"
           />
         </Link>
