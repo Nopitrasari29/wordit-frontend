@@ -7,12 +7,14 @@ import {
 import socket from "../../hooks/useSocket";
 import { getGameById } from "../services/game.service";
 import { toast } from "react-hot-toast";
+import { useAuth } from "../../hooks/useAuth";
 
 import GameRenderer from "../../components/game/GameRenderer";
 
 export default function GameSessionPage() {
   const { sessionId } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const [game, setGame] = useState<any>(null);
   const [error, setError] = useState(false);
@@ -24,18 +26,21 @@ export default function GameSessionPage() {
 
     const playerName =
       sessionStorage.getItem("playerName") ||
+      user?.name ||
       "Guest Player";
 
     const joinGameRoom = () => {
       socket.emit("joinGame", {
         code: sessionId,
         playerName,
+        userId: user?.id,
       });
 
       console.log(
         "🎮 Join Game Room:",
         sessionId,
         playerName,
+        user?.id,
       );
     };
 

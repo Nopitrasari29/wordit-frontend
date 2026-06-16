@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import socket from "../../hooks/useSocket";
 import { toast } from "react-hot-toast";
+import { useAuth } from "../../hooks/useAuth";
 
 export default function GameLobbyPage() {
   const { sessionId } = useParams();
@@ -9,6 +10,7 @@ export default function GameLobbyPage() {
   const [players, setPlayers] = useState<string[]>([]);
   const [waitingApproval, setWaitingApproval] = useState(false);
   const [isApproved, setIsApproved] = useState(false);
+  const { user } = useAuth();
 
   useEffect(() => {
     if (!sessionId) return;
@@ -27,12 +29,14 @@ export default function GameLobbyPage() {
       console.log("JOIN LOBBY EMIT");
       console.log("ROOM:", sessionId);
       console.log("PLAYER:", savedName);
+      console.log("USERID:", user?.id);
       console.log("CONNECTED:", socket.connected);
       console.log("=================================");
 
       socket.emit("joinLobby", {
         code: sessionId,
         playerName: savedName,
+        userId: user?.id,
       });
     };
 

@@ -22,10 +22,10 @@ export default function PlayGamePage() {
 
   const { user } = useAuth();
   const isStudent = user && user.role === "STUDENT";
-  const playerName = sessionStorage.getItem("playerName") || "Player";
+  const playerName = sessionStorage.getItem("playerName") || user?.name || "Player";
 
   useEffect(() => {
-    const playerName = sessionStorage.getItem("playerName") || "Player";
+    const playerName = sessionStorage.getItem("playerName") || user?.name || "Player";
 
     const loadGameArena = async () => {
       if (!gameId) return;
@@ -45,7 +45,7 @@ export default function PlayGamePage() {
         // 🧠 Panggil endpoint /play untuk start session game & dapatkan rekomendasi difficulty (Hanya untuk Student)
         if (isStudent) {
           try {
-            const savedPlayerName = sessionStorage.getItem("playerName") || "Player";
+            const savedPlayerName = sessionStorage.getItem("playerName") || user?.name || "Player";
             const sessionData = await playGame(finalData.id || finalData._id, savedPlayerName);
             if (sessionData && sessionData.recommendedDifficulty) {
               finalData.recommendedDifficulty = sessionData.recommendedDifficulty;
@@ -57,7 +57,7 @@ export default function PlayGamePage() {
 
         setGame(finalData);
         if (finalData.shareCode) {
-          socket.emit("joinGame", { code: finalData.shareCode, playerName });
+          socket.emit("joinGame", { code: finalData.shareCode, playerName, userId: user?.id });
           if (isStudent) {
             sessionStorage.setItem("activeGameRoom", finalData.shareCode);
             sessionStorage.setItem("activeGameId", finalData.id || finalData._id);
@@ -76,7 +76,7 @@ export default function PlayGamePage() {
 
   useEffect(() => {
     const joinRoom = (shareCode: string) => {
-      socket.emit("joinGame", { code: shareCode, playerName });
+      socket.emit("joinGame", { code: shareCode, playerName, userId: user?.id });
     };
 
     const handleGameFinished = () => {
