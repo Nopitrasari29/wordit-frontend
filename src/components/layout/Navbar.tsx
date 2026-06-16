@@ -76,9 +76,11 @@ export default function Navbar() {
           to="/"
           className="flex items-center gap-2 hover:scale-105 transition-transform"
         >
-          <div className="w-8 h-8 bg-indigo-600 rounded-full flex items-center justify-center text-white font-black text-lg shadow-inner">
-            W
-          </div>
+          <img
+            src="/favicon.png"
+            className="w-8 h-8 object-contain rounded"
+            alt="WordIT Logo"
+          />
           <span className="text-xl md:text-2xl font-black text-slate-800 tracking-tight">
             Word<span className="text-blue-500">IT</span>
           </span>
