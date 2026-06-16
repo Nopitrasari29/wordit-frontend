@@ -23,9 +23,9 @@ export default function LtiLaunchPage() {
       }
 
       try {
-        // Panggil endpoint backend lti-login
-        const response = await api.post("/auth/lti-login", { email, name })
-        
+        // Panggil endpoint backend lti-login, sertakan token LTI untuk validasi (SEC-01)
+        const response = await api.post("/auth/lti-login", { email, name, ltiToken: token })
+
         if (response.data.status === "success") {
           const { user, token: jwtToken } = response.data.data
 
@@ -68,7 +68,7 @@ export default function LtiLaunchPage() {
             <div className="bg-rose-500/10 border border-rose-500/20 text-rose-300 p-4 rounded-2xl text-sm font-semibold mb-6">
               {errorMsg} ⚠️
             </div>
-            <button 
+            <button
               onClick={() => navigate("/login")}
               className="bg-indigo-600 hover:bg-indigo-700 text-white font-black px-8 py-3.5 rounded-full transition-all active:scale-95"
             >

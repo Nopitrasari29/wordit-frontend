@@ -43,11 +43,18 @@ export async function updateProfile(data: {
 /* ADMIN GET USERS                */
 /* ============================== */
 
-export async function getUsers() {
-  const res = await api.get("/users");
+export async function getUsers(params?: {
+  page?: number;
+  limit?: number;
+  search?: string;
+  approvalStatus?: string;
+  role?: string;
+}) {
+  const res = await api.get("/users", { params });
   if (res.data.status !== "success" && !res.data.success) {
     throw new Error(res.data.message || "Failed to fetch users");
   }
+  // Backend returns { data: [...], meta: {...} } when paginated
   return res.data.data;
 }
 
@@ -104,6 +111,17 @@ export async function bulkImportUsers(users: any[]) {
   const res = await api.post("/users/bulk-import", { users });
   if (res.data.status !== "success" && !res.data.success) {
     throw new Error(res.data.message || "Failed to bulk import users");
+  }
+  return res.data.data;
+}
+
+/* ============================== */
+/* ADMIN BULK DELETE USERS        */
+/* ============================== */
+export async function bulkDeleteUsers(userIds: string[]) {
+  const res = await api.delete("/users/bulk-delete", { data: { userIds } });
+  if (res.data.status !== "success" && !res.data.success) {
+    throw new Error(res.data.message || "Failed to bulk delete users");
   }
   return res.data.data;
 }
