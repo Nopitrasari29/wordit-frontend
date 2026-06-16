@@ -77,8 +77,8 @@ export default function Navbar() {
           className="flex items-center gap-2 hover:scale-105 transition-transform"
         >
           <img
-            src="/favicon.png"
-            className="w-8 h-8 object-contain rounded"
+            src="/4.svg"
+            className="w-9 h-9 object-contain rounded animate-robot-idle animate-robot-hover"
             alt="WordIT Logo"
           />
           <span className="text-xl md:text-2xl font-black text-slate-800 tracking-tight">
