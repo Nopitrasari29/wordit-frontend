@@ -132,6 +132,9 @@ export default function HostSessionPage() {
     });
 
     return () => {
+      if (game?.shareCode) {
+        socket.emit("hostLeave", game.shareCode);
+      }
       socket.off("connect", joinAsHost);
       socket.off("ranking_update", handleRankingUpdate);
       socket.off("updatePlayerList", handleRankingUpdate);
