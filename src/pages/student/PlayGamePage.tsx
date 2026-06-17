@@ -79,17 +79,28 @@ export default function PlayGamePage() {
       socket.emit("joinGame", { code: shareCode, playerName, userId: user?.id });
     };
 
-    const handleGameFinished = () => {
+    const handleGameFinished = (finalLeaderboard?: any[]) => {
       sessionStorage.removeItem("activeGameRoom");
       sessionStorage.removeItem("activeGameId");
 
       toast.error("Sesi telah berakhir.", { icon: "🛑" });
 
+      const myPlayerName = playerName || sessionStorage.getItem("playerName") || user?.name || "";
+      const myData = Array.isArray(finalLeaderboard)
+        ? finalLeaderboard.find((p: any) => p.name === myPlayerName)
+        : null;
+
+      const finalScore = (myData?.score ?? Number(sessionStorage.getItem("lastScore"))) || 0;
+      const finalAccuracy = (myData?.accuracy ?? Number(sessionStorage.getItem("lastAccuracy"))) || 0;
+
+      sessionStorage.setItem("lastScore", finalScore.toString());
+      sessionStorage.setItem("lastAccuracy", finalAccuracy.toString());
+
       navigate("/student/result", {
         state: {
-          score: Number(sessionStorage.getItem("lastScore")) || 0,
-          accuracy: Number(sessionStorage.getItem("lastAccuracy")) || 0,
-          breakdown: JSON.parse(sessionStorage.getItem("lastBreakdown") || "[]"),
+          score: finalScore,
+          accuracy: finalAccuracy,
+          breakdown: myData?.answersDetail || JSON.parse(sessionStorage.getItem("lastBreakdown") || "[]"),
         },
       });
     };

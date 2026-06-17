@@ -99,7 +99,24 @@ export default function GameSessionPage() {
         finalLeaderboard,
       );
 
-      navigate("/student/result");
+      const myPlayerName = sessionStorage.getItem("playerName") || user?.name || "";
+      const myData = Array.isArray(finalLeaderboard)
+        ? finalLeaderboard.find((p: any) => p.name === myPlayerName)
+        : null;
+
+      const finalScore = (myData?.score ?? Number(sessionStorage.getItem("lastScore"))) || 0;
+      const finalAccuracy = (myData?.accuracy ?? Number(sessionStorage.getItem("lastAccuracy"))) || 0;
+
+      sessionStorage.setItem("lastScore", finalScore.toString());
+      sessionStorage.setItem("lastAccuracy", finalAccuracy.toString());
+
+      navigate("/student/result", {
+        state: {
+          score: finalScore,
+          accuracy: finalAccuracy,
+          answersDetail: myData?.answersDetail || JSON.parse(sessionStorage.getItem("lastBreakdown") || "[]"),
+        },
+      });
     };
 
     socket.on("connect", handleReconnect);
