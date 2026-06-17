@@ -22,8 +22,8 @@ export default function EnterPlayerPage() {
 
         // 2. 🎯 VALIDASI FORMAT (Regex): Harus ada "Underscore" di tengah
         // Format: [Kelas]_[Nama]
-        // Penjelasan Regex: ^[a-zA-Z0-9]+ = Awalan huruf/angka, _ = harus ada underscore, .+ = diikuti minimal 1 karakter nama
-        const formatRegex = /^[a-zA-Z0-9]+_.+/;
+        // Penjelasan Regex: ^[a-zA-Z0-9\s]+ = Awalan huruf/angka/spasi, _ = harus ada underscore, .+ = diikuti nama
+        const formatRegex = /^[a-zA-Z0-9\s]+_.+/;
 
         if (!formatRegex.test(trimmedName)) {
             return toast.error("Format nama salah! Gunakan: Kelas_Nama (Contoh: 3A_Budi)", {

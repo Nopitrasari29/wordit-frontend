@@ -30,6 +30,72 @@ const templateLabel: Record<string, string> = {
   WORD_SEARCH: "Word Search",
 };
 
+const badgeStyles: Record<string, {
+  bg: string;
+  border: string;
+  glow: string;
+  iconBg: string;
+  textColor: string;
+}> = {
+  "First Blood": {
+    bg: "bg-rose-50/70 backdrop-blur-md",
+    border: "border-rose-200/60",
+    glow: "shadow-rose-100 hover:shadow-rose-300/60",
+    iconBg: "bg-gradient-to-tr from-rose-400 to-pink-500",
+    textColor: "text-rose-700"
+  },
+  "Rajin Belajar": {
+    bg: "bg-blue-50/70 backdrop-blur-md",
+    border: "border-blue-200/60",
+    glow: "shadow-blue-100 hover:shadow-blue-300/60",
+    iconBg: "bg-gradient-to-tr from-blue-400 to-indigo-500",
+    textColor: "text-blue-700"
+  },
+  "Master Quiz": {
+    bg: "bg-amber-50/70 backdrop-blur-md",
+    border: "border-amber-200/60",
+    glow: "shadow-amber-100 hover:shadow-amber-300/60",
+    iconBg: "bg-gradient-to-tr from-amber-400 to-orange-500",
+    textColor: "text-amber-700"
+  },
+  "Brainiac": {
+    bg: "bg-indigo-50/70 backdrop-blur-md",
+    border: "border-indigo-200/60",
+    glow: "shadow-indigo-100 hover:shadow-indigo-300/60",
+    iconBg: "bg-gradient-to-tr from-indigo-400 to-violet-500",
+    textColor: "text-indigo-700"
+  },
+  "Perfectionist": {
+    bg: "bg-cyan-50/70 backdrop-blur-md",
+    border: "border-cyan-200/60",
+    glow: "shadow-cyan-100 hover:shadow-cyan-300/60",
+    iconBg: "bg-gradient-to-tr from-cyan-400 to-teal-500",
+    textColor: "text-cyan-700"
+  },
+  "Fast & Furious": {
+    bg: "bg-yellow-50/70 backdrop-blur-md",
+    border: "border-yellow-200/60",
+    glow: "shadow-yellow-100 hover:shadow-yellow-300/60",
+    iconBg: "bg-gradient-to-tr from-yellow-400 to-amber-500",
+    textColor: "text-yellow-700"
+  },
+  "Konsisten": {
+    bg: "bg-emerald-50/70 backdrop-blur-md",
+    border: "border-emerald-200/60",
+    glow: "shadow-emerald-100 hover:shadow-emerald-300/60",
+    iconBg: "bg-gradient-to-tr from-emerald-400 to-teal-500",
+    textColor: "text-emerald-700"
+  }
+};
+
+const fallbackStyle = {
+  bg: "bg-slate-50/70 backdrop-blur-md",
+  border: "border-slate-200/60",
+  glow: "shadow-slate-100 hover:shadow-slate-300/60",
+  iconBg: "bg-gradient-to-tr from-slate-400 to-slate-500",
+  textColor: "text-slate-700"
+};
+
 export default function AnalyticsStudentPage() {
   const { user } = useAuth();
 
@@ -48,7 +114,7 @@ export default function AnalyticsStudentPage() {
     { game: string; score: number }[]
   >([]);
   const [badges, setBadges] = useState<
-    { name: string; icon: string; color: string; isUnlocked: boolean }[]
+    { name: string; icon: string; color: string; description: string; isUnlocked: boolean }[]
   >([]);
   // ✅ FE-19: State untuk riwayat kuis terakhir
   const [recentHistory, setRecentHistory] = useState<
@@ -400,26 +466,57 @@ export default function AnalyticsStudentPage() {
 
         {badges.length > 0 ? (
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 px-2">
-            {badges.map((badge, i) => (
-              <div
-                key={i}
-                className={`bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 flex flex-col items-center text-center transition-all duration-300 group ${badge.isUnlocked ? "hover:scale-105" : "opacity-60 grayscale"}`}
-              >
+            {badges.map((badge, i) => {
+              const style = badgeStyles[badge.name] || fallbackStyle;
+              return badge.isUnlocked ? (
                 <div
-                  className={`w-20 h-20 ${badge.color} rounded-full flex items-center justify-center text-4xl mb-4 shadow-inner ${badge.isUnlocked ? "group-hover:rotate-12 transition-transform" : ""}`}
+                  key={i}
+                  className={`bg-white p-6 rounded-[2.5rem] border shadow-sm flex flex-col items-center text-center transition-all duration-300 hover:scale-[1.05] hover:-translate-y-1 group ${style.border} ${style.glow}`}
                 >
-                  {badge.icon}
+                  <div
+                    className={`w-20 h-20 rounded-[1.8rem] flex items-center justify-center text-4xl mb-4 shadow-md ${style.iconBg} group-hover:rotate-12 group-hover:scale-110 transition-all duration-300 text-white`}
+                  >
+                    {badge.icon}
+                  </div>
+                  <span className={`font-black text-base tracking-tight ${style.textColor}`}>
+                    {badge.name}
+                  </span>
+                  <span className="text-[10px] font-semibold text-slate-500 leading-normal mt-1.5 max-w-[150px]">
+                    {badge.description}
+                  </span>
+                  <span
+                    className="text-[9px] font-black mt-4 px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full uppercase tracking-widest border border-emerald-100 shadow-sm"
+                  >
+                    Unlocked 🏆
+                  </span>
                 </div>
-                <span className="font-black text-slate-700 text-sm tracking-tight">
-                  {badge.name}
-                </span>
-                <span
-                  className={`text-[10px] font-bold mt-1 uppercase tracking-widest ${badge.isUnlocked ? "text-emerald-500" : "text-slate-400"}`}
+              ) : (
+                <div
+                  key={i}
+                  className="bg-slate-50/50 p-6 rounded-[2.5rem] border border-slate-200/60 flex flex-col items-center text-center opacity-70 relative group hover:bg-slate-50 transition-colors duration-300"
                 >
-                  {badge.isUnlocked ? "Unlocked" : "Locked"}
-                </span>
-              </div>
-            ))}
+                  <div
+                    className="w-20 h-20 bg-slate-200 rounded-[1.8rem] flex items-center justify-center text-4xl mb-4 grayscale relative shadow-inner text-slate-400 border border-slate-300/40"
+                  >
+                    {badge.icon}
+                    <div className="absolute -bottom-1 -right-1 bg-slate-800 text-white text-[10px] w-6 h-6 rounded-full flex items-center justify-center shadow-md">
+                      🔒
+                    </div>
+                  </div>
+                  <span className="font-black text-slate-400 text-base tracking-tight">
+                    {badge.name}
+                  </span>
+                  <span className="text-[10px] font-semibold text-slate-400 leading-normal mt-1.5 max-w-[150px]">
+                    {badge.description}
+                  </span>
+                  <span
+                    className="text-[9px] font-black mt-4 px-3 py-1 bg-slate-100 text-slate-400 rounded-full uppercase tracking-widest border border-slate-200"
+                  >
+                    Locked
+                  </span>
+                </div>
+              );
+            })}
           </div>
         ) : (
           <div className="bg-slate-50 py-12 rounded-[2rem] border-2 border-dashed border-slate-200 text-center">

@@ -237,7 +237,7 @@ export default function AnagramEngine({ data, onIntermission, onGameOver }: { da
             }
 
             if (gameId) {
-                submitAnswer(gameId, currentIndex, answer.toUpperCase(), points).catch(err => console.error("Submit Error:", err));
+                submitAnswer(gameId, currentIndex, answer.toUpperCase(), newScore).catch(err => console.error("Submit Error:", err));
             }
 
             setTimeout(() => {

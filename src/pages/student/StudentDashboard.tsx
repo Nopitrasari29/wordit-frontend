@@ -17,8 +17,74 @@ const formatStudyTime = (totalSeconds: number): string => {
   return `${totalSeconds} detik`;
 };
 
+const badgeStyles: Record<string, {
+  bg: string;
+  border: string;
+  glow: string;
+  iconBg: string;
+  textColor: string;
+}> = {
+  "First Blood": {
+    bg: "bg-rose-50/70 backdrop-blur-md",
+    border: "border-rose-200/60",
+    glow: "shadow-rose-100 hover:shadow-rose-300/60",
+    iconBg: "bg-gradient-to-tr from-rose-400 to-pink-500",
+    textColor: "text-rose-700"
+  },
+  "Rajin Belajar": {
+    bg: "bg-blue-50/70 backdrop-blur-md",
+    border: "border-blue-200/60",
+    glow: "shadow-blue-100 hover:shadow-blue-300/60",
+    iconBg: "bg-gradient-to-tr from-blue-400 to-indigo-500",
+    textColor: "text-blue-700"
+  },
+  "Master Quiz": {
+    bg: "bg-amber-50/70 backdrop-blur-md",
+    border: "border-amber-200/60",
+    glow: "shadow-amber-100 hover:shadow-amber-300/60",
+    iconBg: "bg-gradient-to-tr from-amber-400 to-orange-500",
+    textColor: "text-amber-700"
+  },
+  "Brainiac": {
+    bg: "bg-indigo-50/70 backdrop-blur-md",
+    border: "border-indigo-200/60",
+    glow: "shadow-indigo-100 hover:shadow-indigo-300/60",
+    iconBg: "bg-gradient-to-tr from-indigo-400 to-violet-500",
+    textColor: "text-indigo-700"
+  },
+  "Perfectionist": {
+    bg: "bg-cyan-50/70 backdrop-blur-md",
+    border: "border-cyan-200/60",
+    glow: "shadow-cyan-100 hover:shadow-cyan-300/60",
+    iconBg: "bg-gradient-to-tr from-cyan-400 to-teal-500",
+    textColor: "text-cyan-700"
+  },
+  "Fast & Furious": {
+    bg: "bg-yellow-50/70 backdrop-blur-md",
+    border: "border-yellow-200/60",
+    glow: "shadow-yellow-100 hover:shadow-yellow-300/60",
+    iconBg: "bg-gradient-to-tr from-yellow-400 to-amber-500",
+    textColor: "text-yellow-700"
+  },
+  "Konsisten": {
+    bg: "bg-emerald-50/70 backdrop-blur-md",
+    border: "border-emerald-200/60",
+    glow: "shadow-emerald-100 hover:shadow-emerald-300/60",
+    iconBg: "bg-gradient-to-tr from-emerald-400 to-teal-500",
+    textColor: "text-emerald-700"
+  }
+};
+
+const fallbackStyle = {
+  bg: "bg-slate-50/70 backdrop-blur-md",
+  border: "border-slate-200/60",
+  glow: "shadow-slate-100 hover:shadow-slate-300/60",
+  iconBg: "bg-gradient-to-tr from-slate-400 to-slate-500",
+  textColor: "text-slate-700"
+};
+
 export default function StudentDashboard() {
-  const { user } = useAuth()
+  const { user } = useAuth();
 
   const [games, setGames] = useState<any[]>([])
   const [playerName, setPlayerName] = useState("Champion")
@@ -242,28 +308,40 @@ export default function StudentDashboard() {
           Achievement Badges 🏅
         </h2>
 
-        <div className="flex flex-wrap gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
           {loadingAnalytics ? (
             Array(3).fill(null).map((_, i) => (
               <div
                 key={i}
-                className="h-11 bg-slate-100 border border-slate-200/50 rounded-2xl w-32 animate-pulse"
+                className="h-[96px] bg-slate-50 border border-slate-100 rounded-[2rem] w-full animate-pulse"
               />
             ))
           ) : badges.filter((b: any) => b.isUnlocked).length > 0 ? (
             badges
               .filter((b: any) => b.isUnlocked)
-              .map((badge: any, i: number) => (
-                <div
-                  key={i}
-                  className={`flex items-center gap-2 px-6 py-3 rounded-2xl font-black text-sm border shadow-sm ${badge.color || "bg-indigo-50 text-indigo-700 border-indigo-100"}`}
-                >
-                  <span className="text-xl">{badge.icon}</span>
-                  {badge.name}
-                </div>
-              ))
+              .map((badge: any, i: number) => {
+                const style = badgeStyles[badge.name] || fallbackStyle;
+                return (
+                  <div
+                    key={i}
+                    className={`flex items-center gap-4 p-5 rounded-[2rem] border transition-all duration-300 hover:scale-[1.03] hover:-translate-y-1 shadow-sm group ${style.bg} ${style.border} ${style.glow}`}
+                  >
+                    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-3xl shadow-md ${style.iconBg} group-hover:rotate-12 group-hover:scale-110 transition-all duration-300 text-white`}>
+                      {badge.icon}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className={`font-black text-base tracking-tight leading-snug ${style.textColor}`}>
+                        {badge.name}
+                      </h3>
+                      <p className="text-slate-500 font-semibold text-xs leading-relaxed mt-0.5">
+                        {badge.description}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })
           ) : (
-            <p className="text-slate-400 font-bold text-sm italic">
+            <p className="text-slate-400 font-bold text-sm italic col-span-full">
               Belum ada badge yang terbuka. Terus kumpulkan XP! 🎯
             </p>
           )}
