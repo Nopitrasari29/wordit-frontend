@@ -87,8 +87,8 @@ export default function LoginPage() {
           }
         }
       } else {
-        if (user.role === "ADMIN" || user.role === "SUPER_ADMIN" || user.role === "SCHOOL_ADMIN") navigate("/admin/dashboard")
-        else if (user.role === "TEACHER") navigate("/teacher/dashboard")
+        if (user.role === "ADMIN" || user.role === "SUPER_ADMIN") navigate("/admin/dashboard")
+        else if (user.role === "TEACHER" || user.role === "SCHOOL_ADMIN") navigate("/teacher/dashboard")
         else navigate("/student/dashboard")
       }
     } else {

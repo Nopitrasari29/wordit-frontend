@@ -79,8 +79,11 @@ export function AuthProvider({ children }: any) {
   }
 
   function updateUser(newUser: any) {
-    localStorage.setItem("user", JSON.stringify(newUser));
-    setUser(newUser);
+    setUser((prev: any) => {
+      const merged = { ...prev, ...newUser };
+      localStorage.setItem("user", JSON.stringify(merged));
+      return merged;
+    });
   }
 
   function loginLti(user: any, token: string) {

@@ -1,9 +1,26 @@
 import { useAuth } from "../../hooks/useAuth"
 import { Link } from "react-router-dom"
 import { getImageUrl } from "../../utils/assets"
+import { useState } from "react"
+import { toast } from "react-hot-toast"
+import { requestSchoolAdmin } from "../../pages/services/user.service"
 
 export default function ProfilePage() {
-  const { user } = useAuth()
+  const { user, updateUser } = useAuth()
+  const [requesting, setRequesting] = useState(false)
+
+  const handleRequestSchoolAdmin = async () => {
+    try {
+      setRequesting(true)
+      const updatedUser = await requestSchoolAdmin()
+      updateUser(updatedUser)
+      toast.success("Permohonan Admin Sekolah berhasil dikirim! ✨")
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || err.message || "Gagal mengirim permohonan")
+    } finally {
+      setRequesting(false)
+    }
+  }
 
   if (!user) {
     return (
@@ -55,12 +72,35 @@ export default function ProfilePage() {
           {user?.email}
         </p>
 
-        <Link
-          to="/profile/edit"
-          className="inline-block bg-slate-950 text-white font-black px-12 py-4 rounded-full shadow-lg shadow-slate-200 hover:bg-indigo-600 hover:-translate-y-1 transition-all active:scale-95 mb-16"
-        >
-          Edit Profile ⚙️
-        </Link>
+        <div className="flex flex-col sm:flex-row justify-center items-center gap-4 mb-16">
+          <Link
+            to="/profile/edit"
+            className="bg-slate-950 text-white font-black px-12 py-4 rounded-full shadow-lg shadow-slate-200 hover:bg-indigo-600 hover:-translate-y-1 transition-all active:scale-95"
+          >
+            Edit Profile ⚙️
+          </Link>
+
+          {(user?.role === "TEACHER" || user?.role === "SCHOOL_ADMIN") && !user?.hasAdminAccess && (
+            <>
+              {user?.adminRequestStatus === "PENDING" ? (
+                <button
+                  disabled
+                  className="bg-slate-100 text-slate-400 font-bold px-10 py-4 rounded-full border border-slate-200 cursor-not-allowed"
+                >
+                  Permohonan Admin Sekolah Ditinjau ⏳
+                </button>
+              ) : (
+                <button
+                  onClick={handleRequestSchoolAdmin}
+                  disabled={requesting}
+                  className="bg-amber-500 hover:bg-amber-600 text-white font-bold px-10 py-4 rounded-full shadow-lg shadow-amber-100 hover:-translate-y-1 transition-all active:scale-95 disabled:opacity-50"
+                >
+                  {requesting ? "Mengajukan..." : "Ajukan Sebagai Admin Sekolah 🏫"}
+                </button>
+              )}
+            </>
+          )}
+        </div>
 
         {/* GRID MENU (Value Cards) */}
         <div className="grid grid-cols-1 max-w-md mx-auto w-full gap-8 text-left">
