@@ -61,7 +61,7 @@ export default function SpinWheelEngine({ data, onIntermission, onGameOver }: { 
                 return prev - 1;
             });
         }, 1000);
-    }, [completedCount]);
+    }, [completedCount, gameConfig]);
 
     const spinWheel = () => {
         if (spinning || isBusy.current || lives <= 0 || completedCount >= questions.length) return;
@@ -97,33 +97,27 @@ export default function SpinWheelEngine({ data, onIntermission, onGameOver }: { 
             setScore(newScore);
             toast.success("BENAR! +100 Skor 🌟");
             if (roomCode) {
-            const currentAccuracy =
-                Math.round(
-                    (
-                        newScore /
-                        (
-                            (completedCount + 1)
-                            * 100
-                        )
-                    ) * 100
+                const currentAccuracy = Math.round(
+                    (newScore / ((completedCount + 1) * 100)) * 100
                 );
 
-            socket.emit(
-                "updateScore",
-                {
+                socket.emit("updateScore", {
                     code: roomCode,
                     score: newScore,
-                    accuracy:
-                        currentAccuracy,
-                    progress:
-                        `${completedCount + 1}/${questions.length}`,
-                }
-            );
+                    accuracy: currentAccuracy,
+                    progress: `${completedCount + 1}/${questions.length}`,
+                });
+            }
         } else {
             setLives(newLives);
             toast.error(finalInput === "TIMEOUT" ? "Waktu Habis! ⏰" : "Salah Jawaban! ❌");
         }
-        const currentHistoryItem = { word: finalInput, isCorrect, time: (gameConfig?.timeLimit ? Number(gameConfig.timeLimit) : 15) - timeLeft };
+
+        const currentHistoryItem = { 
+            word: finalInput, 
+            isCorrect, 
+            time: (gameConfig?.timeLimit ? Number(gameConfig.timeLimit) : 15) - timeLeft 
+        };
         const updatedHistory = [...history, currentHistoryItem];
         setHistory(updatedHistory);
 
@@ -148,25 +142,12 @@ export default function SpinWheelEngine({ data, onIntermission, onGameOver }: { 
                 sessionStorage.setItem("lastBreakdown", JSON.stringify(updatedHistory));
 
                 if (onGameOver) {
-                    onGameOver(
-                        newScore,
-                        accuracy,
-                        updatedHistory
-                    );
+                    onGameOver(newScore, accuracy, updatedHistory);
                     return;
                 }
 
-                finishGame(
-                    realGameId,
-                    payload
-                ).catch(() => { });
-
-                navigate(
-                    "/student/result",
-                    {
-                        state: payload,
-                    }
-                );
+                finishGame(realGameId, payload).catch(() => { });
+                navigate("/student/result", { state: payload });
             } else {
                 if (onIntermission) onIntermission();
                 setCompletedCount(prev => prev + 1);
@@ -176,26 +157,6 @@ export default function SpinWheelEngine({ data, onIntermission, onGameOver }: { 
             }
         }, 2000);
     };
-
-    useEffect(() => {
-        return () => {
-
-            if (timerRef.current) {
-                clearInterval(
-                    timerRef.current
-                );
-            }
-
-            if (
-                transitionRef.current
-            ) {
-                clearTimeout(
-                    transitionRef.current
-                );
-            }
-
-        };
-    }, []);
 
     // 🎨 DINAMIS: Membuat warna roda berdasarkan jumlah soal & status selesai
     const wheelStyle = useMemo(() => {
@@ -207,12 +168,12 @@ export default function SpinWheelEngine({ data, onIntermission, onGameOver }: { 
             const start = i * degreePerItem;
             const end = (i + 1) * degreePerItem;
             // Jika soal ini sudah dijawab, buat jadi abu-abu
-            const color = i < completedCount ? "#e2e8f0" : colors[i % colors.length];
+            const color = i < completedCount ? "#cbd5e1" : colors[i % colors.length];
             return `${color} ${start}deg ${end}deg`;
         });
 
         return {
-            transform: `rotate(${rotation}deg)`,
+            transform: `rotate(-${rotation}deg)`,
             background: `conic-gradient(${gradientParts.join(", ")})`
         };
     }, [questions.length, rotation, completedCount]);
@@ -220,76 +181,109 @@ export default function SpinWheelEngine({ data, onIntermission, onGameOver }: { 
     if (questions.length === 0) return null;
 
     return (
-        <div className="flex flex-col items-center p-6 space-y-10 max-w-xl mx-auto font-sans select-none">
+        <div className="flex flex-col items-center p-6 space-y-6 max-w-xl mx-auto font-sans select-none w-full">
+            
+            {/* Play Instructions Banner */}
+            <div className="w-full bg-indigo-50/75 backdrop-blur-md border border-indigo-100 rounded-2xl p-4 text-center">
+                <p className="text-xs font-bold text-indigo-950 flex items-center justify-center gap-2">
+                    🎡 <span>Putar Roda keberuntungan kuis untuk mengundi soal secara acak, kemudian pilih jawaban yang benar!</span>
+                </p>
+            </div>
+
             {/* HUD */}
-            <div className="w-full flex justify-between bg-white p-6 rounded-[2.5rem] shadow-sm border-2 border-indigo-50">
-                <div className="flex flex-col text-center items-center">
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Nyawa</span>
-                    <span>{"❤️".repeat(Math.max(0, lives))}</span>
+            <div className="w-full flex justify-between bg-slate-900/95 backdrop-blur-md p-5 rounded-[2rem] shadow-lg border border-slate-800 text-white items-center">
+                <div className="flex flex-col items-center">
+                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Nyawa</span>
+                    <div className="flex gap-0.5">
+                        {[...Array(3)].map((_, i) => (
+                            <span key={i} className={`text-sm transition-all duration-300 ${i < lives ? 'scale-100' : 'grayscale opacity-20 scale-75'}`}>❤️</span>
+                        ))}
+                    </div>
                 </div>
                 <div className="flex flex-col items-center">
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Waktu</span>
-                    <span className={`text-2xl font-black ${timeLeft <= 5 && timeLeft > 0 ? 'text-rose-500 animate-pulse' : 'text-slate-700'}`}>
+                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest text-center mb-0.5">Sisa Waktu</span>
+                    <span className={`text-xl font-black px-4 py-0.5 rounded-full border ${selectedQuestion && !isAnswered && timeLeft <= 5 ? 'text-rose-500 border-rose-500/20 bg-rose-500/10 animate-pulse' : 'text-indigo-300 border-indigo-500/10 bg-indigo-500/5'}`}>
                         {selectedQuestion && !isAnswered ? `${timeLeft}s` : "--"}
                     </span>
                 </div>
                 <div className="text-right flex flex-col font-black">
-                    <span className="text-[10px] text-slate-400 uppercase tracking-widest">Skor</span>
-                    <p className="text-indigo-600 text-2xl">{score}</p>
+                    <span className="text-[9px] text-slate-400 uppercase tracking-widest mb-0.5">Skor</span>
+                    <p className="text-indigo-400 text-xl">{score}</p>
                 </div>
             </div>
 
             {/* WHEEL AREA */}
-            <div className="relative">
+            <div className="relative flex items-center justify-center py-6">
+                {/* Metallic shadow outer frame */}
+                <div className="absolute w-[274px] h-[274px] md:w-[338px] md:h-[338px] rounded-full border-4 border-slate-800 shadow-[0_0_60px_rgba(99,102,241,0.15)] bg-slate-900 -z-10" />
+                
+                {/* Pointer indicator */}
+                <div className="absolute -top-1 z-30 flex flex-col items-center">
+                    <div className="w-0 h-0 border-l-[16px] border-l-transparent border-r-[16px] border-r-transparent border-t-[28px] border-t-rose-500 drop-shadow-[0_4px_6px_rgba(244,63,94,0.4)] animate-bounce" />
+                    <div className="w-3 h-3 bg-white rounded-full -mt-2.5 border-2 border-rose-500 z-40" />
+                </div>
+
+                {/* Rotating Wheel */}
                 <div
-                    className="w-64 h-64 md:w-80 md:h-80 rounded-full border-[12px] border-slate-900 shadow-2xl transition-transform duration-[3000ms] cubic-bezier(0.15, 0, 0.15, 1)"
-                    style={wheelStyle}
+                    className="w-64 h-64 md:w-80 md:h-80 rounded-full border-[10px] border-slate-900 shadow-2xl transition-transform duration-[3000ms]"
+                    style={{
+                        ...wheelStyle,
+                        transitionTimingFunction: "cubic-bezier(0.15, 0, 0.15, 1)"
+                    }}
                 />
-                <div className="absolute -top-4 left-1/2 -translate-x-1/2 text-4xl animate-bounce">👇</div>
+                
+                {/* Center cap */}
+                <div className="absolute w-12 h-12 rounded-full bg-slate-950 border-[6px] border-slate-800 shadow-xl flex items-center justify-center z-20">
+                    <div className="w-3.5 h-3.5 bg-indigo-500 rounded-full animate-ping" />
+                </div>
             </div>
 
-            {!selectedQuestion ? (
-                <button
-                    onClick={spinWheel}
-                    disabled={spinning || lives <= 0}
-                    className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-300 disabled:text-slate-500 disabled:cursor-not-allowed disabled:shadow-none text-white py-6 rounded-[2.5rem] font-black text-xl uppercase shadow-xl transition-all active:scale-95"
-                >
-                    {spinning ? "BERPUTAR..." : "PUTAR RODA! 🚀"}
-                </button>
-            ) : (
-                <div className="w-full bg-white p-8 rounded-[3.5rem] shadow-xl border-2 border-indigo-50 text-center space-y-6 animate-in zoom-in duration-300">
-                    <h3 className="text-2xl font-black italic text-slate-800">"{selectedQuestion.question}"</h3>
-                    <div className="grid grid-cols-2 gap-4 w-full pt-4">
-                        {choices.map((choice: string, i: number) => {
-                            const isCorrectChoice = choice.toLowerCase() === selectedQuestion.answer.toLowerCase();
-                            let btnStyle = "bg-slate-50 hover:bg-indigo-50 border-slate-100 hover:border-indigo-300 text-slate-700 hover:text-indigo-600";
-                            if (isAnswered) {
-                                if (isCorrectChoice) {
-                                    btnStyle = "bg-emerald-500 border-emerald-600 text-white cursor-default";
-                                } else if (userInput.toLowerCase() === choice.toLowerCase()) {
-                                    btnStyle = "bg-rose-500 border-rose-600 text-white cursor-default";
-                                } else {
-                                    btnStyle = "bg-slate-100 border-slate-200 text-slate-400 opacity-50 cursor-default";
+            <div className="w-full min-h-[120px] flex items-center justify-center">
+                {!selectedQuestion ? (
+                    <button
+                        onClick={spinWheel}
+                        disabled={spinning || lives <= 0}
+                        className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-800 disabled:text-slate-500 disabled:border-slate-850 disabled:cursor-not-allowed text-white py-5 rounded-[2rem] font-black text-lg uppercase shadow-xl transition-all active:scale-95 border border-indigo-500/30 shadow-indigo-600/10 hover:shadow-indigo-500/20"
+                    >
+                        {spinning ? "BERPUTAR..." : "PUTAR RODA! 🚀"}
+                    </button>
+                ) : (
+                    <div className="w-full bg-white p-6 rounded-[2.5rem] shadow-xl border border-indigo-50 text-center space-y-5 animate-in zoom-in duration-300">
+                        <span className="text-[10px] font-black text-indigo-500 uppercase tracking-widest block bg-indigo-50 px-3 py-1 rounded-full border border-indigo-100 w-max mx-auto">
+                            Soal Terpilih 🎡
+                        </span>
+                        <h3 className="text-xl md:text-2xl font-black italic text-slate-800 leading-tight">"{selectedQuestion.question}"</h3>
+                        <div className="grid grid-cols-2 gap-3.5 w-full pt-2">
+                            {choices.map((choice: string, i: number) => {
+                                const isCorrectChoice = choice.toLowerCase() === selectedQuestion.answer.toLowerCase();
+                                let btnStyle = "bg-slate-50 hover:bg-indigo-50/50 border-slate-100 hover:border-indigo-200 text-slate-700 hover:text-indigo-600";
+                                if (isAnswered) {
+                                    if (isCorrectChoice) {
+                                        btnStyle = "bg-emerald-500 border-emerald-600 text-white cursor-default shadow-md shadow-emerald-500/20";
+                                    } else if (userInput.toLowerCase() === choice.toLowerCase()) {
+                                        btnStyle = "bg-rose-500 border-rose-600 text-white cursor-default shadow-md shadow-rose-500/20";
+                                    } else {
+                                        btnStyle = "bg-slate-100 border-slate-200 text-slate-400 opacity-45 cursor-default";
+                                    }
                                 }
-                            }
-                            return (
-                                <button
-                                    key={i}
-                                    disabled={isAnswered}
-                                    onClick={() => {
-                                        setUserInput(choice);
-                                        handleResult(isCorrectChoice, choice);
-                                    }}
-                                    className={`p-4 md:p-6 border-2 rounded-[2rem] font-black text-sm md:text-base transition-all active:scale-95 shadow-sm uppercase ${btnStyle}`}
-                                >
-                                    {choice}
-                                </button>
-                            );
-                        })}
+                                return (
+                                    <button
+                                        key={i}
+                                        disabled={isAnswered}
+                                        onClick={() => {
+                                            setUserInput(choice);
+                                            handleResult(isCorrectChoice, choice);
+                                        }}
+                                        className={`p-3.5 border-2 rounded-2xl font-black text-xs md:text-sm transition-all active:scale-95 shadow-sm uppercase ${btnStyle}`}
+                                    >
+                                        {choice}
+                                    </button>
+                                );
+                            })}
+                        </div>
                     </div>
-                </div>
-            )}
+                )}
+            </div>
         </div>
     );
-}
 }

@@ -30,7 +30,7 @@ export default function FlashcardEngine({ data, onGameOver }: { data: any, onGam
         return () => clearInterval(globalTimer);
     }, []);
 
-    // 2. 🎯 FUNGSI EVALUASI (Dibuat useCallback agar stabil)
+    // 2. 🎯 FUNGSI EVALUASI
     const handleEvaluation = useCallback(async (isCorrect: boolean, isTimeout = false) => {
         if (isBusy.current) return;
         isBusy.current = true;
@@ -42,7 +42,6 @@ export default function FlashcardEngine({ data, onGameOver }: { data: any, onGam
         const newScore = score + points;
         const newCorrectCount = isCorrect ? correctCount + 1 : correctCount;
 
-        // 🔄 UPDATE STATE LOKAL SEGERA (Agar Student tidak 0)
         setScore(newScore);
         setCorrectCount(newCorrectCount);
 
@@ -54,30 +53,18 @@ export default function FlashcardEngine({ data, onGameOver }: { data: any, onGam
         const newBreakdown = [...breakdown, currentAnswer];
         setBreakdown(newBreakdown);
 
-        // 📡 KIRIM KE TEACHER & BACKEND
         if (data.shareCode) {
-            const currentAccuracy =
-            Math.round(
-                (newCorrectCount /
-                    (index + 1)) *
-                100
-            );
+            const currentAccuracy = Math.round((newCorrectCount / (index + 1)) * 100);
 
-            socket.emit(
-                "updateScore",
-                {
-                    code: data.shareCode,
-                    score: newScore,
-                    accuracy:
-                        currentAccuracy,
-                    progress:
-                        `${index + 1}/${cards.length}`,
-                }
-            );
+            socket.emit("updateScore", {
+                code: data.shareCode,
+                score: newScore,
+                accuracy: currentAccuracy,
+                progress: `${index + 1}/${cards.length}`,
+            });
         }
         submitAnswer(realGameId, index, isCorrect ? "HAFAL" : "LUPA", newScore).catch(() => { });
 
-        // ⏱️ TRANSISI SOAL
         transitionRef.current = setTimeout(() => {
             if (index < cards.length - 1) {
                 setIndex(prev => prev + 1);
@@ -88,9 +75,8 @@ export default function FlashcardEngine({ data, onGameOver }: { data: any, onGam
         }, 800);
     }, [index, score, correctCount, breakdown, cards, realGameId, data.shareCode]);
 
-    // 3. 🎯 TIMER HITUNG MUNDUR (Reset Instan)
+    // 3. 🎯 TIMER HITUNG MUNDUR
     useEffect(() => {
-        // Reset waktu ke 15 seketika saat index berubah
         setTimeLeft(gameConfig?.timeLimit ? Number(gameConfig.timeLimit) : 15);
         isBusy.current = false;
 
@@ -100,7 +86,7 @@ export default function FlashcardEngine({ data, onGameOver }: { data: any, onGam
             setTimeLeft((prev) => {
                 if (prev <= 1) {
                     if (timerRef.current) clearInterval(timerRef.current);
-                    handleEvaluation(false, true); // Timeout
+                    handleEvaluation(false, true);
                     return 0;
                 }
                 return prev - 1;
@@ -108,24 +94,13 @@ export default function FlashcardEngine({ data, onGameOver }: { data: any, onGam
         }, 1000);
 
         return () => { if (timerRef.current) clearInterval(timerRef.current); };
-    }, [index, handleEvaluation]);
+    }, [index, handleEvaluation, gameConfig]);
 
-    const handleFinish = async (
-        finalScore: number,
-        finalBreakdown: any[],
-        finalCorrect: number
-    ) => {
-
+    const handleFinish = async (finalScore: number, finalBreakdown: any[], finalCorrect: number) => {
         if (isFinishing.current) return;
-
         isFinishing.current = true;
 
-        const accuracy =
-            cards.length > 0
-                ? Math.round(
-                    (finalCorrect / cards.length) * 100
-                )
-                : 0;
+        const accuracy = cards.length > 0 ? Math.round((finalCorrect / cards.length) * 100) : 0;
 
         const payload = {
             scoreValue: finalScore,
@@ -135,89 +110,42 @@ export default function FlashcardEngine({ data, onGameOver }: { data: any, onGam
             answersDetail: finalBreakdown,
         };
 
-        sessionStorage.setItem(
-            "lastScore",
-            finalScore.toString()
-        );
+        sessionStorage.setItem("lastScore", finalScore.toString());
+        sessionStorage.setItem("lastAccuracy", accuracy.toString());
+        sessionStorage.setItem("lastBreakdown", JSON.stringify(finalBreakdown));
 
-        sessionStorage.setItem(
-            "lastAccuracy",
-            accuracy.toString()
-        );
-
-        sessionStorage.setItem(
-            "lastBreakdown",
-            JSON.stringify(finalBreakdown)
-        );
-
-        // 🔥 Jika menggunakan PlayGamePage
         if (onGameOver) {
-            onGameOver(
-                finalScore,
-                accuracy,
-                finalBreakdown
-            );
+            onGameOver(finalScore, accuracy, finalBreakdown);
             return;
         }
 
-        // 🔥 Fallback jika engine dijalankan standalone
         try {
-            await finishGame(
-                realGameId,
-                payload
-            );
+            await finishGame(realGameId, payload);
         } catch (e) {
             console.error(e);
         }
 
-        navigate("/student/result", {
-            state: payload,
-        });
+        navigate("/student/result", { state: payload });
     };
 
     useEffect(() => {
         return () => {
-
-            if (timerRef.current) {
-                clearInterval(
-                    timerRef.current
-                );
-            }
-
-            if (
-                transitionRef.current
-            ) {
-                clearTimeout(
-                    transitionRef.current
-                );
-            }
-
+            if (timerRef.current) clearInterval(timerRef.current);
+            if (transitionRef.current) clearTimeout(transitionRef.current);
             try {
-                if (
-                    "speechSynthesis" in
-                    window
-                ) {
+                if ("speechSynthesis" in window) {
                     window.speechSynthesis.cancel();
                 }
             } catch {}
         };
     }, []);
 
-    if (
-        !cards ||
-        cards.length === 0
-    ) {
+    if (!cards || cards.length === 0) {
         return (
-            <div className="flex items-center justify-center h-full">
+            <div className="flex items-center justify-center h-full w-full">
                 <div className="text-center">
-                    <h2 className="text-2xl font-black">
-                        Tidak ada Flashcard
-                    </h2>
-
-                    <p>
-                        Data kartu
-                        belum tersedia.
-                    </p>
+                    <h2 className="text-2xl font-black text-slate-400">Tidak ada Flashcard</h2>
+                    <p className="text-slate-300 text-sm mt-2">Data kartu belum tersedia.</p>
                 </div>
             </div>
         );
@@ -226,77 +154,121 @@ export default function FlashcardEngine({ data, onGameOver }: { data: any, onGam
     if (!card) return null;
 
     return (
-        <div className="flex flex-col items-center justify-center p-6 space-y-8 max-w-2xl mx-auto font-sans">
+        <div className="flex flex-col items-center justify-center p-6 space-y-6 max-w-2xl mx-auto font-sans w-full select-none">
+            {/* Play Instructions */}
+            <div className="w-full bg-indigo-50/75 backdrop-blur-md border border-indigo-100 rounded-2xl p-4 text-center">
+                <p className="text-xs font-bold text-indigo-950">
+                    🃏 <span>Hafalkan isi kartu! Klik kartu untuk membalik & membuka jawabannya, kemudian evaluasi ingatanmu.</span>
+                </p>
+            </div>
+
             {/* HUD */}
-            <div className="w-full flex justify-between bg-white p-6 rounded-[2.5rem] shadow-sm border-2 border-indigo-50 items-center">
+            <div className="w-full flex justify-between bg-slate-900/95 backdrop-blur-md p-5 rounded-[2rem] border border-slate-800 text-white items-center">
                 <div className="flex flex-col font-black">
-                    <span className="text-[10px] text-slate-400 uppercase tracking-widest">Kartu</span>
-                    <span className="text-indigo-600 italic text-xl">{index + 1} / {cards.length}</span>
+                    <span className="text-[9px] text-slate-400 uppercase tracking-widest mb-0.5">Kartu</span>
+                    <span className="text-indigo-400 italic text-lg">{index + 1} / {cards.length}</span>
                 </div>
                 <div className="flex flex-col items-center">
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Sisa Waktu</span>
-                    <span className={`text-2xl font-black ${timeLeft <= 5 ? 'text-rose-500 animate-pulse' : 'text-slate-700'}`}>
+                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest text-center mb-0.5">Sisa Waktu</span>
+                    <span className={`text-xl font-black px-4 py-0.5 rounded-full border ${timeLeft <= 5 ? 'text-rose-500 border-rose-500/20 bg-rose-500/10 animate-pulse' : 'text-indigo-300 border-indigo-500/10 bg-indigo-500/5'}`}>
                         {timeLeft}s
                     </span>
                 </div>
                 <div className="text-right flex flex-col">
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Skor</span>
-                    <span className="text-indigo-600 font-black text-2xl">{score}</span>
+                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Skor</span>
+                    <span className="text-indigo-400 font-black text-xl">{score}</span>
                 </div>
             </div>
 
-            {/* CARD */}
-            <div
-                onClick={() => !isBusy.current && setShow(!show)}
-                className={`w-full aspect-[4/3] flex items-center justify-center p-8 rounded-[4rem] shadow-2xl cursor-pointer transition-all duration-500 transform ${show ? 'bg-indigo-600 text-white rotate-y-180' : 'bg-white text-slate-800 border-[12px] border-indigo-50'}`}
-            >
-                <div className="text-center flex flex-col items-center">
-                    <p className="text-[10px] font-black uppercase tracking-widest opacity-50 mb-4">{show ? "Jawaban" : "Pertanyaan"}</p>
-                    <h3 className="text-3xl md:text-5xl font-black leading-tight uppercase italic">{show ? card.back : card.front}</h3>
-                    
-                    <button
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            try {
-                                if ('speechSynthesis' in window) {
-                                    window.speechSynthesis.cancel();
-                                    const text = show ? card.back : card.front;
-                                    const utterance = new SpeechSynthesisUtterance(text);
-                                    utterance.lang = "id-ID";
-                                    window.speechSynthesis.speak(utterance);
+            {/* 3D FLASHCARD CONTAINER */}
+            <div className="w-full aspect-[4/3] max-w-lg [perspective:1000px]">
+                <div
+                    onClick={() => !isBusy.current && setShow(!show)}
+                    className={`w-full h-full relative rounded-[2.5rem] shadow-2xl transition-transform duration-700 [transform-style:preserve-3d] cursor-pointer ${show ? '[transform:rotateY(180deg)]' : ''}`}
+                >
+                    {/* FRONT SIDE (Question) */}
+                    <div className="absolute inset-0 w-full h-full bg-white rounded-[2.5rem] border-[8px] border-indigo-50/50 p-8 flex flex-col justify-between items-center [backface-visibility:hidden]">
+                        <span className="text-[9px] font-black text-indigo-400 uppercase tracking-widest bg-indigo-50 px-3 py-1 rounded-full">Pertanyaan</span>
+                        
+                        <div className="flex-1 flex items-center justify-center">
+                            <h3 className="text-3xl md:text-4xl font-black leading-tight uppercase italic text-slate-800 text-center tracking-tight px-4">{card.front}</h3>
+                        </div>
+
+                        {/* Audio TTS button */}
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                try {
+                                    if ('speechSynthesis' in window) {
+                                        window.speechSynthesis.cancel();
+                                        const utterance = new SpeechSynthesisUtterance(card.front);
+                                        utterance.lang = "id-ID";
+                                        window.speechSynthesis.speak(utterance);
+                                    }
+                                } catch (err) {
+                                    console.error(err);
                                 }
-                            } catch (err) {
-                                console.error(err);
-                            }
-                        }}
-                        className={`mt-6 w-12 h-12 rounded-full flex items-center justify-center text-lg active:scale-90 transition-all ${show ? 'bg-indigo-700/60 hover:bg-indigo-700 text-white' : 'bg-indigo-50 hover:bg-indigo-100 text-indigo-600'}`}
-                        title="Dengarkan Pelafalan"
-                    >
-                        🔊
-                    </button>
+                            }}
+                            className="w-12 h-12 rounded-full bg-indigo-50 hover:bg-indigo-100/70 border border-indigo-100 flex items-center justify-center text-lg active:scale-90 transition-all text-indigo-600 shadow-sm"
+                            title="Dengarkan Pelafalan"
+                        >
+                            🔊
+                        </button>
+                    </div>
+
+                    {/* BACK SIDE (Answer) */}
+                    <div className="absolute inset-0 w-full h-full bg-gradient-to-br from-indigo-600 to-violet-800 rounded-[2.5rem] border-[8px] border-indigo-500/20 p-8 flex flex-col justify-between items-center [backface-visibility:hidden] [transform:rotateY(180deg)] text-white shadow-[0_10px_35px_rgba(99,102,241,0.25)]">
+                        <span className="text-[9px] font-black text-indigo-200 uppercase tracking-widest bg-white/10 px-3 py-1 rounded-full border border-white/10">Jawaban</span>
+                        
+                        <div className="flex-1 flex items-center justify-center">
+                            <h3 className="text-3xl md:text-4xl font-black leading-tight uppercase italic text-center tracking-tight px-4 text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.1)]">{card.back}</h3>
+                        </div>
+
+                        {/* Audio TTS button */}
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                try {
+                                    if ('speechSynthesis' in window) {
+                                        window.speechSynthesis.cancel();
+                                        const utterance = new SpeechSynthesisUtterance(card.back);
+                                        utterance.lang = "id-ID";
+                                        window.speechSynthesis.speak(utterance);
+                                    }
+                                } catch (err) {
+                                    console.error(err);
+                                }
+                            }}
+                            className="w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 border border-white/15 flex items-center justify-center text-lg active:scale-90 transition-all text-white shadow-sm"
+                            title="Dengarkan Pelafalan"
+                        >
+                            🔊
+                        </button>
+                    </div>
                 </div>
             </div>
 
-            <div className="w-full h-24 flex items-center justify-center">
+            {/* ACTION CONTROLS */}
+            <div className="w-full h-20 flex items-center justify-center max-w-lg">
                 {!show ? (
                     <button
                         onClick={() => setShow(true)}
                         disabled={isBusy.current}
-                        className="w-full bg-slate-900 text-white py-6 rounded-[2.5rem] font-black text-xl shadow-xl active:scale-95 transition-all uppercase italic"
+                        className="w-full bg-slate-900 hover:bg-slate-800 text-white py-5 rounded-[2rem] font-black text-lg shadow-xl active:scale-95 transition-all uppercase italic tracking-widest border border-slate-700"
                     >
                         Buka Jawaban 🔄
                     </button>
                 ) : (
-                    <div className="flex gap-4 w-full animate-in zoom-in duration-300">
+                    <div className="flex gap-4 w-full animate-in zoom-in duration-200">
                         <button
                             onClick={() => handleEvaluation(false)}
-                            className="flex-1 bg-rose-500 text-white py-6 rounded-[2.5rem] font-black text-xl shadow-xl active:scale-95 transition-all uppercase italic"
+                            className="flex-1 bg-rose-500 hover:bg-rose-400 text-white py-5 rounded-[2rem] font-black text-lg shadow-lg shadow-rose-500/10 active:scale-95 transition-all uppercase italic tracking-widest border border-rose-600/35"
                         >
                             Lupa ❌
                         </button>
                         <button
                             onClick={() => handleEvaluation(true)}
-                            className="flex-1 bg-emerald-500 text-white py-6 rounded-[2.5rem] font-black text-xl shadow-xl active:scale-95 transition-all uppercase italic"
+                            className="flex-1 bg-emerald-500 hover:bg-emerald-400 text-white py-5 rounded-[2rem] font-black text-lg shadow-lg shadow-emerald-500/10 active:scale-95 transition-all uppercase italic tracking-widest border border-emerald-600/35"
                         >
                             Hafal ✅
                         </button>

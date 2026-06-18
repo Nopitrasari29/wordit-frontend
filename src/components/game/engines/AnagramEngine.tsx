@@ -1,21 +1,21 @@
-import { useState, useMemo, useEffect, useRef } from "react"
-import { useNavigate } from "react-router-dom"
-import socket from "../../../hooks/useSocket"
-import { submitAnswer, finishGame } from "../../../pages/services/game.service"
+import { useState, useMemo, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
+import socket from "../../../hooks/useSocket";
+import { submitAnswer, finishGame } from "../../../pages/services/game.service";
 
 export default function AnagramEngine({ data, onIntermission, onGameOver }: { data: any, onIntermission?: () => void, onGameOver?: (score: number, accuracy: number, breakdown: any[]) => void }) {
-    const navigate = useNavigate()
+    const navigate = useNavigate();
     const gameConfig = Array.isArray(data?.gameJson) ? data.gameJson[0] : data?.gameJson;
     const quizWords = gameConfig?.words || [];
     const gameId = data?.id || "";
     const roomCode = data?.shareCode || data?.code || "";
     
-    const [currentIndex, setCurrentIndex] = useState(0)
-    const [answer, setAnswer] = useState("")
-    const [score, setScore] = useState(0)
-    const [isFinished, setIsFinished] = useState(false)
-    const [breakdown, setBreakdown] = useState<any[]>([])
-    const [usedIndices, setUsedIndices] = useState<number[]>([])
+    const [currentIndex, setCurrentIndex] = useState(0);
+    const [answer, setAnswer] = useState("");
+    const [score, setScore] = useState(0);
+    const [isFinished, setIsFinished] = useState(false);
+    const [breakdown, setBreakdown] = useState<any[]>([]);
+    const [usedIndices, setUsedIndices] = useState<number[]>([]);
 
     const playSound = (type: 'click' | 'correct' | 'incorrect' | 'timeout') => {
         try {
@@ -34,9 +34,9 @@ export default function AnagramEngine({ data, onIntermission, onGameOver }: { da
                 osc.start();
                 osc.stop(ctx.currentTime + 0.08);
             } else if (type === 'correct') {
-                osc.frequency.setValueAtTime(523.25, ctx.currentTime); // C5
-                osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.1); // E5
-                osc.frequency.setValueAtTime(783.99, ctx.currentTime + 0.2); // G5
+                osc.frequency.setValueAtTime(523.25, ctx.currentTime);
+                osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.1);
+                osc.frequency.setValueAtTime(783.99, ctx.currentTime + 0.2);
                 gain.gain.setValueAtTime(0.08, ctx.currentTime);
                 gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
                 osc.start();
@@ -73,27 +73,27 @@ export default function AnagramEngine({ data, onIntermission, onGameOver }: { da
     };
     
     // Timer & UX State
-    const [timeLeft, setTimeLeft] = useState(gameConfig?.timeLimit ? Number(gameConfig.timeLimit) : 15)
-    const [feedback, setFeedback] = useState<'none' | 'correct' | 'incorrect' | 'timeout'>('none')
-    const correctCountRef = useRef(0)
+    const [timeLeft, setTimeLeft] = useState(gameConfig?.timeLimit ? Number(gameConfig.timeLimit) : 15);
+    const [feedback, setFeedback] = useState<'none' | 'correct' | 'incorrect' | 'timeout'>('none');
+    const correctCountRef = useRef(0);
 
-    const startTimeRef = useRef<number>(Date.now())
+    const startTimeRef = useRef<number>(Date.now());
 
-    const currentQuestion = quizWords[currentIndex]
-    const targetWord = currentQuestion?.word?.toUpperCase() || ""
+    const currentQuestion = quizWords[currentIndex];
+    const targetWord = currentQuestion?.word?.toUpperCase() || "";
 
     const shuffled = useMemo(() => {
-        if (!targetWord) return []
-        const letters = targetWord.split("")
+        if (!targetWord) return [];
+        const letters = targetWord.split("");
         for (let i = letters.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
-            [letters[i], letters[j]] = [letters[j], letters[i]]
+            [letters[i], letters[j]] = [letters[j], letters[i]];
         }
         if (letters.join("") === targetWord && targetWord.length > 1) {
-            return targetWord.split("").reverse()
+            return targetWord.split("").reverse();
         }
-        return letters
-    }, [targetWord, currentIndex])
+        return letters;
+    }, [targetWord, currentIndex]);
 
     // Timer Logic
     useEffect(() => {
@@ -111,7 +111,7 @@ export default function AnagramEngine({ data, onIntermission, onGameOver }: { da
         }, 1000);
 
         return () => clearInterval(timer);
-    }, [currentIndex, feedback, isFinished, quizWords.length])
+    }, [currentIndex, feedback, isFinished, quizWords.length]);
 
     function handleTimeout() {
         playSound('timeout');
@@ -139,45 +139,29 @@ export default function AnagramEngine({ data, onIntermission, onGameOver }: { da
 
             const payload = {
                 scoreValue: score,
-                maxScore: quizWords.length * 250, // max 100 base + 150 time bonus
+                maxScore: quizWords.length * 250,
                 accuracy,
                 timeSpent,
                 answersDetail: finalBreakdown,
             };
 
-            // Simpan ke session untuk antisipasi jika ter-refresh
             sessionStorage.setItem("lastScore", score.toString());
             sessionStorage.setItem("lastAccuracy", accuracy.toString());
             sessionStorage.setItem("lastBreakdown", JSON.stringify(finalBreakdown));
 
-            // ✅ SIMPAN SKOR FINAL KE DATABASE (1x di akhir game)
             if (onGameOver) {
-                onGameOver(
-                    score,
-                    accuracy,
-                    finalBreakdown
-                );
+                onGameOver(score, accuracy, finalBreakdown);
                 return;
             }
 
             if (gameId) {
-                finishGame(
-                    gameId,
-                    payload
-                ).catch(e =>
-                    console.error(
-                        "finishGame error:",
-                        e
-                    )
+                finishGame(gameId, payload).catch(e =>
+                    console.error("finishGame error:", e)
                 );
             }
 
-            navigate(
-                "/student/result",
-                {
-                    state: payload,
-                }
-            );
+            navigate("/student/result", { state: payload });
+        }
     }
 
     if (!quizWords || quizWords.length === 0) {
@@ -186,7 +170,7 @@ export default function AnagramEngine({ data, onIntermission, onGameOver }: { da
                 <div className="animate-spin text-4xl mb-4">⌛</div>
                 Menyiapkan arena permainan...
             </div>
-        )
+        );
     }
 
     async function submit() {
@@ -201,7 +185,6 @@ export default function AnagramEngine({ data, onIntermission, onGameOver }: { da
             const newScore = score + points;
             setScore(newScore);
 
-            // 💾 SIMPAN LANGSUNG KE SESSION (Buat jaga-jaga kalau host End Session mendadak)
             sessionStorage.setItem("lastScore", newScore.toString());
             const runningAccuracy = Math.round((correctCountRef.current / quizWords.length) * 100);
             sessionStorage.setItem("lastAccuracy", runningAccuracy.toString());
@@ -216,24 +199,14 @@ export default function AnagramEngine({ data, onIntermission, onGameOver }: { da
             });
 
             if (roomCode) {
-                const runningAccuracy =
-                    Math.round(
-                        (correctCountRef.current /
-                            (currentIndex + 1)) *
-                        100
-                    );
+                const runningAccuracy = Math.round((correctCountRef.current / (currentIndex + 1)) * 105);
 
-                socket.emit(
-                    "updateScore",
-                    {
-                        code: roomCode,
-                        score: newScore,
-                        accuracy:
-                            runningAccuracy,
-                        progress:
-                            `${currentIndex + 1}/${quizWords.length}`,
-                    }
-                );
+                socket.emit("updateScore", {
+                    code: roomCode,
+                    score: newScore,
+                    accuracy: runningAccuracy,
+                    progress: `${currentIndex + 1}/${quizWords.length}`,
+                });
             }
 
             if (gameId) {
@@ -262,49 +235,58 @@ export default function AnagramEngine({ data, onIntermission, onGameOver }: { da
                 <div className="animate-spin text-4xl mb-4">🔄</div>
                 Menghitung skor akhir...
             </div>
-        )
+        );
     }
 
-    // Dynamic UI Styling based on feedback
-    let containerClass = "flex flex-col items-center justify-center p-6 space-y-8 font-sans w-full max-w-2xl mx-auto transition-all duration-500 rounded-[3rem]"
-    let inputClass = "w-full max-w-md border-4 px-6 py-4 rounded-3xl text-center text-2xl font-black outline-none transition-all uppercase "
+    let containerClass = "flex flex-col items-center justify-center p-6 space-y-6 font-sans w-full max-w-2xl mx-auto transition-all duration-500 rounded-[2.5rem]";
+    let inputClass = "w-full max-w-md border-2 px-5 py-4 rounded-2xl text-center text-xl font-black outline-none transition-all uppercase ";
     
     if (feedback === 'correct') {
-        containerClass += " bg-emerald-50 scale-105"
-        inputClass += " bg-emerald-100 border-emerald-400 text-emerald-700"
+        containerClass += " bg-emerald-50/50 scale-102";
+        inputClass += " bg-emerald-100 border-emerald-400 text-emerald-700";
     } else if (feedback === 'incorrect') {
-        containerClass += " bg-rose-50 animate-shake"
-        inputClass += " bg-rose-100 border-rose-400 text-rose-700 placeholder:text-rose-300"
+        containerClass += " bg-rose-50/50 animate-shake";
+        inputClass += " bg-rose-100 border-rose-400 text-rose-700 placeholder:text-rose-300";
     } else if (feedback === 'timeout') {
-        containerClass += " bg-amber-50 scale-95 opacity-80"
-        inputClass += " bg-amber-100 border-amber-400 text-amber-700"
+        containerClass += " bg-amber-50/50 scale-95 opacity-80";
+        inputClass += " bg-amber-100 border-amber-400 text-amber-700";
     } else {
-        containerClass += " bg-transparent"
-        inputClass += " bg-slate-50 border-slate-100 text-slate-700 focus:border-indigo-500 focus:bg-white placeholder:normal-case placeholder:font-medium placeholder:text-slate-300"
+        containerClass += " bg-transparent";
+        inputClass += " bg-slate-50 border-slate-200 text-slate-700 focus:border-indigo-500 focus:bg-white placeholder:normal-case placeholder:font-semibold placeholder:text-slate-300";
     }
 
     return (
         <div className={containerClass}>
             
+            {/* Play Instructions */}
+            <div className="w-full bg-indigo-50/75 backdrop-blur-md border border-indigo-100 rounded-2xl p-4 text-center">
+                <p className="text-xs font-bold text-indigo-950">
+                    🧩 <span>Susun kembali huruf-huruf acak di bawah untuk mencocokkan kata dengan petunjuk yang diberikan!</span>
+                </p>
+            </div>
+
             {/* Header & Timer */}
-            <div className="w-full flex justify-between items-center mb-4 px-4">
-                <div className="bg-white border-2 border-slate-100 px-6 py-2 rounded-full font-black text-slate-400 shadow-sm text-xs tracking-widest uppercase">
+            <div className="w-full flex justify-between items-center px-4">
+                <div className="bg-slate-900/95 backdrop-blur-md border border-slate-800 text-white px-5 py-2 rounded-full font-black text-[10px] tracking-widest uppercase shadow-sm">
                     Soal {currentIndex + 1} / {quizWords.length}
                 </div>
-                <div className={`flex items-center gap-2 px-6 py-2 rounded-full font-black text-lg shadow-sm border-2 ${timeLeft <= 5 ? 'bg-rose-100 text-rose-600 border-rose-200 animate-pulse' : 'bg-white text-indigo-600 border-indigo-50'}`}>
+                <div className={`flex items-center gap-2 px-5 py-1.5 rounded-full font-black text-base border ${timeLeft <= 5 ? 'text-rose-500 border-rose-500/20 bg-rose-500/10 animate-pulse' : 'text-indigo-300 border-indigo-500/10 bg-indigo-500/5'}`}>
                     ⏱️ 00:{timeLeft.toString().padStart(2, '0')}
                 </div>
             </div>
 
-            <div className="text-center">
-                <h2 className="text-3xl font-black text-slate-800 tracking-tight mb-4">Arrange the Letters 🧩</h2>
-                <p className="text-indigo-600 font-black bg-indigo-50 px-6 py-3 rounded-2xl border-2 border-indigo-100 italic shadow-inner">
-                    " {currentQuestion?.hint || "Tidak ada petunjuk"} "
-                </p>
+            {/* Hint Panel */}
+            <div className="text-center w-full max-w-lg">
+                <div className="bg-white border-2 border-indigo-50 px-6 py-4 rounded-2xl shadow-sm">
+                    <span className="text-[9px] font-black text-indigo-400 uppercase tracking-widest block mb-1">Petunjuk Kata</span>
+                    <p className="text-slate-800 font-bold italic text-lg leading-relaxed">
+                        " {currentQuestion?.hint || "Tidak ada petunjuk"} "
+                    </p>
+                </div>
             </div>
 
             {/* Letter Blocks */}
-            <div className="flex flex-wrap justify-center gap-3">
+            <div className="flex flex-wrap justify-center gap-2.5">
                 {shuffled.map((letter: string, i: number) => {
                     const isUsed = usedIndices.includes(i);
                     return (
@@ -312,13 +294,12 @@ export default function AnagramEngine({ data, onIntermission, onGameOver }: { da
                             key={`${currentIndex}-${i}`} 
                             disabled={feedback !== 'none' || isUsed}
                             onClick={() => handleLetterClick(letter, i)}
-                            className={`w-14 h-14 md:w-16 md:h-16 border-4 rounded-2xl flex items-center justify-center text-3xl font-black shadow-sm transition-all
-                                ${feedback === 'correct' ? 'bg-emerald-500 border-emerald-400 text-white scale-110' : 
+                            className={`w-12 h-12 md:w-14 md:h-14 border-[3px] rounded-xl flex items-center justify-center text-2xl font-black shadow-sm transition-all
+                                ${feedback === 'correct' ? 'bg-emerald-500 border-emerald-400 text-white scale-105' : 
                                   feedback === 'incorrect' ? 'bg-rose-50 border-rose-200 text-rose-600' :
                                   feedback === 'timeout' ? 'bg-amber-100 border-amber-200 text-amber-500 grayscale' :
                                   isUsed ? 'bg-slate-100 border-slate-200 text-slate-300 opacity-40 cursor-default scale-95' :
-                                  'bg-white border-indigo-100 text-indigo-600 hover:bg-indigo-50 hover:scale-105 active:scale-95 animate-bounce'}`}
-                            style={{ animationDelay: (feedback === 'none' && !isUsed) ? `${i * 0.1}s` : '0s' }}
+                                  'bg-white border-indigo-100 text-indigo-600 hover:bg-indigo-50/50 hover:scale-105 active:scale-95'}`}
                         >
                             {letter}
                         </button>
@@ -327,29 +308,27 @@ export default function AnagramEngine({ data, onIntermission, onGameOver }: { da
             </div>
 
             {/* Input & Action */}
-            <div className="w-full flex flex-col items-center gap-4 relative">
-                
-                {/* Visual Feedback Badges */}
+            <div className="w-full flex flex-col items-center gap-4 relative max-w-md">
                 {feedback === 'correct' && (
-                    <div className="absolute -top-10 bg-emerald-500 text-white px-6 py-1 rounded-full font-black text-xs uppercase tracking-widest animate-bounce shadow-lg">
+                    <div className="absolute -top-10 bg-emerald-500 text-white px-5 py-1 rounded-full font-black text-[10px] uppercase tracking-widest animate-bounce shadow-lg">
                         + {100 + (timeLeft * 10)} PTS!
                     </div>
                 )}
                 {feedback === 'incorrect' && (
-                    <div className="absolute -top-10 bg-rose-500 text-white px-6 py-1 rounded-full font-black text-xs uppercase tracking-widest animate-pulse shadow-lg">
+                    <div className="absolute -top-10 bg-rose-500 text-white px-5 py-1 rounded-full font-black text-[10px] uppercase tracking-widest animate-pulse shadow-lg">
                         SALAH! COBA LAGI
                     </div>
                 )}
                 {feedback === 'timeout' && (
-                    <div className="absolute -top-10 bg-amber-500 text-white px-6 py-1 rounded-full font-black text-xs uppercase tracking-widest animate-pulse shadow-lg">
+                    <div className="absolute -top-10 bg-amber-500 text-white px-5 py-1 rounded-full font-black text-[10px] uppercase tracking-widest animate-pulse shadow-lg">
                         WAKTU HABIS! ⌛
                     </div>
                 )}
 
-                <div className="w-full max-w-md flex gap-2">
+                <div className="w-full flex gap-2">
                     <input
                         className={inputClass}
-                        placeholder={feedback === 'timeout' ? "TIME'S UP" : "Ketik atau klik huruf..."}
+                        placeholder={feedback === 'timeout' ? "TIME'S UP" : "Ketik / klik huruf..."}
                         autoFocus
                         value={answer}
                         onChange={(e) => setAnswer(e.target.value)}
@@ -359,7 +338,7 @@ export default function AnagramEngine({ data, onIntermission, onGameOver }: { da
                     <button
                         onClick={handleClear}
                         disabled={feedback !== 'none' || !answer}
-                        className="bg-slate-200 hover:bg-slate-300 active:scale-95 text-slate-700 px-4 rounded-3xl font-black text-xs uppercase tracking-wider transition-all disabled:opacity-50"
+                        className="bg-slate-200 hover:bg-slate-300 active:scale-95 text-slate-700 px-4 rounded-2xl font-black text-xs uppercase tracking-wider transition-all disabled:opacity-50 border border-slate-350"
                         title="Hapus Jawaban"
                     >
                         🧹 Clear
@@ -369,19 +348,18 @@ export default function AnagramEngine({ data, onIntermission, onGameOver }: { da
                 <button
                     onClick={submit}
                     disabled={feedback !== 'none'}
-                    className={`font-black text-xl px-12 py-4 rounded-3xl transition-all uppercase tracking-widest text-white shadow-lg
+                    className={`w-full font-black text-lg py-4 rounded-2xl transition-all uppercase tracking-widest text-white shadow-lg border
                         ${feedback === 'none' 
-                            ? 'bg-indigo-600 hover:bg-indigo-500 hover:-translate-y-1 active:translate-y-2' 
-                            : 'bg-slate-300 cursor-not-allowed opacity-50'}`}
+                            ? 'bg-indigo-600 hover:bg-indigo-500 hover:-translate-y-0.5 active:scale-98 shadow-indigo-600/10 border-indigo-500/20' 
+                            : 'bg-slate-300 cursor-not-allowed opacity-50 border-slate-200'}`}
                 >
-                    {feedback === 'none' ? 'Kirim Jawaban! 🚀' : '⏳ Wait...'}
+                    {feedback === 'none' ? 'Kirim Jawaban! 🚀' : '⏳ Mohon tunggu...'}
                 </button>
             </div>
 
-            <div className="bg-white border-2 border-slate-100 px-8 py-3 rounded-full font-black text-slate-500 shadow-sm text-sm">
-                Skor: <span className="text-indigo-600 ml-2">{score}</span>
+            <div className="bg-slate-900/95 backdrop-blur-md border border-slate-800 text-white px-6 py-2 rounded-full font-black text-xs shadow-sm">
+                Skor: <span className="text-indigo-400 ml-1">{score}</span>
             </div>
         </div>
-    )
-    }
+    );
 }

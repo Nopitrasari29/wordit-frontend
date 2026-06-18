@@ -59,31 +59,17 @@ export default function WordSearchEngine({ data, onGameOver, onIntermission }: {
         sessionStorage.setItem("lastBreakdown", JSON.stringify(payload.answersDetail));
 
         if (onGameOver) {
-            onGameOver(
-                finalScore,
-                accuracy,
-                payload.answersDetail
-            );
+            onGameOver(finalScore, accuracy, payload.answersDetail);
             return;
         }
 
         try {
-            await finishGame(
-                realGameId,
-                payload
-            );
+            await finishGame(realGameId, payload);
         } catch (e) {
-            console.error(
-                "Gagal simpan skor ke DB"
-            );
+            console.error("Gagal simpan skor ke DB");
         }
 
-        navigate(
-            "/student/result",
-            {
-                state: payload,
-            }
-        );
+        navigate("/student/result", { state: payload });
     }, [isFinished, onGameOver, onIntermission, realGameId, wordsToFind, gameConfig, timeLeft, navigate]);
 
     const generateGrid = useCallback(() => {
@@ -223,7 +209,7 @@ export default function WordSearchEngine({ data, onGameOver, onIntermission }: {
     };
 
     if (wordsToFind.length === 0) {
-        return <div className="p-10 text-center animate-pulse text-indigo-600 font-bold">Menyiapkan permainan... 🔎</div>;
+        return <div className="p-10 text-center animate-pulse text-indigo-650 font-bold">Menyiapkan permainan... 🔎</div>;
     }
 
     if (isFinished) {
@@ -231,42 +217,64 @@ export default function WordSearchEngine({ data, onGameOver, onIntermission }: {
     }
 
     return (
-        <div className="flex flex-col items-center p-6 space-y-8 max-w-2xl mx-auto font-sans">
-            <div className="w-full flex justify-between bg-white p-6 rounded-[2.5rem] shadow-sm border-2 border-indigo-50 items-center">
+        <div className="flex flex-col items-center p-6 space-y-6 max-w-2xl mx-auto font-sans select-none w-full">
+            {/* Play Instructions */}
+            <div className="w-full bg-indigo-50/75 backdrop-blur-md border border-indigo-100 rounded-2xl p-4 text-center">
+                <p className="text-xs font-bold text-indigo-950">
+                    🔎 <span>Cari dan seret (drag) huruf-huruf pada papan untuk menyusun kata yang sesuai dengan daftar di bawah!</span>
+                </p>
+            </div>
+
+            {/* HUD HEADER */}
+            <div className="w-full flex justify-between bg-slate-900/95 backdrop-blur-md p-5 rounded-[2rem] border border-slate-800 text-white items-center shadow-lg">
                 <div className="flex flex-col font-black">
-                    <span className="text-[9px] text-slate-400 uppercase tracking-widest">Nyawa</span>
-                    <span className="text-xl">{"❤️".repeat(lives)}</span>
+                    <span className="text-[9px] text-slate-400 uppercase tracking-widest mb-1">Nyawa</span>
+                    <div className="flex gap-0.5">
+                        {[...Array(3)].map((_, i) => (
+                            <span key={i} className={`text-sm transition-all duration-300 ${i < lives ? 'scale-100' : 'grayscale opacity-20 scale-75'}`}>❤️</span>
+                        ))}
+                    </div>
                 </div>
                 <div className="flex flex-col items-center">
                     <span className="text-[9px] text-slate-400 uppercase tracking-widest">Sisa Waktu</span>
-                    <span className={`text-2xl font-black ${timeLeft <= 10 ? 'text-rose-500 animate-pulse' : 'text-slate-700'}`}>
+                    <span className={`text-xl font-black px-4 py-0.5 rounded-full border ${timeLeft <= 10 ? 'text-rose-500 border-rose-500/20 bg-rose-500/10 animate-pulse' : 'text-indigo-300 border-indigo-500/10 bg-indigo-500/5'}`}>
                         {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}
                     </span>
                 </div>
                 <div className="text-right flex flex-col font-black">
-                    <span className="text-[9px] text-slate-400 uppercase tracking-widest">Skor</span>
-                    <span className="text-indigo-600 text-2xl">{score}</span>
+                    <span className="text-[9px] text-slate-400 uppercase tracking-widest mb-0.5">Skor</span>
+                    <span className="text-indigo-400 text-xl">{score}</span>
                 </div>
             </div>
 
-            <div className="flex flex-wrap gap-2 justify-center bg-slate-50 p-4 rounded-3xl w-full border-2 border-slate-100">
+            {/* TARGET WORDS PANELS */}
+            <div className="flex flex-wrap gap-2 justify-center bg-white p-4 rounded-2xl w-full border-2 border-indigo-50 shadow-sm">
                 {wordsToFind.map((w: string) => (
-                    <span key={w} className={`px-4 py-2 rounded-xl font-black text-[10px] transition-all duration-500 ${foundWords.includes(w) ? 'bg-emerald-500 text-white line-through scale-90' : 'bg-white text-slate-400 border-2 border-slate-200'}`}>
+                    <span key={w} className={`px-4 py-1.5 rounded-xl font-black text-xs transition-all duration-550 border ${foundWords.includes(w) ? 'bg-emerald-500 border-emerald-500 text-white line-through scale-90' : 'bg-slate-50 text-slate-400 border-slate-200'}`}>
                         {w} {foundWords.includes(w) && "✅"}
                     </span>
                 ))}
             </div>
 
+            {/* WORD GRID CONTAINER */}
             <div 
-                className="bg-indigo-600 p-2 sm:p-4 rounded-[2rem] sm:rounded-[3.5rem] shadow-2xl border-[8px] sm:border-[12px] border-indigo-500/20 max-w-full overflow-hidden"
+                className="bg-slate-950 p-3 rounded-[2.5rem] shadow-2xl border-[10px] border-slate-900 max-w-full overflow-hidden shadow-indigo-500/5"
                 onMouseLeave={handleMouseUp}
                 onMouseUp={handleMouseUp}
                 onTouchEnd={handleMouseUp}
             >
-                <div className="grid gap-1 sm:gap-2" style={{ gridTemplateColumns: `repeat(${size}, minmax(0, 1fr))` }}>
+                <div className="grid gap-1.5" style={{ gridTemplateColumns: `repeat(${size}, minmax(0, 1fr))` }}>
                     {grid.map((row, r: number) => row.map((char: string, c: number) => {
                         const isSelected = selection.includes(`${r}-${c}`);
                         const isFound = foundCells.includes(`${r}-${c}`);
+                        
+                        let cellClass = "bg-slate-900 border border-slate-800/60 text-slate-300 hover:bg-slate-800/80 hover:text-white";
+                        if (isFound) {
+                            cellClass = "bg-emerald-500 border-emerald-400 text-white shadow-[0_0_12px_rgba(16,185,129,0.3)]";
+                        } else if (isSelected) {
+                            cellClass = "bg-indigo-500 border-indigo-400 text-white scale-105 shadow-[0_0_12px_rgba(99,102,241,0.3)]";
+                        }
+
                         return (
                             <button 
                                 key={`${r}-${c}`} 
@@ -284,7 +292,7 @@ export default function WordSearchEngine({ data, onGameOver, onIntermission }: {
                                         handleMouseEnter(tr, tc);
                                     }
                                 }}
-                                className={`w-7 h-7 sm:w-9 sm:h-9 md:w-12 md:h-12 rounded-lg sm:rounded-xl font-black text-sm sm:text-base md:text-lg flex items-center justify-center transition-all select-none touch-none ${isFound ? 'bg-emerald-400 text-white' : isSelected ? 'bg-amber-400 text-white scale-110 shadow-lg' : 'bg-white text-indigo-900 hover:bg-indigo-50'}`}
+                                className={`w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-xl font-black text-sm sm:text-base md:text-lg flex items-center justify-center transition-all select-none touch-none ${cellClass}`}
                             >
                                 {char}
                             </button>

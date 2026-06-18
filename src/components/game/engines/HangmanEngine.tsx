@@ -44,7 +44,7 @@ export default function HangmanEngine({
     const currentData = quizWords[currentIndex];
     const word = currentData?.word?.toUpperCase() || "";
 
-    // 1. Timer Logic (Reset per soal)
+    // 1. Timer Logic
     useEffect(() => {
         if (feedback !== 'none' || isFinished || quizWords.length === 0) return;
 
@@ -80,59 +80,38 @@ export default function HangmanEngine({
         let earnedPoints = 0;
 
         if (isCorrect) {
-            // Hitung poin: Base 100 + Bonus Nyawa + Bonus Waktu
             earnedPoints = 100 + (lives * 10);
             const newScore = score + earnedPoints;
             setScore(newScore);
 
-            // 📡 Update Teacher via Socket (Agar sinkron real-time)
             if (roomCode) {
-
-            const currentAccuracy =
-                Math.round(
-                    (
-                        (breakdown.filter(
-                            b => b.isCorrect
-                        ).length + 1)
-                        /
-                        (currentIndex + 1)
-                    ) * 100
+                const currentAccuracy = Math.round(
+                    ((breakdown.filter(b => b.isCorrect).length + 1) / (currentIndex + 1)) * 100
                 );
 
-            socket.emit(
-                "updateScore",
-                {
+                socket.emit("updateScore", {
                     code: roomCode,
                     score: newScore,
-                    accuracy:
-                        currentAccuracy,
-                    progress:
-                        `${currentIndex + 1}/${quizWords.length}`,
-                }
-            );
-        }
+                    accuracy: currentAccuracy,
+                    progress: `${currentIndex + 1}/${quizWords.length}`,
+                });
+            }
 
-            // 📡 Simpan ke DB (Update skor akumulasi)
             submitAnswer(realGameId, currentIndex, word, newScore).catch(() => { });
         } else {
-            // Jika salah/timeout, tetap kirim skor terakhir agar tidak error
             submitAnswer(realGameId, currentIndex, status === 'timeout' ? "TIMEOUT" : "WRONG", score).catch(() => { });
         }
 
-        // 🎯 FIX: Pastikan SEMUA kondisi (Benar/Salah/Timeout) masuk ke breakdown
         const currentAnswerDetail = {
             word: word,
             isCorrect: isCorrect,
-            // Menentukan label tampilan di Riwayat Jawaban
             userAnswer: isCorrect ? word : (status === 'timeout' ? "Waktu Habis ⏰" : "Salah ❌"),
             time: (data?.gameJson?.timeLimit ? Number(data.gameJson.timeLimit) : 30) - timeLeft
         };
 
-        // Langsung masukkan ke array breakdown
         const newBreakdown = [...breakdown, currentAnswerDetail];
         setBreakdown(newBreakdown);
 
-        // Transisi ke soal berikutnya atau selesai
         setTimeout(() => {
             if (currentIndex < quizWords.length - 1) {
                 if (onIntermission) onIntermission();
@@ -144,83 +123,43 @@ export default function HangmanEngine({
                 setTimeLeft(data?.gameJson?.timeLimit ? Number(data.gameJson.timeLimit) : 30);
                 isBusy.current = false;
             } else {
-                // Kirim breakdown terbaru yang sudah lengkap ke handleFinish
                 handleFinish(isCorrect ? score + earnedPoints : score, newBreakdown);
             }
         }, 2000);
     };
 
     const handleFinish = async (finalScore: number, finalBreakdown: any[]) => {
-        if (
-            isSavingRef.current
-        ) return;
+        if (isSavingRef.current) return;
 
-        isSavingRef.current =
-        true;
+        isSavingRef.current = true;
         setIsFinished(true);
         const correctCount = finalBreakdown.filter(b => b.isCorrect).length;
-        const accuracy =
-        quizWords.length > 0
-        ? Math.round(
-            (correctCount /
-            quizWords.length) * 100
-        )
-        : 0;
+        const accuracy = quizWords.length > 0 ? Math.round((correctCount / quizWords.length) * 100) : 0;
 
         const finalPayload = {
             scoreValue: finalScore,
-            maxScore: quizWords.length * 150, // Estimasi max score
+            maxScore: quizWords.length * 150,
             accuracy,
             timeSpent: totalTimeRef.current,
             answersDetail: finalBreakdown,
         };
 
-        // Redundansi simpan ke storage
-        sessionStorage.setItem(
-            "lastScore",
-            finalScore.toString()
-        );
-
-        sessionStorage.setItem(
-            "lastAccuracy",
-            accuracy.toString()
-        );
-
-        sessionStorage.setItem(
-            "lastBreakdown",
-            JSON.stringify(
-                finalBreakdown
-            )
-        );
+        sessionStorage.setItem("lastScore", finalScore.toString());
+        sessionStorage.setItem("lastAccuracy", accuracy.toString());
+        sessionStorage.setItem("lastBreakdown", JSON.stringify(finalBreakdown));
 
         if (onGameOver) {
-
-            onGameOver(
-                finalScore,
-                accuracy,
-                finalBreakdown
-            );
-
+            onGameOver(finalScore, accuracy, finalBreakdown);
             return;
         }
 
         try {
-            await finishGame(
-                realGameId,
-                finalPayload
-            );
+            await finishGame(realGameId, finalPayload);
         } catch (e) {
-            console.error(
-                "Gagal simpan skor akhir"
-            );
+            console.error("Gagal simpan skor akhir");
         }
 
-        navigate(
-            "/student/result",
-            {
-                state: finalPayload
-            }
-        );
+        navigate("/student/result", { state: finalPayload });
     };
 
     const submitGuess = () => {
@@ -243,73 +182,80 @@ export default function HangmanEngine({
             setLives(newLives);
             if (newLives <= 0) handleEndTurn('lose');
         } else {
-            // Cek apakah semua huruf sudah tertebak
             const isComplete = word.split("").every((l: string) => newUsed.includes(l));
             if (isComplete) handleEndTurn('correct');
         }
     };
 
-    if (quizWords.length === 0 || isFinished) return <div className="p-20 text-center font-black">Memproses...</div>;
+    if (quizWords.length === 0 || isFinished) return <div className="p-20 text-center font-black text-indigo-400">Memproses...</div>;
 
     return (
-        <div className="flex flex-col items-center p-8 space-y-8 font-sans w-full max-w-2xl mx-auto">
+        <div className="flex flex-col items-center p-6 space-y-6 font-sans w-full max-w-2xl mx-auto select-none">
+            {/* Play Instructions */}
+            <div className="w-full bg-indigo-50/75 backdrop-blur-md border border-indigo-100 rounded-2xl p-4 text-center">
+                <p className="text-xs font-bold text-indigo-950">
+                    🤠 <span>Tebak kata rahasia dengan memasukkan satu per satu huruf tebakanmu sebelum nyawamu habis!</span>
+                </p>
+            </div>
+
             {/* HUD HEADER */}
-            <div className="w-full flex justify-between items-center bg-white p-6 rounded-[2.5rem] shadow-sm border-2 border-indigo-50">
+            <div className="w-full flex justify-between items-center bg-slate-900/95 backdrop-blur-md p-5 rounded-[2rem] border border-slate-800 text-white">
                 <div className="flex flex-col gap-1">
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Nyawa</span>
-                    <div className="flex gap-1">
+                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Nyawa</span>
+                    <div className="flex gap-0.5">
                         {[...Array(6)].map((_, i) => (
-                            <span key={i} className={`transition-all duration-500 ${i < lives ? 'scale-100' : 'grayscale opacity-20 scale-75'}`}>❤️</span>
+                            <span key={i} className={`text-xs transition-all duration-300 ${i < lives ? 'scale-100' : 'grayscale opacity-20 scale-75'}`}>❤️</span>
                         ))}
                     </div>
                 </div>
-                <div className={`px-6 py-2 rounded-full font-black text-lg border-2 ${timeLeft <= 10 ? 'text-rose-600 border-rose-200 animate-pulse' : 'text-indigo-600 border-indigo-50'}`}>
+                <div className={`px-5 py-1.5 rounded-full font-black text-base border ${timeLeft <= 10 ? 'text-rose-500 border-rose-500/20 bg-rose-500/10 animate-pulse' : 'text-indigo-300 border-indigo-500/10 bg-indigo-500/5'}`}>
                     ⏱️ {timeLeft}s
                 </div>
                 <div className="text-right flex flex-col">
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Skor</span>
-                    <span className="text-indigo-600 font-black text-2xl">{score}</span>
+                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Skor</span>
+                    <span className="text-indigo-400 font-black text-xl">{score}</span>
                 </div>
             </div>
 
-            {/* VISUAL HANGMAN SVG */}
-            <div className="flex justify-center items-center">
-                <svg className="w-40 h-48 stroke-slate-700 stroke-[5] fill-none stroke-linecap-round stroke-linejoin-round bg-slate-50 p-4 rounded-3xl border border-slate-100 shadow-inner">
+            {/* VISUAL HANGMAN CONTAINER */}
+            <div className="flex justify-center items-center py-2">
+                <svg className="w-40 h-44 stroke-slate-700 stroke-[5] fill-none stroke-linecap-round stroke-linejoin-round bg-slate-50 p-4 rounded-3xl border border-slate-100 shadow-inner">
                     {/* Gallows */}
-                    <line x1="20" y1="150" x2="120" y2="150" />
-                    <line x1="50" y1="150" x2="50" y2="20" />
-                    <line x1="50" y1="20" x2="110" y2="20" />
-                    <line x1="110" y1="20" x2="110" y2="40" />
+                    <line x1="20" y1="130" x2="120" y2="130" className="stroke-slate-400" />
+                    <line x1="45" y1="130" x2="45" y2="15" className="stroke-slate-400" />
+                    <line x1="45" y1="15" x2="105" y2="15" className="stroke-slate-400" />
+                    <line x1="105" y1="15" x2="105" y2="35" className="stroke-slate-400" />
 
-                    {/* Head */}
-                    {lives <= 5 && <circle cx="110" cy="52" r="12" className="stroke-indigo-600 stroke-[4]" />}
+                    {/* Head with neon touch */}
+                    {lives <= 5 && <circle cx="105" cy="45" r="10" className="stroke-indigo-500 stroke-[4]" />}
                     {/* Body */}
-                    {lives <= 4 && <line x1="110" y1="64" x2="110" y2="105" className="stroke-indigo-600" />}
+                    {lives <= 4 && <line x1="105" y1="55" x2="105" y2="92" className="stroke-indigo-500" />}
                     {/* Left Arm */}
-                    {lives <= 3 && <line x1="110" y1="75" x2="90" y2="60" className="stroke-indigo-600" />}
+                    {lives <= 3 && <line x1="105" y1="65" x2="88" y2="52" className="stroke-indigo-500" />}
                     {/* Right Arm */}
-                    {lives <= 2 && <line x1="110" y1="75" x2="130" y2="60" className="stroke-indigo-600" />}
+                    {lives <= 2 && <line x1="105" y1="65" x2="122" y2="52" className="stroke-indigo-500" />}
                     {/* Left Leg */}
-                    {lives <= 1 && <line x1="110" y1="105" x2="90" y2="130" className="stroke-indigo-600" />}
+                    {lives <= 1 && <line x1="105" y1="92" x2="88" y2="115" className="stroke-indigo-500" />}
                     {/* Right Leg */}
-                    {lives === 0 && <line x1="110" y1="105" x2="130" y2="130" className="stroke-rose-500" />}
+                    {lives === 0 && <line x1="105" y1="92" x2="122" y2="115" className="stroke-rose-500 stroke-[4]" />}
                 </svg>
             </div>
 
             {/* HINT AREA */}
-            <div className="text-center space-y-4 w-full">
-                <div className="bg-white border-4 border-indigo-50 px-8 py-6 rounded-[2.5rem] shadow-sm">
-                    <p className="text-indigo-900 font-black italic text-2xl">"{currentData?.hint}"</p>
+            <div className="text-center w-full max-w-lg">
+                <div className="bg-white border-2 border-indigo-50 px-6 py-4 rounded-2xl shadow-sm">
+                    <span className="text-[9px] font-black text-indigo-400 uppercase tracking-widest block mb-1">Petunjuk</span>
+                    <p className="text-slate-800 font-bold italic text-lg leading-relaxed">"{currentData?.hint}"</p>
                 </div>
             </div>
 
             {/* WORD DISPLAY */}
-            <div className="flex flex-wrap justify-center gap-3">
+            <div className="flex flex-wrap justify-center gap-2">
                 {word.split("").map((l: string, i: number) => {
                     const isRevealed = used.includes(l) || feedback === 'timeout' || feedback === 'lose';
                     return (
-                        <div key={i} className={`w-12 h-14 border-b-8 flex items-center justify-center text-3xl font-black transition-all duration-500 ${used.includes(l) ? 'border-indigo-500 text-indigo-600' :
-                            (feedback === 'timeout' || feedback === 'lose') ? 'border-rose-300 text-rose-400' : 'border-slate-300 text-transparent'
+                        <div key={i} className={`w-10 h-12 border-b-4 flex items-center justify-center text-2xl font-black transition-all duration-300 ${used.includes(l) ? 'border-indigo-500 text-indigo-600' :
+                            (feedback === 'timeout' || feedback === 'lose') ? 'border-rose-400 text-rose-500' : 'border-slate-200 text-transparent'
                             }`}>
                             {isRevealed ? l : ""}
                         </div>
@@ -318,34 +264,36 @@ export default function HangmanEngine({
             </div>
 
             {/* GUESSED LETTERS HISTORY */}
-            <div className="flex flex-col items-center gap-3">
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Huruf yang sudah dicoba:</span>
-                <div className="flex flex-wrap justify-center gap-2">
-                    {used.length === 0 && <span className="text-slate-300 italic text-xs">Belum ada tebakan</span>}
-                    {used.map((char, i) => (
-                        <span key={i} className={`w-8 h-8 rounded-lg flex items-center justify-center font-black text-sm border-2 ${word.includes(char) ? 'bg-emerald-50 border-emerald-200 text-emerald-600' : 'bg-slate-50 border-slate-200 text-slate-400 line-through'}`}>
-                            {char}
-                        </span>
-                    ))}
+            <div className="flex flex-col items-center gap-2 w-full max-w-lg">
+                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Huruf yang telah dicoba</span>
+                <div className="flex flex-wrap justify-center gap-1.5 min-h-[32px]">
+                    {used.length === 0 ? (
+                        <span className="text-slate-300 italic text-xs">Belum ada tebakan</span>
+                    ) : (
+                        used.map((char, i) => (
+                            <span key={i} className={`w-7 h-7 rounded-lg flex items-center justify-center font-black text-xs border ${word.includes(char) ? 'bg-emerald-50 border-emerald-200 text-emerald-600 shadow-sm' : 'bg-slate-50 border-slate-200 text-slate-400 line-through opacity-70'}`}>
+                                {char}
+                            </span>
+                        ))
+                    )}
                 </div>
             </div>
 
             {/* INPUT AREA */}
-            <div className="w-full max-w-xs space-y-4">
-
+            <div className="w-full max-w-xs space-y-3">
                 <input
-                    className="w-full bg-slate-50 border-4 border-slate-100 p-6 rounded-[2.5rem] text-center text-4xl font-black focus:border-indigo-500 outline-none uppercase transition-all"
+                    className="w-full bg-slate-50 border-2 border-slate-100 p-4 rounded-2xl text-center text-3xl font-black focus:border-indigo-500 focus:bg-white outline-none uppercase transition-all"
                     maxLength={1}
                     value={guess}
                     onChange={(e) => setGuess(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && submitGuess()}
                     disabled={feedback !== 'none'}
-                    autoFocus
+                    placeholder="Masukkan Huruf"
                 />
                 <button
                     onClick={submitGuess}
-                    disabled={feedback !== 'none'}
-                    className="w-full py-5 rounded-[2.5rem] font-black text-xl bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-100 transition-all active:scale-95 disabled:bg-slate-200"
+                    disabled={feedback !== 'none' || !guess.trim()}
+                    className="w-full py-4 rounded-2xl font-black text-base bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/10 active:scale-95 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed transition-all border border-indigo-500/20"
                 >
                     TEBAK! 🚀
                 </button>

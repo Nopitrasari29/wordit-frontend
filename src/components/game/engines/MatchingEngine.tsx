@@ -14,7 +14,6 @@ export default function MatchingEngine(props: { data: any, onGameOver?: any, onI
     const gameConfig = useMemo(() => Array.isArray(data?.gameJson) ? data.gameJson[0] : data?.gameJson, [data]);
     const pairs = useMemo(() => gameConfig?.pairs || [], [gameConfig]);
 
-    // 🛠️ ID unik berbasis indeks
     const { leftItems, rightItems } = useMemo(() => {
         const left = pairs.map((p: any, i: number) => ({
             uniqueId: `L-${i}`,
@@ -41,7 +40,6 @@ export default function MatchingEngine(props: { data: any, onGameOver?: any, onI
     const [timeLeft, setTimeLeft] = useState(gameConfig?.timeLimit ? Number(gameConfig.timeLimit) : pairs.length * 20);
     const [isFinished, setIsFinished] = useState(false);
 
-    // 🛠️ FIX: Gunakan Ref untuk history agar tidak memicu re-render looping
     const matchesHistoryRef = useRef<any[]>([]);
 
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -86,34 +84,21 @@ export default function MatchingEngine(props: { data: any, onGameOver?: any, onI
                     isCorrect: true
                 };
 
-                // Update data secara sinkron
                 matchesHistoryRef.current.push(newMatchRecord);
                 setMatchedIds(prev => [...prev, selectedLeft.uniqueId, selectedRight.uniqueId]);
 
                 if (roomCode) {
-                const currentAccuracy =
-                    Math.round(
-                        (
-                            matchesHistoryRef.current
-                                .filter(
-                                    m => m.isCorrect
-                                ).length
-                            /
-                            pairs.length
-                        ) * 100
+                    const currentAccuracy = Math.round(
+                        (matchesHistoryRef.current.filter(m => m.isCorrect).length / pairs.length) * 100
                     );
 
-                socket.emit(
-                    "updateScore",
-                    {
+                    socket.emit("updateScore", {
                         code: roomCode,
                         score: newScore,
-                        accuracy:
-                            currentAccuracy,
-                        progress:
-                            `${matchedIds.length / 2}/${pairs.length}`,
-                    }
-                );
+                        accuracy: currentAccuracy,
+                        progress: `${(matchedIds.length + 2) / 2}/${pairs.length}`,
+                    });
+                }
 
                 submitAnswer(realGameId, selectedLeft.originalIndex, JSON.stringify({
                     leftItem: selectedLeft.text,
@@ -132,7 +117,6 @@ export default function MatchingEngine(props: { data: any, onGameOver?: any, onI
                     rightItem: selectedRight.text,
                     isCorrect: false
                 };
-                // Catat jika belum pernah dijawab salah sebelumnya
                 if (!matchesHistoryRef.current.find(m => m.questionIndex === failedMatch.questionIndex)) {
                     matchesHistoryRef.current.push(failedMatch);
                 }
@@ -144,8 +128,7 @@ export default function MatchingEngine(props: { data: any, onGameOver?: any, onI
                 setSelectedRight(null);
             }, 400);
         }
-    }
-}, [selectedLeft, selectedRight]); // 🛠️ Hanya dependensi seleksi!
+    }, [selectedLeft, selectedRight, score, pairs.length, matchedIds.length, realGameId, roomCode]);
 
     const handleFinish = async (finalMatches: any[], finalScore: number) => {
         if (isFinished) return;
@@ -181,59 +164,57 @@ export default function MatchingEngine(props: { data: any, onGameOver?: any, onI
         sessionStorage.setItem("lastBreakdown", JSON.stringify(completeHistory));
 
         if (onGameOver) {
-            onGameOver(
-                finalScore,
-                realAccuracy,
-                completeHistory
-            );
+            onGameOver(finalScore, realAccuracy, completeHistory);
             return;
         }
 
         try {
-            await finishGame(
-                realGameId,
-                payload
-            );
+            await finishGame(realGameId, payload);
         } catch (e) {
-            console.error(
-                "Gagal simpan skor"
-            );
+            console.error("Gagal simpan skor");
         }
 
-        navigate(
-            "/student/result",
-            {
-                state: {
-                    ...payload,
-                    accuracy: realAccuracy
-                }
+        navigate("/student/result", {
+            state: {
+                ...payload,
+                accuracy: realAccuracy
             }
-        );
+        });
     };
 
-    if (pairs.length === 0) return <div className="p-10 text-center animate-pulse">Menyiapkan... 🔗</div>;
+    if (pairs.length === 0) return <div className="p-10 text-center animate-pulse text-indigo-650 font-bold">Menyiapkan... 🔗</div>;
     if (isFinished) return <div className="p-20 text-center font-black animate-pulse text-indigo-600">Menyimpan Skor... 🏆</div>;
 
     return (
-        <div className="flex flex-col items-center p-4 space-y-6 max-w-5xl mx-auto w-full font-sans text-slate-800">
-            <div className="w-full flex justify-between bg-white p-4 md:p-6 rounded-[2rem] shadow-sm border-2 border-indigo-50 items-center">
+        <div className="flex flex-col items-center p-6 space-y-6 max-w-5xl mx-auto w-full font-sans select-none text-slate-800">
+            {/* Play Instructions */}
+            <div className="w-full bg-indigo-50/75 backdrop-blur-md border border-indigo-100 rounded-2xl p-4 text-center">
+                <p className="text-xs font-bold text-indigo-950">
+                    🔗 <span>Hubungkan item di kolom kiri dengan pasangan yang tepat di kolom kanan dengan mengeklik keduanya!</span>
+                </p>
+            </div>
+
+            {/* HUD Header */}
+            <div className="w-full flex justify-between bg-slate-900/95 backdrop-blur-md p-5 rounded-[2rem] border border-slate-800 text-white items-center shadow-lg">
                 <div className="flex flex-col font-black text-center">
-                    <span className="text-[10px] text-slate-400 uppercase tracking-widest">Progress</span>
-                    <span className="text-xl text-indigo-600">{matchedIds.length / 2} / {pairs.length}</span>
+                    <span className="text-[9px] text-slate-400 uppercase tracking-widest mb-0.5">Progress</span>
+                    <span className="text-xl text-indigo-400">{matchedIds.length / 2} / {pairs.length}</span>
                 </div>
                 <div className="flex flex-col items-center">
-                    <span className="text-[10px] text-slate-400 uppercase tracking-widest">Waktu</span>
-                    <span className={`text-2xl font-black ${timeLeft <= 10 ? 'text-rose-500 animate-pulse' : 'text-slate-700'}`}>{timeLeft}s</span>
+                    <span className="text-[9px] text-slate-400 uppercase tracking-widest text-center mb-0.5">Waktu</span>
+                    <span className={`text-xl font-black px-4 py-0.5 rounded-full border ${timeLeft <= 10 ? 'text-rose-500 border-rose-500/20 bg-rose-500/10 animate-pulse' : 'text-indigo-300 border-indigo-500/10 bg-indigo-500/5'}`}>{timeLeft}s</span>
                 </div>
                 <div className="text-center flex flex-col font-black">
-                    <span className="text-[10px] text-slate-400 uppercase tracking-widest">Skor</span>
-                    <span className="text-indigo-600 text-2xl">{score}</span>
+                    <span className="text-[9px] text-slate-400 uppercase tracking-widest mb-0.5">Skor</span>
+                    <span className="text-indigo-400 text-xl">{score}</span>
                 </div>
             </div>
 
-            <div className="w-full bg-white p-3 md:p-10 rounded-[2.5rem] md:rounded-[3rem] shadow-xl border border-slate-100 flex flex-row gap-3 md:gap-8 relative overflow-hidden">
-                <div className="flex-1 flex flex-col gap-3 md:gap-4">
-                    <h3 className="text-center font-black text-slate-400 uppercase text-[9px] md:text-xs mb-1 md:mb-2 tracking-widest">Pilih Item</h3>
+            {/* GAME AREA */}
+            <div className="w-full bg-white p-6 md:p-10 rounded-[2.5rem] shadow-xl border border-indigo-50 flex flex-row gap-4 md:gap-8 items-stretch relative overflow-hidden">
+                {/* LEFT COLUMN */}
+                <div className="flex-1 flex flex-col gap-3">
+                    <h3 className="text-center font-black text-indigo-500 uppercase text-[10px] md:text-xs mb-1 tracking-widest bg-indigo-50 py-1.5 rounded-lg border border-indigo-100">Pilih Item</h3>
                     {leftItems.map((item) => {
                         const isMatched = matchedIds.includes(item.uniqueId);
                         const isSelected = selectedLeft?.uniqueId === item.uniqueId;
@@ -242,24 +223,26 @@ export default function MatchingEngine(props: { data: any, onGameOver?: any, onI
                                 key={item.uniqueId}
                                 disabled={isMatched}
                                 onClick={() => setSelectedLeft(isSelected ? null : item)}
-                                className={`p-3 md:p-6 rounded-xl md:rounded-2xl font-black text-xs md:text-lg transition-all border-b-4 text-left flex justify-between items-center ${isMatched ? 'bg-emerald-50 text-emerald-400 border-transparent opacity-50 cursor-not-allowed' :
-                                    isSelected ? 'bg-indigo-500 text-white border-indigo-700 scale-105 shadow-lg' :
-                                        'bg-slate-100 text-slate-700 hover:bg-slate-200 border-slate-300'
+                                className={`p-4 md:p-5 rounded-2xl font-black text-xs md:text-base transition-all border-2 text-left flex justify-between items-center ${isMatched ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20 opacity-60 cursor-not-allowed shadow-none' :
+                                    isSelected ? 'bg-indigo-500 text-white border-indigo-600 scale-[1.02] shadow-lg shadow-indigo-500/20' :
+                                        'bg-slate-50 text-slate-700 hover:bg-indigo-50/20 border-slate-100 hover:border-indigo-200'
                                     }`}
                             >
-                                <span className="truncate">{item.text}</span>
-                                {isMatched && <CheckCircle2 size={16} className="hidden sm:inline shrink-0" />}
+                                <span className="truncate pr-2">{item.text}</span>
+                                {isMatched && <CheckCircle2 size={16} className="text-emerald-500 shrink-0" />}
                             </button>
                         );
                     })}
                 </div>
 
-                <div className="hidden md:flex flex-col justify-center items-center text-indigo-200">
-                    <Link2 size={40} className={selectedLeft && selectedRight ? "animate-bounce text-indigo-500" : ""} />
+                {/* MIDDLE LINK ICON */}
+                <div className="hidden md:flex flex-col justify-center items-center text-slate-300">
+                    <Link2 size={32} className={selectedLeft && selectedRight ? "animate-bounce text-indigo-500" : ""} />
                 </div>
 
-                <div className="flex-1 flex flex-col gap-3 md:gap-4">
-                    <h3 className="text-center font-black text-slate-400 uppercase text-[9px] md:text-xs mb-1 md:mb-2 tracking-widest">Cari Pasangannya</h3>
+                {/* RIGHT COLUMN */}
+                <div className="flex-1 flex flex-col gap-3">
+                    <h3 className="text-center font-black text-amber-500 uppercase text-[10px] md:text-xs mb-1 tracking-widest bg-amber-50 py-1.5 rounded-lg border border-amber-100">Cari Pasangannya</h3>
                     {rightItems.map((item) => {
                         const isMatched = matchedIds.includes(item.uniqueId);
                         const isSelected = selectedRight?.uniqueId === item.uniqueId;
@@ -268,13 +251,13 @@ export default function MatchingEngine(props: { data: any, onGameOver?: any, onI
                                 key={item.uniqueId}
                                 disabled={isMatched}
                                 onClick={() => setSelectedRight(isSelected ? null : item)}
-                                className={`p-3 md:p-6 rounded-xl md:rounded-2xl font-black text-xs md:text-lg transition-all border-b-4 text-left flex justify-between items-center ${isMatched ? 'bg-emerald-50 text-emerald-400 border-transparent opacity-50 cursor-not-allowed' :
-                                    isSelected ? 'bg-amber-500 text-white border-amber-700 scale-105 shadow-lg' :
-                                        'bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border-indigo-200'
+                                className={`p-4 md:p-5 rounded-2xl font-black text-xs md:text-base transition-all border-2 text-left flex justify-between items-center ${isMatched ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20 opacity-60 cursor-not-allowed shadow-none' :
+                                    isSelected ? 'bg-amber-500 text-white border-amber-600 scale-[1.02] shadow-lg shadow-amber-500/20' :
+                                        'bg-slate-50 text-slate-700 hover:bg-indigo-50/20 border-slate-100 hover:border-indigo-200'
                                     }`}
                             >
-                                <span className="truncate">{item.text}</span>
-                                {isMatched && <CheckCircle2 size={16} className="hidden sm:inline shrink-0" />}
+                                <span className="truncate pr-2">{item.text}</span>
+                                {isMatched && <CheckCircle2 size={16} className="text-emerald-500 shrink-0" />}
                             </button>
                         );
                     })}

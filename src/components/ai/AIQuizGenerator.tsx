@@ -7,6 +7,7 @@ interface AIProps {
   template: string;
   onFinish: (data: any) => void;
   requestedCount?: number;
+  onCountChange?: (count: number) => void;
 }
 
 export default function AIQuizGenerator({
@@ -14,6 +15,7 @@ export default function AIQuizGenerator({
   template,
   onFinish,
   requestedCount = 5,
+  onCountChange,
 }: AIProps) {
   const cacheKey = `ai_gen_${level}_${template}`;
 
@@ -219,20 +221,43 @@ export default function AIQuizGenerator({
             rows={3}
             className="w-full bg-slate-800/40 backdrop-blur-md border border-slate-700/50 focus:border-indigo-500 rounded-2xl p-5 outline-none transition-all font-bold text-base text-white resize-none"
           />
-          <button
-            onClick={generate}
-            disabled={loading}
-            className="w-full md:w-auto self-end bg-indigo-600/80 hover:bg-indigo-500 backdrop-blur-md disabled:opacity-50 text-white font-black px-10 py-4 rounded-2xl transition-all active:scale-95 whitespace-nowrap shadow-lg shadow-indigo-500/20 border border-indigo-400/30 flex items-center justify-center gap-2"
-          >
-            {loading ? (
-              <span className="flex items-center gap-2">
-                <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                AI Lagi Mikir...
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-4 w-full">
+            <div className="flex items-center gap-3 bg-slate-800/60 border border-slate-700/40 px-5 py-3 rounded-2xl w-full sm:w-auto">
+              <label className="text-xs font-black text-slate-300 uppercase tracking-wider whitespace-nowrap">
+                Jumlah Soal
+              </label>
+              <input
+                type="number"
+                min={1}
+                max={20}
+                value={requestedCount}
+                onChange={(e) =>
+                  onCountChange?.(
+                    Math.max(1, Math.min(20, Number(e.target.value)))
+                  )
+                }
+                className="w-16 bg-slate-950 border-2 border-slate-700/60 rounded-xl px-2 py-1.5 text-center font-black text-base text-white outline-none focus:border-indigo-500 transition-all"
+              />
+              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                soal (maks. 20)
               </span>
-            ) : (
-              <span>Generate Magic 🪄</span>
-            )}
-          </button>
+            </div>
+            
+            <button
+              onClick={generate}
+              disabled={loading}
+              className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-black px-10 py-4 rounded-2xl transition-all active:scale-95 whitespace-nowrap shadow-lg shadow-indigo-500/20 border border-indigo-400/30 flex items-center justify-center gap-2"
+            >
+              {loading ? (
+                <span className="flex items-center gap-2">
+                  <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  AI Lagi Mikir...
+                </span>
+              ) : (
+                <span>Generate Magic 🪄</span>
+              )}
+            </button>
+          </div>
         </div>
 
         {/* ✅ FE-17: Banner peringatan jika soal kurang dari yang diminta */}

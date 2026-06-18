@@ -281,7 +281,14 @@ export default function GameBuilderPage() {
               </div>
             </div>
           </div>
-          {step === 2 && (
+          {step === 1 ? (
+            <Button
+              onClick={handleManualCreate}
+              className="bg-indigo-600 hover:bg-indigo-500 shadow-indigo-500/10 text-white font-black px-6 py-3 rounded-full flex items-center gap-2 transition-all text-xs"
+            >
+              ✏️ Buat Manual Tanpa AI
+            </Button>
+          ) : (
             <button
               onClick={() => setStep(1)}
               className="text-indigo-600 font-black text-sm hover:underline transition-all"
@@ -295,49 +302,14 @@ export default function GameBuilderPage() {
       <div className="max-w-5xl mx-auto px-6 space-y-8">
         {step === 1 ? (
           <div className="animate-in fade-in duration-500">
-            {/* 🔢 AI-05: Input jumlah soal sebelum generate — wire requestedCount ke AIQuizGenerator */}
-            <div className="space-y-4">
-              <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 flex items-center gap-5">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] whitespace-nowrap">
-                  Jumlah Soal
-                </label>
-                <input
-                  type="number"
-                  min={1}
-                  max={20}
-                  value={questionCount}
-                  onChange={(e) =>
-                    setQuestionCount(
-                      Math.max(1, Math.min(20, Number(e.target.value))),
-                    )
-                  }
-                  className="w-24 bg-slate-50 border-2 border-transparent px-4 py-2 rounded-full focus:bg-white focus:border-indigo-500 outline-none font-black text-xl text-slate-800 text-center transition-all"
-                />
-                <span className="text-slate-400 text-sm font-bold">
-                  soal (maks. 20)
-                </span>
-              </div>
-              
-              <div className="flex flex-col md:flex-row gap-4">
-                <div className="flex-1">
-                  <AIQuizGenerator
-                    level={level}
-                    template={template}
-                    onFinish={handleAIFinished}
-                    requestedCount={questionCount}
-                  />
-                </div>
-                
-                <div className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-slate-200 rounded-[2rem] md:w-1/3 bg-slate-50">
-                  <p className="text-sm font-bold text-slate-500 mb-4 text-center">Atau buat kuis sendiri dari awal tanpa bantuan AI</p>
-                  <Button 
-                    onClick={handleManualCreate}
-                    isFullWidth
-                  >
-                    ✏️ Buat Manual
-                  </Button>
-                </div>
-              </div>
+            <div className="w-full">
+              <AIQuizGenerator
+                level={level}
+                template={template}
+                onFinish={handleAIFinished}
+                requestedCount={questionCount}
+                onCountChange={setQuestionCount}
+              />
             </div>
           </div>
         ) : (
