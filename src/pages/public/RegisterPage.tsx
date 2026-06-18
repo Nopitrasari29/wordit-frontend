@@ -52,6 +52,10 @@ export default function RegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!name.trim()) {
+      return toast.error("Nama lengkap wajib diisi!");
+    }
+
     if (!emailRegex.test(email)) {
       setEmailError("Format email harus valid (contoh: nama@sekolah.com)");
       return toast.error("Format email tidak valid!");
@@ -70,13 +74,21 @@ export default function RegisterPage() {
       return toast.error("Siswa wajib memilih jenjang pendidikan!");
     }
 
+    if (!schoolOrigin.trim()) {
+      return toast.error("Asal Sekolah/Institusi wajib diisi!");
+    }
+
+    if (!phoneNumber.trim()) {
+      return toast.error("Nomor HP / WhatsApp wajib diisi!");
+    }
+
     if (role === "ADMIN") {
       return toast.error("Pendaftaran Admin hanya bisa dilakukan melalui sistem internal.");
     }
 
     setIsLoading(true);
     try {
-      await register(name, email, password, role, educationLevels, schoolOrigin || undefined, phoneNumber || undefined);
+      await register(name, email, password, role, educationLevels, schoolOrigin.trim(), phoneNumber.trim());
 
       toast.success("Registrasi berhasil! Silakan verifikasi email Anda. 🚀");
       navigate(`/verify-pending?email=${encodeURIComponent(email)}`);
@@ -90,27 +102,28 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-screen flex justify-center items-center p-4 bg-gradient-to-br from-indigo-100 via-blue-50 to-white relative overflow-hidden font-sans pt-28 pb-12">
-      {/* Background Decor Tetap Sama */}
+      {/* Background Decor */}
       <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-indigo-300 rounded-full mix-blend-multiply filter blur-3xl opacity-40 animate-blob"></div>
       <div className="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-blue-300 rounded-full mix-blend-multiply filter blur-3xl opacity-40 animate-blob" style={{ animationDelay: '2s' }}></div>
 
-      <div className="bg-white/90 backdrop-blur-xl shadow-[0_20px_50px_rgba(0,0,0,0.05)] border border-white rounded-[3rem] w-full max-w-4xl relative z-10 flex flex-col md:flex-row overflow-hidden">
+      <div className="bg-white/90 backdrop-blur-xl shadow-[0_20px_50px_rgba(0,0,0,0.05)] border border-white rounded-[3rem] w-full max-w-5xl relative z-10 flex flex-col md:flex-row overflow-hidden animate-in fade-in duration-500">
 
-        {/* Branding Side Tetap Sama */}
-        <div className="bg-indigo-600 p-10 md:p-12 text-white flex flex-col justify-center w-full md:w-5/12 relative overflow-hidden">
+        {/* Branding Side */}
+        <div className="bg-indigo-600 p-10 md:p-12 text-white flex flex-col justify-center w-full md:w-4/12 relative overflow-hidden">
           <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-10 rounded-full blur-3xl translate-x-1/2 -translate-y-1/2"></div>
           <h2 className="text-4xl font-black mb-4 tracking-tight relative z-10">
             Bergabung dengan Word<span className="text-blue-300">IT</span>!
           </h2>
-          <p className="text-indigo-100 font-semibold text-lg relative z-10">
+          <p className="text-indigo-100 font-semibold text-lg relative z-10 leading-relaxed">
             Buat akunmu sekarang dan rasakan pengalaman belajar yang belum pernah ada sebelumnya.
           </p>
           <div className="mt-10 text-6xl hidden md:block animate-bounce">🚀</div>
         </div>
 
         {/* Form Side */}
-        <div className="p-8 md:p-12 w-full md:w-7/12 bg-white">
-          <h1 className="text-2xl font-black text-slate-800 mb-6 tracking-tight">Register Akun Baru</h1>
+        <div className="p-8 md:p-12 w-full md:w-8/12 bg-white">
+          <h1 className="text-3xl font-black text-slate-800 mb-2 tracking-tight">Register Akun Baru</h1>
+          <p className="text-slate-400 text-sm font-semibold mb-6">Silakan lengkapi formulir pendaftaran di bawah ini.</p>
 
           <div className="mb-6 bg-indigo-50 border border-indigo-100 p-4 rounded-2xl flex items-start gap-3">
             <span className="text-xl">📧</span>
@@ -120,44 +133,75 @@ export default function RegisterPage() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
-            <Input label="Full Name" placeholder="Budi Santoso" value={name} onChange={(e) => setName(e.target.value)} required />
-            
-            <div>
-              <Input label="Email" type="email" placeholder="budi@sekolah.com" value={email} onChange={(e) => handleEmailChange(e.target.value)} error={emailError} required />
-              <p className="text-[10px] text-slate-400 font-bold ml-2 mt-1.5 text-left">
-                ⚠️ Gunakan email asli yang aktif untuk menerima tautan verifikasi akun.
-              </p>
-            </div>
-
-            <div>
-              <Input label="Password" type="password" placeholder="••••••••" value={password} onChange={(e) => handlePasswordChange(e.target.value)} error={passwordError} required />
-              <p className="text-[10px] text-slate-400 font-bold ml-2 mt-1.5 text-left">
-                🔒 Password harus terdiri dari minimal 8 karakter.
-              </p>
-            </div>
-
-            <div className="w-full flex flex-col gap-2">
-              <label className="text-sm font-bold text-slate-700 ml-2">Daftar Sebagai</label>
-              <div className="relative">
-                <select
-                  className="w-full bg-slate-50 text-slate-800 px-6 py-4 rounded-full border-2 border-slate-100 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/20 outline-none transition-all font-bold appearance-none cursor-pointer"
-                  value={role}
-                  onChange={(e) => setRole(e.target.value)}
-                >
-                  <option value="STUDENT">🎓 Siswa (Student)</option>
-                  <option value="TEACHER">👨‍🏫 Guru (Teacher)</option>
-                </select>
-                <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 font-bold">▼</div>
+            {/* Row 1: Nama & Peran */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <Input label="Full Name" placeholder="Budi Santoso" value={name} onChange={(e) => setName(e.target.value)} required />
+              
+              <div className="w-full flex flex-col gap-2">
+                <label className="text-sm font-bold text-slate-700 ml-2">
+                  Daftar Sebagai <span className="text-rose-500">*</span>
+                </label>
+                <div className="relative">
+                  <select
+                    className="w-full bg-slate-50 text-slate-800 px-6 py-4 rounded-full border-2 border-slate-100 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/20 outline-none transition-all font-bold appearance-none cursor-pointer"
+                    value={role}
+                    onChange={(e) => setRole(e.target.value)}
+                  >
+                    <option value="STUDENT">🎓 Siswa (Student)</option>
+                    <option value="TEACHER">👨‍🏫 Guru (Teacher)</option>
+                  </select>
+                  <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 font-bold">▼</div>
+                </div>
               </div>
             </div>
 
-            {/* SEKSI BARU: Checkbox Education Level untuk Teacher */}
+            {/* Row 2: Email & Password */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div>
+                <Input label="Email" type="email" placeholder="budi@sekolah.com" value={email} onChange={(e) => handleEmailChange(e.target.value)} error={emailError} required />
+                <p className="text-[10px] text-slate-400 font-bold ml-2 mt-1.5 text-left">
+                  ⚠️ Gunakan email asli yang aktif untuk verifikasi akun.
+                </p>
+              </div>
+
+              <div>
+                <Input label="Password" type="password" placeholder="••••••••" value={password} onChange={(e) => handlePasswordChange(e.target.value)} error={passwordError} required />
+                <p className="text-[10px] text-slate-400 font-bold ml-2 mt-1.5 text-left">
+                  🔒 Password harus terdiri dari minimal 8 karakter.
+                </p>
+              </div>
+            </div>
+
+            {/* Row 3: Asal Sekolah & Kontak */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <Input
+                label="Asal Sekolah / Institusi"
+                placeholder="SMA Negeri 1 Jakarta"
+                value={schoolOrigin}
+                onChange={(e) => setSchoolOrigin(e.target.value)}
+                required
+              />
+              <Input
+                label="Nomor HP / WhatsApp"
+                type="tel"
+                placeholder="08123456789"
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value)}
+                required
+              />
+            </div>
+            
+            <p className="text-[10px] text-slate-400 font-bold ml-2 text-left -mt-2">
+              📋 Asal sekolah dan nomor HP wajib diisi secara akurat untuk verifikasi oleh Admin Sekolah.
+            </p>
+
+            {/* Row 4: Jenjang Pendidikan */}
             {role === "TEACHER" && (
-              <div className="w-full flex flex-col gap-3 p-4 bg-indigo-50 rounded-3xl border border-indigo-100 transition-all animate-in fade-in slide-in-from-top-2">
+              <div className="w-full flex flex-col gap-3 p-5 bg-indigo-50/50 rounded-3xl border border-indigo-100/50 transition-all animate-in fade-in slide-in-from-top-2">
                 <label className="text-xs font-black uppercase tracking-wider text-indigo-600 ml-2">
-                  Pilih Jenjang Pendidikan (Bisa Lebih Dari Satu)
+                  Pilih Jenjang Pendidikan (Bisa Lebih Dari Satu) <span className="text-rose-500">*</span>
                 </label>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {["SD", "SMP", "SMA", "UNIVERSITY"].map((level) => (
                     <label
                       key={level}
@@ -187,13 +231,12 @@ export default function RegisterPage() {
               </div>
             )}
 
-            {/* SEKSI BARU: Selector Education Level untuk Student */}
             {role === "STUDENT" && (
-              <div className="w-full flex flex-col gap-3 p-4 bg-blue-50 rounded-3xl border border-blue-100 transition-all animate-in fade-in slide-in-from-top-2">
+              <div className="w-full flex flex-col gap-3 p-5 bg-blue-50/50 rounded-3xl border border-blue-100/50 transition-all animate-in fade-in slide-in-from-top-2">
                 <label className="text-xs font-black uppercase tracking-wider text-blue-600 ml-2">
-                  Pilih Jenjang Pendidikanmu (Pilih Salah Satu)
+                  Pilih Jenjang Pendidikanmu (Pilih Salah Satu) <span className="text-rose-500">*</span>
                 </label>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {["SD", "SMP", "SMA", "UNIVERSITY"].map((level) => (
                     <label
                       key={level}
@@ -209,7 +252,7 @@ export default function RegisterPage() {
                         className="hidden"
                         checked={educationLevels.includes(level)}
                         onChange={() => {
-                          setEducationLevels([level]); // Single-select, save as an array with 1 item
+                          setEducationLevels([level]);
                         }}
                       />
                       {level}
@@ -219,34 +262,10 @@ export default function RegisterPage() {
               </div>
             )}
 
-            {/* SEKSI: Info Sekolah & Kontak (Opsional) */}
-            <div className="w-full flex flex-col gap-3 p-4 bg-slate-50 rounded-3xl border border-slate-100">
-              <label className="text-xs font-black uppercase tracking-wider text-slate-500 ml-2">
-                Informasi Tambahan (Opsional)
-              </label>
-              <Input
-                label="Asal Sekolah/Institusi"
-                placeholder="SMA Negeri 1 Jakarta"
-                value={schoolOrigin}
-                onChange={(e) => setSchoolOrigin(e.target.value)}
-              />
-              <Input
-                label="Nomor HP / WhatsApp"
-                type="tel"
-                placeholder="08123456789"
-                value={phoneNumber}
-                onChange={(e) => setPhoneNumber(e.target.value)}
-              />
-              <p className="text-[10px] text-slate-400 font-bold ml-2">
-                📋 Data sekolah digunakan untuk pengelolaan akun oleh Admin Sekolah.
-              </p>
-            </div>
-
-            <Button type="submit" isFullWidth disabled={isLoading} className="mt-8 shadow-xl shadow-indigo-100">
+            <Button type="submit" isFullWidth disabled={isLoading} className="mt-8 shadow-xl shadow-indigo-100 py-4.5 text-base">
               {isLoading ? "Sedang Mendaftar..." : "Register Sekarang"}
             </Button>
           </form>
-
 
           <p className="text-center mt-6 text-sm font-semibold text-slate-500">
             Already have an account?
@@ -255,5 +274,5 @@ export default function RegisterPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }
