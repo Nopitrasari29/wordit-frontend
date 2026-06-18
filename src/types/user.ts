@@ -1,5 +1,4 @@
-// Sesuaikan dengan Enum di Prisma backend kamu
-export type Role = "STUDENT" | "TEACHER" | "ADMIN";
+export type Role = "STUDENT" | "TEACHER" | "SCHOOL_ADMIN" | "SUPER_ADMIN" | "ADMIN";
 export type ApprovalStatus = "PENDING" | "APPROVED" | "REJECTED";
 export type EducationLevel = "SD" | "SMP" | "SMA" | "UNIVERSITY";
 
@@ -13,15 +12,17 @@ export interface User {
   photoUrl?: string | null;
   createdAt: string;
   updatedAt?: string;
+  schoolOrigin?: string | null;
+  phoneNumber?: string | null;
+  hasAdminAccess?: boolean;
+  adminRequestStatus?: ApprovalStatus | null;
 
-  // 🛠️ FIX UTAMA: Daftarkan objek relasi profile agar dikenali di tabel Admin Frontend
   profile?: {
     bio?: string | null;
     totalPoints?: number;
     badges?: string[];
   };
 
-  // 🛠️ TAMBAHAN: Daftarkan properti agregat count untuk kalkulasi jumlah kuis terbuat
   _count?: {
     gamesCreated?: number;
     sessions?: number;

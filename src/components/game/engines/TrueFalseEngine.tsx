@@ -90,7 +90,11 @@ export default function TrueFalseEngine({
     setSwipeDirection(answerChoice ? "right" : "left");
 
     // Kalkulasi Skor
-    const pointsEarned = isCorrect ? 50 : 0;
+    const maxScoreConfig = Number(gameConfig?.maxScore);
+    const pointsPerQuestion = maxScoreConfig && maxScoreConfig > 0 && questions.length > 0
+      ? Math.round(maxScoreConfig / questions.length)
+      : 100; // default 100
+    const pointsEarned = isCorrect ? pointsPerQuestion : 0;
     const newScore = score + pointsEarned;
 
     setScore(newScore);
@@ -182,7 +186,7 @@ export default function TrueFalseEngine({
      */
     const payload = {
       scoreValue: finalScore,
-      maxScore: questions.length * 50,
+      maxScore: Number(gameConfig?.maxScore) || questions.length * 100,
       accuracy: realAccuracy,
       timeSpent: totalTimeSpent,
       answersDetail: completeHistory,
@@ -288,14 +292,16 @@ export default function TrueFalseEngine({
         )}
 
         <div
-          className={`w-full h-[300px] bg-white p-8 md:p-12 rounded-[3rem] shadow-2xl border-4 border-indigo-50 flex items-center justify-center text-center relative overflow-hidden origin-bottom ${cardAnimationClass}`}
+          className={`w-full min-h-[250px] max-h-[380px] bg-white p-6 md:p-10 rounded-[3rem] shadow-2xl border-4 border-indigo-50 flex items-center justify-center text-center relative overflow-hidden origin-bottom ${cardAnimationClass}`}
         >
           <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2"></div>
           <div className="absolute bottom-0 left-0 w-32 h-32 bg-rose-500/10 rounded-full blur-2xl translate-y-1/2 -translate-x-1/2"></div>
 
-          <h2 className="text-2xl md:text-3xl font-black text-slate-800 leading-snug relative z-10">
-            "{currentQ.question}"
-          </h2>
+          <div className="relative z-10 w-full max-h-[300px] overflow-y-auto">
+            <h2 className="text-xl md:text-2xl font-black text-slate-800 leading-snug break-words whitespace-pre-wrap">
+              "{currentQ.question}"
+            </h2>
+          </div>
         </div>
       </div>
 

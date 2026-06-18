@@ -186,7 +186,7 @@ export default function TeacherDashboard() {
                   {game.title}
                 </h3>
 
-                <div className="flex items-center gap-2 mb-8 px-2">
+                <div className="flex items-center gap-2 mb-8 px-2 flex-wrap">
                   <span className="bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wildest">
                     {game.templateType?.replace('_', ' ')}
                   </span>
@@ -194,6 +194,14 @@ export default function TeacherDashboard() {
                   <span className="text-slate-400 font-bold text-[10px] uppercase">
                     {game.educationLevel}
                   </span>
+                  {game.classGrade && (
+                    <>
+                      <span className="text-slate-300 font-black">•</span>
+                      <span className="bg-violet-50 text-violet-600 px-2 py-0.5 rounded-full text-[9px] font-black uppercase">
+                        Kelas {game.classGrade}
+                      </span>
+                    </>
+                  )}
                 </div>
 
                 <div className="mt-auto pt-6 border-t border-slate-50 flex items-center gap-3">

@@ -143,7 +143,7 @@ export default function AIQuizGenerator({
   const previewItems = itemsList;
 
   return (
-    <div className="bg-[#0f172a] p-8 md:p-12 rounded-[3rem] text-white shadow-2xl relative overflow-hidden border border-white/5 font-sans">
+    <div className="bg-slate-900/90 backdrop-blur-2xl p-8 md:p-12 rounded-[3rem] text-white shadow-2xl relative overflow-hidden border border-indigo-500/30 shadow-[0_0_50px_rgba(99,102,241,0.15)] font-sans">
       <div className="relative z-10">
         <div className="mb-6">
           <div className="flex justify-between items-start flex-wrap gap-4">
@@ -211,20 +211,27 @@ export default function AIQuizGenerator({
           </p>
         </div>
 
-        <div className="flex flex-col md:flex-row gap-4 mb-10">
-          <input
-            placeholder="Ketik topik kuis (Misal: Ekosistem Laut)..."
+        <div className="flex flex-col gap-4 mb-10">
+          <textarea
+            placeholder="Ketik topik atau prompt kuis (Misal: Ekosistem Laut, rantai makanan, dan terumbu karang)..."
             value={topic}
             onChange={(e) => setTopic(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && !loading && generate()}
-            className="flex-1 bg-white/10 border-2 border-white/5 px-8 py-4 rounded-full outline-none focus:border-indigo-500 transition-all font-bold text-lg text-white"
+            rows={3}
+            className="w-full bg-slate-800/40 backdrop-blur-md border border-slate-700/50 focus:border-indigo-500 rounded-2xl p-5 outline-none transition-all font-bold text-base text-white resize-none"
           />
           <button
             onClick={generate}
             disabled={loading}
-            className="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-black px-10 py-4 rounded-full transition-all active:scale-95 whitespace-nowrap shadow-lg shadow-indigo-500/20"
+            className="w-full md:w-auto self-end bg-indigo-600/80 hover:bg-indigo-500 backdrop-blur-md disabled:opacity-50 text-white font-black px-10 py-4 rounded-2xl transition-all active:scale-95 whitespace-nowrap shadow-lg shadow-indigo-500/20 border border-indigo-400/30 flex items-center justify-center gap-2"
           >
-            {loading ? "AI Lagi Mikir..." : "Generate Magic 🪄"}
+            {loading ? (
+              <span className="flex items-center gap-2">
+                <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                AI Lagi Mikir...
+              </span>
+            ) : (
+              <span>Generate Magic 🪄</span>
+            )}
           </button>
         </div>
 

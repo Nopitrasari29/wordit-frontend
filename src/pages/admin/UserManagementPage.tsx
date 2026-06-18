@@ -7,6 +7,7 @@ import {
   approveUser,
   bulkImportUsers,
   bulkDeleteUsers,
+  approveSchoolAdmin,
 } from "../services/user.service";
 import type { User } from "../../types/user";
 import { toast } from "react-hot-toast";
@@ -34,6 +35,7 @@ export default function UserManagementPage() {
   const [meta, setMeta] = useState<PaginationMeta>({ page: 1, limit: PAGE_LIMIT, total: 0, totalPages: 1 });
   const [loading, setLoading] = useState(true);
   const [pendingCount, setPendingCount] = useState(0);
+  const [subTab, setSubTab] = useState<"ALL_USERS" | "SCHOOL_ADMIN_REQUESTS">("ALL_USERS");
 
   // ─── Filter & Search ─────────────────────────────────────────
   const [search, setSearch] = useState("");
@@ -67,13 +69,18 @@ export default function UserManagementPage() {
   const closeConfirm = () => setConfirmConfig((p) => ({ ...p, isOpen: false }));
 
   // ─── Fetch Users (server-side filtering + pagination) ────────
-  const loadUsers = useCallback(async (page = currentPage, q = search, status = statusFilter) => {
+  const loadUsers = useCallback(async (page = currentPage, q = search, status = statusFilter, currentSubTab = subTab) => {
     setLoading(true);
     setSelectedIds(new Set()); // reset selection on reload
     try {
       const params: any = { page, limit: PAGE_LIMIT };
       if (q.trim()) params.search = q.trim();
-      if (status !== "ALL") params.approvalStatus = status;
+      
+      if (currentSubTab === "SCHOOL_ADMIN_REQUESTS") {
+        params.adminRequestStatus = "PENDING";
+      } else {
+        if (status !== "ALL") params.approvalStatus = status;
+      }
 
       const response = await getUsers(params);
       // response can be { data: [...], meta: {...} } or array
@@ -92,9 +99,26 @@ export default function UserManagementPage() {
     } finally {
       setLoading(false);
     }
-  }, []); // eslint-disable-line
+  }, [currentPage, search, statusFilter, subTab]);
 
-  useEffect(() => { loadUsers(1, search, statusFilter); }, []); // eslint-disable-line
+  useEffect(() => { loadUsers(1, search, statusFilter, subTab); }, []); // eslint-disable-line
+
+  const handleSubTabChange = (tab: "ALL_USERS" | "SCHOOL_ADMIN_REQUESTS") => {
+    setSubTab(tab);
+    setCurrentPage(1);
+    setSelectedIds(new Set());
+    loadUsers(1, search, statusFilter, tab);
+  };
+
+  async function handleSchoolAdminApproval(id: string, action: "APPROVE" | "REJECT") {
+    try {
+      await approveSchoolAdmin(id, action);
+      toast.success(`Pengajuan Admin Sekolah berhasil di-${action === "APPROVE" ? "setujui" : "tolak"}`);
+      loadUsers(currentPage, search, statusFilter, subTab);
+    } catch (err: any) {
+      toast.error(err.message || "Gagal memproses pengajuan Admin Sekolah");
+    }
+  }
 
   // ─── Socket ──────────────────────────────────────────────────
   useEffect(() => {
@@ -360,6 +384,11 @@ export default function UserManagementPage() {
           </h2>
           <p className="text-xs text-slate-400 mt-0.5 font-bold uppercase tracking-wider">
             Review status guru, verifikasi akun, dan kelola peran user · Total: {meta.total} pengguna
+            {currentAdmin?.schoolOrigin && (
+              <span className="text-indigo-600 block mt-1 normal-case font-extrabold text-[11px]">
+                🏫 Terbatas untuk Asal Sekolah: {currentAdmin.schoolOrigin}
+              </span>
+            )}
           </p>
         </div>
 
@@ -442,6 +471,32 @@ export default function UserManagementPage() {
               )}
             </button>
           </div>
+        </div>
+      )}
+
+      {/* ── SUB TAB UNTUK SUPER_ADMIN ── */}
+      {currentAdmin?.role === "SUPER_ADMIN" && (
+        <div className="flex gap-2 border-b border-slate-200 mb-2">
+          <button
+            onClick={() => handleSubTabChange("ALL_USERS")}
+            className={`py-3 px-6 text-xs font-black uppercase tracking-wider border-b-2 transition-all ${
+              subTab === "ALL_USERS"
+                ? "border-indigo-600 text-indigo-600"
+                : "border-transparent text-slate-400 hover:text-slate-600"
+            }`}
+          >
+            👥 Semua Pengguna
+          </button>
+          <button
+            onClick={() => handleSubTabChange("SCHOOL_ADMIN_REQUESTS")}
+            className={`py-3 px-6 text-xs font-black uppercase tracking-wider border-b-2 transition-all ${
+              subTab === "SCHOOL_ADMIN_REQUESTS"
+                ? "border-indigo-600 text-indigo-600"
+                : "border-transparent text-slate-400 hover:text-slate-600"
+            }`}
+          >
+            🏫 Pengajuan Admin Sekolah
+          </button>
         </div>
       )}
 
@@ -610,16 +665,34 @@ export default function UserManagementPage() {
 
                       {/* Role Dropdown */}
                       <td className="py-4 px-4 text-center">
-                        <select
-                          value={u.role}
-                          onChange={(e) => changeRole(u.id, e.target.value)}
-                          disabled={isSelf}
-                          className={`bg-slate-50 border border-slate-200 text-slate-700 px-2.5 py-1.5 rounded-lg font-bold text-[10px] outline-none hover:border-indigo-500 cursor-pointer ${isSelf ? "opacity-60 cursor-not-allowed" : ""}`}
-                        >
-                          <option value="STUDENT">🎓 STUDENT</option>
-                          <option value="TEACHER">👨‍🏫 TEACHER</option>
-                          <option value="ADMIN">🛡️ ADMIN</option>
-                        </select>
+                        {currentAdmin?.role === "SCHOOL_ADMIN" && (u.role === "SCHOOL_ADMIN" || u.role === "SUPER_ADMIN") ? (
+                          <span className="text-[10px] font-black text-slate-500 bg-slate-100 px-2.5 py-1 rounded-md uppercase">
+                            {u.role === "SUPER_ADMIN" ? "🛡️ SUPER_ADMIN" : "🏫 SCHOOL_ADMIN"}
+                          </span>
+                        ) : (
+                          <div className="flex flex-col gap-1 items-center justify-center">
+                            <select
+                              value={u.role}
+                              onChange={(e) => changeRole(u.id, e.target.value)}
+                              disabled={isSelf || (currentAdmin?.role === "SCHOOL_ADMIN" && (u.role === "SCHOOL_ADMIN" || u.role === "SUPER_ADMIN"))}
+                              className={`bg-slate-50 border border-slate-200 text-slate-700 px-2.5 py-1.5 rounded-lg font-bold text-[10px] outline-none hover:border-indigo-500 cursor-pointer ${(isSelf || (currentAdmin?.role === "SCHOOL_ADMIN" && (u.role === "SCHOOL_ADMIN" || u.role === "SUPER_ADMIN"))) ? "opacity-60 cursor-not-allowed" : ""}`}
+                            >
+                              <option value="STUDENT">🎓 STUDENT</option>
+                              <option value="TEACHER">👨‍🏫 TEACHER</option>
+                              {currentAdmin?.role === "SUPER_ADMIN" && (
+                                <>
+                                  <option value="SCHOOL_ADMIN">🏫 SCHOOL_ADMIN</option>
+                                  <option value="SUPER_ADMIN">🛡️ SUPER_ADMIN</option>
+                                </>
+                              )}
+                            </select>
+                            {u.hasAdminAccess && (
+                              <span className="block mt-1 text-[8px] font-black uppercase text-indigo-600 bg-indigo-50 border border-indigo-100 rounded px-1.5 w-max">
+                                Admin Access
+                              </span>
+                            )}
+                          </div>
+                        )}
                       </td>
 
                       {/* Actions */}
@@ -643,6 +716,27 @@ export default function UserManagementPage() {
                               </button>
                             </div>
                           )}
+
+                          {/* Opsi Persetujuan School Admin */}
+                          {subTab === "SCHOOL_ADMIN_REQUESTS" && u.adminRequestStatus === "PENDING" && (
+                            <div className="flex items-center gap-1 border-r border-slate-100 pr-2 mr-1">
+                              <button
+                                onClick={() => handleSchoolAdminApproval(u.id, "APPROVE")}
+                                className="p-1.5 bg-emerald-50 hover:bg-emerald-500 text-emerald-600 hover:text-white rounded-lg transition-colors border border-emerald-100"
+                                title="Setujui Pengajuan Admin Sekolah"
+                              >
+                                <Check size={14} />
+                              </button>
+                              <button
+                                onClick={() => handleSchoolAdminApproval(u.id, "REJECT")}
+                                className="p-1.5 bg-rose-50 hover:bg-rose-500 text-rose-600 hover:text-white rounded-lg transition-colors border border-rose-100"
+                                title="Tolak Pengajuan Admin Sekolah"
+                              >
+                                <X size={14} />
+                              </button>
+                            </div>
+                          )}
+
                           <button
                             onClick={() => setSelectedUser(u)}
                             className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all"
@@ -650,14 +744,17 @@ export default function UserManagementPage() {
                           >
                             <Eye size={16} />
                           </button>
-                          <button
-                            onClick={() => removeUser(u.id)}
-                            disabled={isSelf}
-                            className={`p-2 rounded-xl transition-all ${isSelf ? "text-slate-200 cursor-not-allowed" : "text-slate-400 hover:text-rose-600 hover:bg-rose-50"}`}
-                            title={isSelf ? "Tidak dapat hapus akun sendiri" : "Hapus Pengguna"}
-                          >
-                            <Trash2 size={16} />
-                          </button>
+                          
+                          {!(currentAdmin?.role === "SCHOOL_ADMIN" && (u.role === "SCHOOL_ADMIN" || u.role === "SUPER_ADMIN")) && (
+                            <button
+                              onClick={() => removeUser(u.id)}
+                              disabled={isSelf}
+                              className={`p-2 rounded-xl transition-all ${isSelf ? "text-slate-200 cursor-not-allowed" : "text-slate-400 hover:text-rose-600 hover:bg-rose-50"}`}
+                              title={isSelf ? "Tidak dapat hapus akun sendiri" : "Hapus Pengguna"}
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -786,6 +883,31 @@ export default function UserManagementPage() {
                   </span>
                 </div>
               </div>
+
+              {currentAdmin?.role === "SUPER_ADMIN" && (
+                <div className="flex items-center gap-2 bg-indigo-50/50 p-3 rounded-2xl border border-indigo-100">
+                  <input
+                    type="checkbox"
+                    id="hasAdminAccess"
+                    checked={selectedUser.hasAdminAccess || false}
+                    onChange={async (e) => {
+                      const checked = e.target.checked;
+                      try {
+                        const updated = await updateUser(selectedUser.id, { hasAdminAccess: checked });
+                        setSelectedUser((prev: any) => ({ ...prev, ...updated }));
+                        setUsers((prev) => prev.map((u) => u.id === selectedUser.id ? { ...u, ...updated } : u));
+                        toast.success("Akses Admin berhasil diperbarui");
+                      } catch (err: any) {
+                        toast.error(err.message || "Gagal memperbarui akses admin");
+                      }
+                    }}
+                    className="w-4 h-4 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500 cursor-pointer"
+                  />
+                  <label htmlFor="hasAdminAccess" className="text-xs font-black text-indigo-800 uppercase tracking-wider cursor-pointer">
+                    Berikan Akses Admin Sekolah (hasAdminAccess)
+                  </label>
+                </div>
+              )}
             </div>
             <div className="mt-6 pt-5 border-t border-slate-100 flex justify-end">
               <button

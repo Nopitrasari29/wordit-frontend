@@ -46,6 +46,7 @@ export default function GameBuilderPage() {
   const [chapter, setChapter] = useState("");
   const [topic, setTopic] = useState("");
   const [timeLimit, setTimeLimit] = useState<number | "">(""); // Timer dalam detik
+  const [maxScore, setMaxScore] = useState<number | "">(""); // Nilai Maksimum Kuis
 
   // Handle Buat Manual
   const handleManualCreate = () => {
@@ -212,6 +213,9 @@ export default function GameBuilderPage() {
       if (timeLimit) {
         quizContent.timeLimit = Number(timeLimit);
       }
+      if (maxScore) {
+        quizContent.maxScore = Number(maxScore);
+      }
 
       const finalPayload = {
         title: gamePayload.title.trim(),
@@ -373,13 +377,46 @@ export default function GameBuilderPage() {
                 </div>
               </div>
 
-              {/* Timer Input */}
-              <div className="mt-6 ml-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Waktu Pengerjaan / Timer (opsional)</label>
-                <div className="flex items-center gap-3">
-                  <input type="number" min={0} placeholder="0" className="w-24 bg-slate-50 border border-slate-100 px-4 py-3 rounded-xl focus:border-indigo-500 outline-none text-sm font-bold text-slate-700 text-center" value={timeLimit} onChange={(e) => setTimeLimit(e.target.value ? Number(e.target.value) : "")} />
-                  <span className="text-slate-500 text-sm font-bold">Detik</span>
-                  <span className="text-slate-400 text-xs italic ml-2">(Biarkan kosong untuk tanpa batas waktu khusus)</span>
+              {/* Timer & Skor Maksimum */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6 ml-2">
+                <div>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">
+                    Waktu Pengerjaan / Timer (opsional)
+                  </label>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="number"
+                      min={0}
+                      placeholder="0"
+                      className="w-24 bg-slate-50 border border-slate-100 px-4 py-3 rounded-xl focus:border-indigo-500 outline-none text-sm font-bold text-slate-700 text-center"
+                      value={timeLimit}
+                      onChange={(e) => setTimeLimit(e.target.value ? Number(e.target.value) : "")}
+                    />
+                    <span className="text-slate-500 text-sm font-bold">Detik</span>
+                  </div>
+                  <p className="text-rose-500 text-[10px] font-bold mt-1.5 leading-relaxed">
+                    * Catatan: Ini adalah batas waktu total pengerjaan kuis keseluruhan, bukan batas waktu per soal.
+                  </p>
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">
+                    Nilai Maksimum Kuis (opsional)
+                  </label>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="number"
+                      min={1}
+                      placeholder="e.g. 500"
+                      className="w-32 bg-slate-50 border border-slate-100 px-4 py-3 rounded-xl focus:border-indigo-500 outline-none text-sm font-bold text-slate-700 text-center"
+                      value={maxScore}
+                      onChange={(e) => setMaxScore(e.target.value ? Number(e.target.value) : "")}
+                    />
+                    <span className="text-slate-500 text-sm font-bold">Poin</span>
+                  </div>
+                  <p className="text-slate-400 text-[10px] font-semibold mt-1.5 leading-relaxed">
+                    Biarkan kosong untuk kalkulasi skor otomatis (default 100 poin per soal benar).
+                  </p>
                 </div>
               </div>
             </div>

@@ -13,8 +13,9 @@ export default function RegisterPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [role, setRole] = useState("STUDENT")
-  // State baru untuk EducationLevels sesuai Enum di Prisma
   const [educationLevels, setEducationLevels] = useState<string[]>([])
+  const [schoolOrigin, setSchoolOrigin] = useState("")
+  const [phoneNumber, setPhoneNumber] = useState("")
   const [isLoading, setIsLoading] = useState(false)
 
   const [emailError, setEmailError] = useState("")
@@ -75,7 +76,7 @@ export default function RegisterPage() {
 
     setIsLoading(true);
     try {
-      await register(name, email, password, role, educationLevels);
+      await register(name, email, password, role, educationLevels, schoolOrigin || undefined, phoneNumber || undefined);
 
       toast.success("Registrasi berhasil! Silakan verifikasi email Anda. 🚀");
       navigate(`/verify-pending?email=${encodeURIComponent(email)}`);
@@ -218,10 +219,34 @@ export default function RegisterPage() {
               </div>
             )}
 
+            {/* SEKSI: Info Sekolah & Kontak (Opsional) */}
+            <div className="w-full flex flex-col gap-3 p-4 bg-slate-50 rounded-3xl border border-slate-100">
+              <label className="text-xs font-black uppercase tracking-wider text-slate-500 ml-2">
+                Informasi Tambahan (Opsional)
+              </label>
+              <Input
+                label="Asal Sekolah/Institusi"
+                placeholder="SMA Negeri 1 Jakarta"
+                value={schoolOrigin}
+                onChange={(e) => setSchoolOrigin(e.target.value)}
+              />
+              <Input
+                label="Nomor HP / WhatsApp"
+                type="tel"
+                placeholder="08123456789"
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value)}
+              />
+              <p className="text-[10px] text-slate-400 font-bold ml-2">
+                📋 Data sekolah digunakan untuk pengelolaan akun oleh Admin Sekolah.
+              </p>
+            </div>
+
             <Button type="submit" isFullWidth disabled={isLoading} className="mt-8 shadow-xl shadow-indigo-100">
               {isLoading ? "Sedang Mendaftar..." : "Register Sekarang"}
             </Button>
           </form>
+
 
           <p className="text-center mt-6 text-sm font-semibold text-slate-500">
             Already have an account?

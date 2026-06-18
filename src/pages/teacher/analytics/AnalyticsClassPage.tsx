@@ -307,7 +307,12 @@ export default function AnalyticsClassPage({
             {analyticsData.difficultQuestions.map((q: any, i: number) => (
               <div key={i} className="flex flex-col md:flex-row md:items-center justify-between p-4 bg-rose-50 rounded-2xl border border-rose-100 gap-2">
                 <div className="flex flex-col">
-                  <span className="font-bold text-slate-400 text-xs uppercase tracking-wider">Soal #{q.questionIndex + 1}</span>
+                  <span className="font-bold text-slate-400 text-xs uppercase tracking-wider">
+                    Peringkat #{i + 1} Tersulit
+                    {(q.questionIndex !== undefined && !isNaN(Number(q.questionIndex))) && (
+                      <span className="ml-1 text-slate-300">(Soal #{Number(q.questionIndex) + 1})</span>
+                    )}
+                  </span>
                   <p className="font-black text-slate-700 text-sm mt-0.5">{q.questionText}</p>
                 </div>
                 <span className="bg-rose-500 text-white text-[10px] font-black px-3 py-1.5 rounded-full uppercase tracking-wider shrink-0 text-center">

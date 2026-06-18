@@ -19,10 +19,25 @@ export default function ProtectedRoute({ role }: { role?: string }) {
         return <Navigate to="/login" state={{ from: location }} replace />
     }
 
+    // Helper: apakah user memiliki role yang cukup?
+    const hasAccess = (): boolean => {
+        if (!role) return true; // Tidak ada batasan role
+
+        // SUPER_ADMIN dan SCHOOL_ADMIN bisa akses semua rute TEACHER
+        if (role === "TEACHER" && (user.role === "SCHOOL_ADMIN" || user.role === "SUPER_ADMIN")) return true;
+        // SUPER_ADMIN bisa akses rute SCHOOL_ADMIN
+        if (role === "SCHOOL_ADMIN" && user.role === "SUPER_ADMIN") return true;
+        // Semua admin lama (ADMIN) diarahkan ke SUPER_ADMIN
+        if (role === "ADMIN" && (user.role === "SUPER_ADMIN" || user.role === "SCHOOL_ADMIN")) return true;
+
+        return user.role === role;
+    };
+
     // Jika ada batasan role dan role user tidak sesuai
-    if (role && user.role !== role) {
-        // Redirect ke dashboard masing-masing jika salah masuk jalur
-        if (user.role === 'ADMIN') return <Navigate to="/admin/dashboard" replace />
+    if (!hasAccess()) {
+        // Redirect ke dashboard masing-masing
+        if (user.role === 'SUPER_ADMIN' || user.role === 'ADMIN') return <Navigate to="/admin/dashboard" replace />
+        if (user.role === 'SCHOOL_ADMIN') return <Navigate to="/teacher/dashboard" replace />
         if (user.role === 'TEACHER') return <Navigate to="/teacher/dashboard" replace />
         return <Navigate to="/student/dashboard" replace />
     }

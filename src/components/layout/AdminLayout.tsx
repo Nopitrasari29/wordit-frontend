@@ -82,22 +82,30 @@ export default function AdminLayout() {
   };
 
   const menuItems = [
-    {
-      path: "/admin/dashboard",
-      name: "Dashboard",
-      icon: LayoutDashboard,
-    },
+    ...(user?.role === "SUPER_ADMIN"
+      ? [
+          {
+            path: "/admin/dashboard",
+            name: "Dashboard",
+            icon: LayoutDashboard,
+          },
+        ]
+      : []),
     {
       path: "/admin/users",
       name: "Kelola Pengguna",
       icon: Users,
       badge: pendingCount > 0 ? pendingCount : undefined,
     },
-    {
-      path: "/admin/logs",
-      name: "Log & Kuota AI",
-      icon: ShieldAlert,
-    },
+    ...(user?.role === "SUPER_ADMIN"
+      ? [
+          {
+            path: "/admin/logs",
+            name: "Log & Kuota AI",
+            icon: ShieldAlert,
+          },
+        ]
+      : []),
   ];
 
   // Map path to screen title

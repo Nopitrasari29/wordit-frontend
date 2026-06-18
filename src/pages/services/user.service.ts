@@ -125,3 +125,25 @@ export async function bulkDeleteUsers(userIds: string[]) {
   }
   return res.data.data;
 }
+
+/* ============================== */
+/* REQUEST SCHOOL ADMIN           */
+/* ============================== */
+export async function requestSchoolAdmin() {
+  const res = await api.patch("/users/request-school-admin");
+  if (res.data.status !== "success" && !res.data.success) {
+    throw new Error(res.data.message || "Gagal mengajukan Admin Sekolah");
+  }
+  return res.data.data;
+}
+
+/* ============================== */
+/* APPROVE/REJECT SCHOOL ADMIN    */
+/* ============================== */
+export async function approveSchoolAdmin(id: string, action: "APPROVE" | "REJECT") {
+  const res = await api.patch(`/users/${id}/approve-school-admin`, { action });
+  if (res.data.status !== "success" && !res.data.success) {
+    throw new Error(res.data.message || "Gagal memproses pengajuan Admin Sekolah");
+  }
+  return res.data.data;
+}

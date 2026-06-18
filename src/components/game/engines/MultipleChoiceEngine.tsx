@@ -71,7 +71,11 @@ export default function MultipleChoiceEngine({ data, onGameOver, onIntermission 
         const isCorrect = option === currentQ.correctAnswer;
 
         // Kalkulasi Skor
-        const pointsEarned = isCorrect ? 100 : 0;
+        const maxScoreConfig = Number(gameConfig?.maxScore);
+        const pointsPerQuestion = maxScoreConfig && maxScoreConfig > 0 && questions.length > 0
+          ? Math.round(maxScoreConfig / questions.length)
+          : 100; // default 100
+        const pointsEarned = isCorrect ? pointsPerQuestion : 0;
         const newScore = score + pointsEarned;
 
         setScore(newScore);

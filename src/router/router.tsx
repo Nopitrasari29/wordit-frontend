@@ -82,7 +82,7 @@ export default function Router() {
             <Route path="/student/result" element={<ResultPage />} />
           </Route>
 
-          {/* ================= TEACHER ROUTES ================= */}
+          {/* ================= TEACHER ROUTES (TEACHER + SCHOOL_ADMIN + SUPER_ADMIN) ================= */}
           <Route element={<ProtectedRoute role="TEACHER" />}>
             <Route path="/teacher/dashboard" element={<TeacherDashboard />} />
             <Route path="/teacher/projects" element={<MyProjectsPage />} />
@@ -102,11 +102,16 @@ export default function Router() {
           </Route>
         </Route>
 
-        {/* ================= ADMIN ROUTES ================= */}
+        {/* ================= ADMIN ROUTES (SUPER_ADMIN + SCHOOL_ADMIN for users) ================= */}
         <Route element={<ProtectedRoute role="ADMIN" />}>
           <Route element={<AdminLayout />}>
-            <Route path="/admin/dashboard" element={<AdminDashboard />} />
             <Route path="/admin/users" element={<UserManagementPage />} />
+          </Route>
+        </Route>
+
+        <Route element={<ProtectedRoute role="SUPER_ADMIN" />}>
+          <Route element={<AdminLayout />}>
+            <Route path="/admin/dashboard" element={<AdminDashboard />} />
             <Route path="/admin/logs" element={<SystemLogsPage />} />
           </Route>
         </Route>

@@ -48,7 +48,9 @@ export function AuthProvider({ children }: any) {
     email: string,
     password: string,
     role: string,
-    educationLevels?: string[] // Menerima array untuk guru
+    educationLevels?: string[],
+    schoolOrigin?: string,
+    phoneNumber?: string,
   ) {
     // Kirim data ke authService
     return await authService.register({
@@ -56,9 +58,12 @@ export function AuthProvider({ children }: any) {
       email,
       password,
       role,
-      educationLevels // Sertakan array ini
+      educationLevels,
+      schoolOrigin,
+      phoneNumber,
     })
   }
+
 
   async function logout() {
     try {

@@ -4,7 +4,6 @@ import GameRenderer from "../../components/game/GameRenderer";
 import { getGameById, getGameByCode, finishGame, playGame } from "../services/game.service";
 import socket from "../../hooks/useSocket";
 import { toast } from "react-hot-toast";
-import RankingOverlay from "../../components/game/common/RankingOverlay";
 import { useAuth } from "../../hooks/useAuth";
 
 export default function PlayGamePage() {
@@ -12,10 +11,7 @@ export default function PlayGamePage() {
   const navigate = useNavigate();
   const [game, setGame] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-
-  const [showOverlay, setShowOverlay] = useState(false);
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
-  const [overlayCountdown, setOverlayCountdown] = useState(3);
 
   // State untuk local score (Guest & Teacher)
   const [localScoreResult, setLocalScoreResult] = useState<any>(null);
@@ -211,19 +207,10 @@ export default function PlayGamePage() {
       }
   };
 
+  // Instant next: tidak ada jeda antar soal, langsung lanjut
   const handleIntermission = () => {
-    setShowOverlay(true);
-    setOverlayCountdown(3);
-    const timer = setInterval(() => {
-      setOverlayCountdown((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          setShowOverlay(false);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
+    // Sengaja dikosongkan: perpindahan soal langsung tanpa jeda
+    // Game engine akan otomatis lanjut ke soal berikutnya
   };
 
   if (loading) return (
@@ -239,16 +226,6 @@ export default function PlayGamePage() {
 
   return (
     <div className="min-h-screen bg-slate-900 flex flex-col font-sans relative overflow-hidden selection:bg-transparent">
-      {showOverlay && (
-        <RankingOverlay players={sortedLeaderboard.slice(0, 10)} currentPlayerName={playerName} />
-      )}
-
-      {showOverlay && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
-           <div className="text-white font-black text-9xl opacity-10 animate-ping">{overlayCountdown}</div>
-        </div>
-      )}
-
       <div className="bg-slate-800/50 backdrop-blur-md px-8 py-4 flex justify-between items-center border-b border-white/5 z-10">
         <div className="flex items-center gap-4">
           <button onClick={() => navigate(-1)} className="text-white opacity-50 hover:opacity-100 transition-opacity text-xl">❮</button>

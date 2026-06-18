@@ -26,9 +26,9 @@ export default function Navbar() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // ✅ FE-NEW-07: Fetch jumlah user PENDING jika role ADMIN
+  // ✅ FE-NEW-07: Fetch jumlah user PENDING jika role SUPER_ADMIN atau SCHOOL_ADMIN
   useEffect(() => {
-    if (user?.role !== "ADMIN") return;
+    if (user?.role !== "SUPER_ADMIN" && user?.role !== "SCHOOL_ADMIN") return;
 
     async function fetchPendingCount() {
       try {
@@ -85,7 +85,7 @@ export default function Navbar() {
 
         {/* MENU TENGAH */}
         <div className="hidden md:flex items-center gap-6 font-bold text-slate-500">
-          {user?.role !== "ADMIN" && (
+          {user?.role !== "SUPER_ADMIN" && (
             <Link
               to="/explore"
               className="hover:text-indigo-600 transition-colors"
@@ -111,7 +111,7 @@ export default function Navbar() {
             </>
           )}
 
-          {user?.role === "TEACHER" && (
+          {(user?.role === "TEACHER" || user?.role === "SCHOOL_ADMIN") && (
             <>
               <Link
                 to="/teacher/dashboard"
@@ -125,10 +125,23 @@ export default function Navbar() {
               >
                 My Projects
               </Link>
+              {user?.role === "SCHOOL_ADMIN" && (
+                <Link
+                  to="/admin/users"
+                  className="relative hover:text-indigo-600 transition-colors flex items-center gap-1"
+                >
+                  Manajemen Sekolah
+                  {pendingCount > 0 && (
+                    <span className="absolute -top-2 -right-4 min-w-[18px] h-[18px] bg-rose-500 text-white text-[10px] font-black rounded-full flex items-center justify-center px-1 shadow-md shadow-rose-200 animate-pulse">
+                      {pendingCount > 99 ? "99+" : pendingCount}
+                    </span>
+                  )}
+                </Link>
+              )}
             </>
           )}
 
-          {user?.role === "ADMIN" && (
+          {user?.role === "SUPER_ADMIN" && (
             <>
               <Link
                 to="/admin/dashboard"
