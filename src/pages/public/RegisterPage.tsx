@@ -101,29 +101,28 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen flex justify-center items-center p-4 bg-gradient-to-br from-indigo-100 via-blue-50 to-white relative overflow-hidden font-sans pt-28 pb-12">
-      {/* Background Decor */}
-      <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-indigo-300 rounded-full mix-blend-multiply filter blur-3xl opacity-40 animate-blob"></div>
-      <div className="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-blue-300 rounded-full mix-blend-multiply filter blur-3xl opacity-40 animate-blob" style={{ animationDelay: '2s' }}></div>
-
-      <div className="bg-white/90 backdrop-blur-xl shadow-[0_20px_50px_rgba(0,0,0,0.05)] border border-white rounded-[3rem] w-full max-w-5xl relative z-10 flex flex-col md:flex-row overflow-hidden animate-in fade-in duration-500">
-
-        {/* Branding Side */}
-        <div className="bg-indigo-600 p-10 md:p-12 text-white flex flex-col justify-center w-full md:w-4/12 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-10 rounded-full blur-3xl translate-x-1/2 -translate-y-1/2"></div>
-          <h2 className="text-4xl font-black mb-4 tracking-tight relative z-10">
+    <div className="min-h-screen flex flex-col md:flex-row bg-white font-sans relative">
+      {/* Branding Side (Ungu) - Ngefill 100% tinggi di desktop */}
+      <div className="bg-indigo-600 p-12 text-white flex flex-col justify-center w-full md:w-5/12 relative overflow-hidden min-h-[350px] md:min-h-screen pt-32 pb-16">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full blur-3xl translate-x-1/2 -translate-y-1/2"></div>
+        <div className="absolute bottom-0 left-0 w-96 h-96 bg-white/10 rounded-full blur-3xl -translate-x-1/2 translate-y-1/2"></div>
+        
+        <div className="relative z-10 max-w-md mx-auto md:mx-0 text-left">
+          <h2 className="text-4xl md:text-5xl font-black mb-6 tracking-tight leading-tight">
             Bergabung dengan Word<span className="text-blue-300">IT</span>!
           </h2>
-          <p className="text-indigo-100 font-semibold text-lg relative z-10 leading-relaxed">
+          <p className="text-indigo-100 font-semibold text-lg leading-relaxed">
             Buat akunmu sekarang dan rasakan pengalaman belajar yang belum pernah ada sebelumnya.
           </p>
-          <div className="mt-10 text-6xl hidden md:block animate-bounce">🚀</div>
+          <div className="mt-12 text-6xl hidden md:block animate-bounce">🚀</div>
         </div>
+      </div>
 
-        {/* Form Side */}
-        <div className="p-8 md:p-12 w-full md:w-8/12 bg-white">
+      {/* Form Side */}
+      <div className="w-full md:w-7/12 bg-white px-8 py-12 md:px-16 md:py-28 flex items-center justify-center min-h-screen overflow-y-auto">
+        <div className="w-full max-w-2xl">
           <h1 className="text-3xl font-black text-slate-800 mb-2 tracking-tight">Register Akun Baru</h1>
-          <p className="text-slate-400 text-sm font-semibold mb-6">Silakan lengkapi formulir pendaftaran di bawah ini.</p>
+          <p className="text-slate-400 text-sm font-semibold mb-8">Silakan lengkapi formulir pendaftaran di bawah ini.</p>
 
           <div className="mb-6 bg-indigo-50 border border-indigo-100 p-4 rounded-2xl flex items-start gap-3">
             <span className="text-xl">📧</span>

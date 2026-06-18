@@ -51,12 +51,22 @@ export default function EditProfilePage() {
       // Jika status dari backend adalah PENDING, paksa data jenjang di browser kembali ke jenjang lama.
       // Dengan begini, visual profile & pembuatan game tidak akan berubah sebelum disetujui Admin!
       // =======================================================================
+      const isLevelsChanged = user?.role === "TEACHER" && (
+        educationLevels.length !== (user?.educationLevels || []).length ||
+        !educationLevels.every((l) => (user?.educationLevels || []).includes(l))
+      );
+
       if (updatedData && updatedData.approvalStatus === "PENDING") {
         updatedData.educationLevels = user?.educationLevels || [];
       }
 
       updateUser(updatedData)
-      toast.success("Profil berhasil diperbarui! Pengajuan perubahan jenjang Anda telah dikirim ke Admin untuk ditinjau (Maksimal 2-3 hari kerja).")
+      
+      if (isLevelsChanged) {
+        toast.success("Profil berhasil diperbarui! Pengajuan perubahan jenjang Anda telah dikirim ke Admin untuk ditinjau (Maksimal 2-3 hari kerja).")
+      } else {
+        toast.success("Profil berhasil diperbarui! ✨")
+      }
       navigate("/profile")
     } catch (err: any) {
       toast.error(err.message || "Update failed")
