@@ -11,6 +11,16 @@ export default function PreviewGamePage() {
   const [game, setGame] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [errorDetail, setErrorDetail] = useState("");
+  
+  const [showResults, setShowResults] = useState(false);
+  const [results, setResults] = useState<{ score: number; accuracy: number; breakdown: any[] } | null>(null);
+  const [previewKey, setPreviewKey] = useState(0);
+
+  const handleReplay = () => {
+    setPreviewKey(prev => prev + 1);
+    setShowResults(false);
+    setResults(null);
+  };
 
   useEffect(() => {
     const fetchGameData = async () => {
@@ -73,7 +83,68 @@ export default function PreviewGamePage() {
         </div>
 
         <div className="relative bg-white rounded-[4.5rem] shadow-2xl border-[14px] border-indigo-50 min-h-[600px] flex items-center justify-center overflow-hidden transition-all duration-500">
-          <GameRenderer templateType={game.templateType} gameData={game} />
+          <GameRenderer 
+            key={previewKey}
+            templateType={game.templateType} 
+            gameData={game} 
+            onGameOver={(score, accuracy, breakdown) => {
+              console.log("🎮 Preview Game Over:", { score, accuracy, breakdown });
+              setResults({ score: score || 0, accuracy: accuracy || 0, breakdown: breakdown || [] });
+              setShowResults(true);
+            }}
+          />
+
+          {showResults && results && (
+            <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-6 text-white animate-fade-in z-50">
+              <div className="max-w-md w-full bg-slate-900/90 border border-slate-800 p-8 rounded-[3rem] shadow-2xl flex flex-col items-center text-center space-y-6">
+                <div className="text-6xl animate-bounce">🏆</div>
+                <div>
+                  <h2 className="text-3xl font-black bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent italic">
+                    Pratinjau Selesai!
+                  </h2>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">
+                    UAT Testing Sandbox
+                  </p>
+                </div>
+
+                {/* Stats Grid */}
+                <div className="grid grid-cols-2 gap-4 w-full">
+                  <div className="bg-slate-800/50 border border-slate-700/50 p-4 rounded-2xl">
+                    <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">Skor</span>
+                    <span className="text-2xl font-black text-amber-400">{results.score} <span className="text-xs text-amber-500">XP</span></span>
+                  </div>
+                  <div className="bg-slate-800/50 border border-slate-700/50 p-4 rounded-2xl">
+                    <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">Akurasi</span>
+                    <span className="text-2xl font-black text-indigo-400">{results.accuracy}%</span>
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex flex-col gap-2.5 w-full">
+                  <button
+                    onClick={handleReplay}
+                    className="w-full bg-indigo-650 hover:bg-indigo-600 text-white py-3.5 rounded-full font-black text-xs uppercase tracking-widest shadow-lg shadow-indigo-900/20 active:scale-98 transition-all flex items-center justify-center gap-2"
+                  >
+                    <span>Main Lagi 🔄</span>
+                  </button>
+                  <div className="flex gap-2 w-full">
+                    <button
+                      onClick={() => navigate(`/teacher/game/edit/${gameId}`)}
+                      className="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-350 py-3 rounded-full font-black text-[10px] uppercase tracking-widest border border-slate-700 active:scale-98 transition-all"
+                    >
+                      Edit ✏️
+                    </button>
+                    <button
+                      onClick={() => navigate("/teacher/projects")}
+                      className="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-350 py-3 rounded-full font-black text-[10px] uppercase tracking-widest border border-slate-700 active:scale-98 transition-all"
+                    >
+                      Kembali 🎒
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="bg-slate-900 p-10 rounded-[4rem] shadow-2xl flex flex-col md:flex-row items-center justify-between gap-8">

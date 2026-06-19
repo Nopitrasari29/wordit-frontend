@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import api from "../services/api";
 import { Loader2 } from "lucide-react";
 import socket from "../../hooks/useSocket";
@@ -60,6 +61,7 @@ const LEVEL_ICONS: Record<string, string> = {
 };
 
 export default function AdminDashboard() {
+  const navigate = useNavigate();
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
@@ -128,6 +130,31 @@ export default function AdminDashboard() {
 
   return (
     <div className="space-y-8">
+      {/* ─── BANNER NOTIFICATION: SCHOOL ADMIN REQUESTS ─── */}
+      {stats.schoolAdminRequests?.pending > 0 && (
+        <div className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-200/50 p-6 rounded-3xl flex flex-col md:flex-row items-center justify-between gap-4 shadow-sm animate-in slide-in-from-top duration-300">
+          <div className="flex items-center gap-4 text-left">
+            <div className="w-12 h-12 bg-amber-500/20 text-amber-600 rounded-2xl flex items-center justify-center text-2xl shrink-0 animate-pulse">
+              🔔
+            </div>
+            <div>
+              <h4 className="text-sm font-black text-amber-800">
+                Pengajuan Admin Sekolah Menunggu Persetujuan!
+              </h4>
+              <p className="text-xs text-amber-600 font-bold mt-0.5">
+                Ada {stats.schoolAdminRequests.pending} pengajuan baru dari guru untuk menjadi Admin Sekolah.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => navigate("/admin/users")}
+            className="w-full md:w-auto px-6 py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-2xl text-xs font-black transition-all shadow-md shadow-amber-500/10"
+          >
+            Tinjau Pengajuan 🏫
+          </button>
+        </div>
+      )}
+
       {/* ─── SECTION 1: OVERVIEW CARDS ─── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Card 1: Total Users */}
