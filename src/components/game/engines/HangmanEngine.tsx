@@ -79,8 +79,12 @@ export default function HangmanEngine({
         const isCorrect = status === 'correct';
         let earnedPoints = 0;
 
+        // Hitung poin proporsional dari maxScore config (tidak pakai lives bonus)
+        const gameJson = data?.gameJson && Array.isArray(data.gameJson) ? data.gameJson[0] : data?.gameJson;
+        const maxScoreConfig = gameJson?.maxScore ? Number(gameJson.maxScore) : 0;
+        const totalQs = quizWords.length;
         if (isCorrect) {
-            earnedPoints = 100 + (lives * 10);
+            earnedPoints = maxScoreConfig && totalQs > 0 ? Math.floor(maxScoreConfig / totalQs) : 100;
             const newScore = score + earnedPoints;
             setScore(newScore);
 
@@ -97,16 +101,20 @@ export default function HangmanEngine({
                 });
             }
 
-            submitAnswer(realGameId, currentIndex, word, newScore).catch(() => { });
+            submitAnswer(realGameId, currentIndex, word, earnedPoints).catch(() => { });
         } else {
             submitAnswer(realGameId, currentIndex, status === 'timeout' ? "TIMEOUT" : "WRONG", score).catch(() => { });
         }
 
         const currentAnswerDetail = {
+            questionIndex: currentIndex,
             word: word,
+            selectedAnswer: isCorrect ? word : (status === 'timeout' ? null : null),
+            question: `Soal ${currentIndex + 1}: ${word}`,
             isCorrect: isCorrect,
             userAnswer: isCorrect ? word : (status === 'timeout' ? "Waktu Habis ⏰" : "Salah ❌"),
-            time: (data?.gameJson?.timeLimit ? Number(data.gameJson.timeLimit) : 30) - timeLeft
+            time: (gameJson?.timeLimit ? Number(gameJson.timeLimit) : 30) - timeLeft,
+            pointsEarned: isCorrect ? earnedPoints : 0
         };
 
         const newBreakdown = [...breakdown, currentAnswerDetail];
@@ -120,7 +128,7 @@ export default function HangmanEngine({
                 setGuess("");
                 setLives(6);
                 setFeedback('none');
-                setTimeLeft(data?.gameJson?.timeLimit ? Number(data.gameJson.timeLimit) : 30);
+                setTimeLeft(gameJson?.timeLimit ? Number(gameJson.timeLimit) : 30);
                 isBusy.current = false;
             } else {
                 handleFinish(isCorrect ? score + earnedPoints : score, newBreakdown);

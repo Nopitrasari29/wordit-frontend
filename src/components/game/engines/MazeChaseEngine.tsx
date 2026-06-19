@@ -77,14 +77,21 @@ export default function MazeChaseEngine({ data, onGameOver, onIntermission }: { 
 
         let isCorrect = (type === "PORTAL" && cell) ? cell.isCorrect : false;
 
-        let newScore = isCorrect ? score + 100 : score;
+        // Hitung poin proporsional dari maxScore config
+        const maxScoreConfig = gameConfig?.maxScore ? Number(gameConfig.maxScore) : 0;
+        const totalQs = questions.length;
+        const pointsPerQ = maxScoreConfig && totalQs > 0 ? Math.floor(maxScoreConfig / totalQs) : 100;
+
+        let earnedPoints = isCorrect ? pointsPerQ : 0;
+        let newScore = isCorrect ? score + pointsPerQ : score;
         let newLives = isCorrect ? lives : lives - 1;
 
         if (isCorrect) {
             setScore(newScore);
-            toast.success("Tepat Sekali! 🌟");
+            toast.success(`Tepat Sekali! +${pointsPerQ} 🌟`);
 
-            const currentAccuracy = Math.round((newScore / ((currentIdx + 1) * 100)) * 100);
+            const correctCountSoFar = history.filter(h => h.isCorrect).length + 1;
+            const currentAccuracy = Math.round((correctCountSoFar / (currentIdx + 1)) * 100);
 
             socket.emit("updateScore", {
                 code: roomCode,
@@ -92,17 +99,21 @@ export default function MazeChaseEngine({ data, onGameOver, onIntermission }: { 
                 accuracy: currentAccuracy,
                 progress: `${currentIdx + 1}/${questions.length}`,
             });
-            submitAnswer(realGameId, currentIdx, cell.text, newScore).catch(() => { });
+            submitAnswer(realGameId, currentIdx, cell.text, earnedPoints).catch(() => { });
         } else {
             setLives(newLives);
             toast.error(type === "TIMEOUT" ? "Waktu Habis! ⏰" : "Portal Salah! 🐙");
-            submitAnswer(realGameId, currentIdx, type === "TIMEOUT" ? "TIMEOUT" : cell?.text, newScore).catch(() => { });
+            submitAnswer(realGameId, currentIdx, type === "TIMEOUT" ? "TIMEOUT" : cell?.text, 0).catch(() => { });
         }
 
         const currentHistoryItem = { 
-            word: cell?.text || "TIMEOUT", 
+            questionIndex: currentIdx,
+            word: questions[currentIdx]?.question || cell?.text || "TIMEOUT",
+            selectedAnswer: isCorrect ? cell?.text : null,
+            question: questions[currentIdx]?.question || `Soal ${currentIdx + 1}`,
             isCorrect, 
-            time: (gameConfig?.timeLimit ? Number(gameConfig.timeLimit) : 15) - timeLeft 
+            time: (gameConfig?.timeLimit ? Number(gameConfig.timeLimit) : 15) - timeLeft,
+            pointsEarned: earnedPoints
         };
         const updatedHistory = [...history, currentHistoryItem];
         setHistory(updatedHistory);
@@ -112,11 +123,12 @@ export default function MazeChaseEngine({ data, onGameOver, onIntermission }: { 
             if (isGameOver) {
                 if (isSavingRef.current) return;
                 isSavingRef.current = true;
-                const accuracy = Math.round((newScore / (questions.length * 100)) * 100);
+                const correctCount = updatedHistory.filter(h => h.isCorrect).length;
+                const accuracy = totalQs > 0 ? Math.round((correctCount / totalQs) * 100) : 0;
                 const timeSpent = Math.round((Date.now() - startTimeRef.current) / 1000);
                 const payload = {
                     scoreValue: newScore,
-                    maxScore: questions.length * 100,
+                    maxScore: maxScoreConfig || totalQs * 100,
                     accuracy,
                     timeSpent,
                     answersDetail: updatedHistory

@@ -117,7 +117,15 @@ export default function AnagramEngine({ data, onIntermission, onGameOver }: { da
         playSound('timeout');
         setFeedback('timeout');
         setUsedIndices([]);
-        const nextBreakdown = [...breakdown, { word: targetWord, isCorrect: false, time: gameConfig?.timeLimit ? Number(gameConfig.timeLimit) : 15 }];
+        const nextBreakdown = [...breakdown, { 
+            questionIndex: currentIndex,
+            word: targetWord, 
+            selectedAnswer: null,
+            question: `Soal ${currentIndex + 1}: ${targetWord}`,
+            isCorrect: false, 
+            time: gameConfig?.timeLimit ? Number(gameConfig.timeLimit) : 15,
+            pointsEarned: 0
+        }];
         setBreakdown(nextBreakdown);
         sessionStorage.setItem("lastBreakdown", JSON.stringify(nextBreakdown));
         setTimeout(() => {
@@ -195,7 +203,7 @@ export default function AnagramEngine({ data, onIntermission, onGameOver }: { da
                     points = Math.floor(maxScoreConfig / totalQuestions);
                 }
             } else {
-                points = 100 + (timeLeft * 10);
+                points = 100;
             }
             
             const newScore = score + points;
@@ -206,7 +214,15 @@ export default function AnagramEngine({ data, onIntermission, onGameOver }: { da
             sessionStorage.setItem("lastAccuracy", runningAccuracy.toString());
 
             const currentTimeSpent = (gameConfig?.timeLimit ? Number(gameConfig.timeLimit) : 15) - timeLeft;
-            const nextBreakdown = [...breakdown, { word: targetWord, isCorrect: true, time: currentTimeSpent }];
+            const nextBreakdown = [...breakdown, { 
+                questionIndex: currentIndex,
+                word: targetWord, 
+                selectedAnswer: answer.toUpperCase(),
+                question: `Soal ${currentIndex + 1}: ${targetWord}`,
+                isCorrect: true, 
+                time: currentTimeSpent,
+                pointsEarned: points
+            }];
             setBreakdown(nextBreakdown);
             sessionStorage.setItem("lastBreakdown", JSON.stringify(nextBreakdown));
 

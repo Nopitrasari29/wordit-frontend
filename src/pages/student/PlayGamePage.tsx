@@ -180,24 +180,30 @@ export default function PlayGamePage() {
       sessionStorage.removeItem("activeGameId");
 
       try {
+          // Ambil maxScore dari game config (bukan hardcode)
+          const gameContent = game?.gameJson && Array.isArray(game.gameJson) ? game.gameJson[0] : game?.gameJson;
+          const configuredMaxScore = gameContent?.maxScore ? Number(gameContent.maxScore) : (totalQuestions * 100);
+
           // 🛠️ SINKRONISASI MUTLAK: Ambil response data kembalian dari database server WordIT
           const response = await finishGame(realGameId!, {
               scoreValue: score,
-              maxScore: totalQuestions * 100,
+              maxScore: configuredMaxScore,
               accuracy: finalAccuracy,
               timeSpent: 0,
               answersDetail: breakdown
           });
 
-          // Ekstrak hasil perhitungan poin kecepatan (PTS/XP) resmi backend
-          const savedScore = response?.data?.result?.scoreValue || response?.result?.scoreValue || score;
-          const savedAccuracy = response?.data?.result?.accuracy || response?.result?.accuracy || finalAccuracy;
+          // Ekstrak hasil perhitungan poin resmi backend
+          const savedScore = response?.result?.scoreValue ?? response?.data?.result?.scoreValue ?? score;
+          const savedAccuracy = response?.result?.accuracy ?? response?.data?.result?.accuracy ?? finalAccuracy;
+          // Gunakan breakdown dari backend (sudah ter-verifikasi dan berisi pointsEarned yang akurat)
+          const savedBreakdown = response?.result?.answersDetail ?? response?.data?.result?.answersDetail ?? breakdown;
 
           (window as any)._worditFinishing = false;
           
-          // Alihkan halaman membawa skor ter-sinkronisasi 1650 XP murni
+          // Alihkan halaman membawa skor ter-sinkronisasi dari backend
           navigate("/student/result", {
-              state: { score: Number(savedScore), accuracy: Number(savedAccuracy), breakdown }
+              state: { score: Number(savedScore), accuracy: Number(savedAccuracy), breakdown: savedBreakdown }
           });
       } catch (e) {
           console.warn("Autosave gagal, menggunakan fallback local state.");

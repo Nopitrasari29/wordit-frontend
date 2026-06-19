@@ -38,7 +38,11 @@ export default function FlashcardEngine({ data, onGameOver }: { data: any, onGam
         if (timerRef.current) clearInterval(timerRef.current);
 
         setShow(false);
-        const points = isCorrect ? 20 : 0;
+        // Hitung poin proporsional dari maxScore config
+        const maxScoreConfig = gameConfig?.maxScore ? Number(gameConfig.maxScore) : 0;
+        const totalCards = cards.length;
+        const pointsPerCard = maxScoreConfig && totalCards > 0 ? Math.floor(maxScoreConfig / totalCards) : 100;
+        const points = isCorrect ? pointsPerCard : 0;
         const newScore = score + points;
         const newCorrectCount = isCorrect ? correctCount + 1 : correctCount;
 
@@ -46,9 +50,13 @@ export default function FlashcardEngine({ data, onGameOver }: { data: any, onGam
         setCorrectCount(newCorrectCount);
 
         const currentAnswer = {
+            questionIndex: index,
             word: cards[index]?.front || "Kartu",
+            selectedAnswer: isCorrect ? "HAFAL" : (isTimeout ? null : "LUPA"),
+            question: cards[index]?.front || `Kartu ${index + 1}`,
             userAnswer: isTimeout ? "Waktu Habis" : (isCorrect ? "Hafal" : "Lupa"),
-            isCorrect: isCorrect
+            isCorrect: isCorrect,
+            pointsEarned: points
         };
         const newBreakdown = [...breakdown, currentAnswer];
         setBreakdown(newBreakdown);
@@ -63,7 +71,7 @@ export default function FlashcardEngine({ data, onGameOver }: { data: any, onGam
                 progress: `${index + 1}/${cards.length}`,
             });
         }
-        submitAnswer(realGameId, index, isCorrect ? "HAFAL" : "LUPA", newScore).catch(() => { });
+        submitAnswer(realGameId, index, isCorrect ? "HAFAL" : "LUPA", points).catch(() => { });
 
         transitionRef.current = setTimeout(() => {
             if (index < cards.length - 1) {
@@ -73,7 +81,7 @@ export default function FlashcardEngine({ data, onGameOver }: { data: any, onGam
                 handleFinish(newScore, newBreakdown, newCorrectCount);
             }
         }, 800);
-    }, [index, score, correctCount, breakdown, cards, realGameId, data.shareCode]);
+    }, [index, score, correctCount, breakdown, cards, realGameId, data.shareCode, gameConfig]);
 
     // 3. 🎯 TIMER HITUNG MUNDUR
     useEffect(() => {
@@ -101,10 +109,11 @@ export default function FlashcardEngine({ data, onGameOver }: { data: any, onGam
         isFinishing.current = true;
 
         const accuracy = cards.length > 0 ? Math.round((finalCorrect / cards.length) * 100) : 0;
+        const maxScoreConfig = gameConfig?.maxScore ? Number(gameConfig.maxScore) : 0;
 
         const payload = {
             scoreValue: finalScore,
-            maxScore: cards.length * 20,
+            maxScore: maxScoreConfig || cards.length * 100,
             accuracy,
             timeSpent,
             answersDetail: finalBreakdown,

@@ -90,16 +90,21 @@ export default function SpinWheelEngine({ data, onIntermission, onGameOver }: { 
         isBusy.current = true;
         setIsAnswered(true);
 
-        const newScore = isCorrect ? score + 100 : score;
+        // Hitung poin proporsional dari maxScore config
+        const maxScoreConfig = gameConfig?.maxScore ? Number(gameConfig.maxScore) : 0;
+        const totalQs = questions.length;
+        const pointsPerQ = maxScoreConfig && totalQs > 0 ? Math.floor(maxScoreConfig / totalQs) : 100;
+
+        const earnedPoints = isCorrect ? pointsPerQ : 0;
+        const newScore = isCorrect ? score + pointsPerQ : score;
         const newLives = isCorrect ? lives : lives - 1;
 
         if (isCorrect) {
             setScore(newScore);
-            toast.success("BENAR! +100 Skor 🌟");
+            toast.success(`BENAR! +${pointsPerQ} Skor 🌟`);
             if (roomCode) {
-                const currentAccuracy = Math.round(
-                    (newScore / ((completedCount + 1) * 100)) * 100
-                );
+                const correctCountSoFar = history.filter(h => h.isCorrect).length + 1;
+                const currentAccuracy = Math.round((correctCountSoFar / (completedCount + 1)) * 100);
 
                 socket.emit("updateScore", {
                     code: roomCode,
@@ -113,25 +118,31 @@ export default function SpinWheelEngine({ data, onIntermission, onGameOver }: { 
             toast.error(finalInput === "TIMEOUT" ? "Waktu Habis! ⏰" : "Salah Jawaban! ❌");
         }
 
+        const questionIdx = selectedQuestion ? questions.indexOf(selectedQuestion) : completedCount;
         const currentHistoryItem = { 
-            word: finalInput, 
+            questionIndex: questionIdx,
+            word: selectedQuestion?.question || finalInput,
+            selectedAnswer: isCorrect ? finalInput : null,
+            question: selectedQuestion?.question || `Soal ${completedCount + 1}`,
             isCorrect, 
-            time: (gameConfig?.timeLimit ? Number(gameConfig.timeLimit) : 15) - timeLeft 
+            time: (gameConfig?.timeLimit ? Number(gameConfig.timeLimit) : 15) - timeLeft,
+            pointsEarned: earnedPoints
         };
         const updatedHistory = [...history, currentHistoryItem];
         setHistory(updatedHistory);
 
-        submitAnswer(realGameId, questions.indexOf(selectedQuestion), finalInput, newScore).catch(() => { });
+        submitAnswer(realGameId, questionIdx, finalInput, earnedPoints).catch(() => { });
 
         setTimeout(() => {
             const isGameOver = newLives <= 0 || completedCount + 1 >= questions.length;
             if (isGameOver) {
                 if (isSavingRef.current) return;
                 isSavingRef.current = true;
-                const accuracy = Math.round((newScore / (questions.length * 100)) * 100);
+                const correctCount = updatedHistory.filter(h => h.isCorrect).length;
+                const accuracy = totalQs > 0 ? Math.round((correctCount / totalQs) * 100) : 0;
                 const payload = {
                     scoreValue: newScore,
-                    maxScore: questions.length * 100,
+                    maxScore: maxScoreConfig || totalQs * 100,
                     accuracy,
                     timeSpent: 0,
                     answersDetail: updatedHistory

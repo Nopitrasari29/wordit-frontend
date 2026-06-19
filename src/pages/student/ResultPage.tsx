@@ -34,17 +34,30 @@ export default function ResultPage() {
       location.state?.scoreValue ??
       location.state?.score ??
       parseInt(sessionStorage.getItem("lastScore") || "0");
-    const finalAccuracy =
+    const rawAccuracy =
       location.state?.accuracy ??
       parseInt(sessionStorage.getItem("lastAccuracy") || "0");
+    const finalAccuracy = Math.min(100, Math.max(0, rawAccuracy)); // Clamp 0–100
     const finalBreakdown =
       location.state?.answersDetail ??
       location.state?.breakdown ??
       JSON.parse(sessionStorage.getItem("lastBreakdown") || "[]");
 
+    // Hitung pointsPerCorrect dari total score dan jumlah benar
+    // (untuk kasus breakdown tidak memiliki pointsEarned dari engine lama)
+    const correctCount = finalBreakdown.filter((b: any) => b.isCorrect === true).length;
+    const derivedPointsPerCorrect = correctCount > 0 ? Math.round(finalScore / correctCount) : 0;
+    const enrichedBreakdown = finalBreakdown.map((b: any) => ({
+      ...b,
+      // Jika pointsEarned sudah ada dari backend, pakai itu; jika tidak, hitung dari score total
+      pointsEarned: b.pointsEarned !== undefined && b.pointsEarned !== null
+        ? b.pointsEarned
+        : (b.isCorrect ? derivedPointsPerCorrect : 0)
+    }));
+
     setScore(finalScore);
     setAccuracy(finalAccuracy);
-    setBreakdown(finalBreakdown);
+    setBreakdown(enrichedBreakdown);
 
     if (finalAccuracy >= 80) {
       confetti({
@@ -192,7 +205,7 @@ export default function ResultPage() {
   // Render satu item breakdown — auto-detect essay vs pilihan ganda
   const renderBreakdownItem = (item: any, idx: number) => {
     const isEssayItem = typeof item.isCorrect === "undefined";
-    const pts = item.pointsEarned ?? (item.isCorrect ? 100 : 0);
+    const pts = item.pointsEarned ?? 0;
     const scoreStyle = getScoreStyle(pts);
 
     if (isEssayItem) {
@@ -342,7 +355,7 @@ export default function ResultPage() {
             <span
               className={`font-black text-lg ${item.isCorrect ? "text-emerald-500" : "text-rose-500"}`}
             >
-              {item.isCorrect ? `+${item.pointsEarned || 100}` : "0 Poin"}
+              {item.isCorrect ? `+${item.pointsEarned ?? 0}` : "0 Poin"}
             </span>
             {!item.isCorrect && (
               <button
