@@ -25,6 +25,7 @@ export default function PlayGamePage() {
   );
 
   const isMounted = useRef(true);
+  const startTimeRef = useRef<number>(Date.now());
 
   useEffect(() => {
     isMounted.current = true;
@@ -89,6 +90,7 @@ export default function PlayGamePage() {
         }
 
         setGame(finalData);
+        startTimeRef.current = Date.now();
         if (finalData.shareCode) {
           socket.emit("joinGame", { code: finalData.shareCode, playerName: activeName, userId: user?.id });
           if (isStudent) {
@@ -230,12 +232,14 @@ export default function PlayGamePage() {
           const gameContent = game?.gameJson && Array.isArray(game.gameJson) ? game.gameJson[0] : game?.gameJson;
           const configuredMaxScore = gameContent?.maxScore ? Number(gameContent.maxScore) : (totalQuestions * 100);
 
+          const elapsedTimeSeconds = Math.max(1, Math.round((Date.now() - startTimeRef.current) / 1000));
+
           // 🛠️ SINKRONISASI MUTLAK: Ambil response data kembalian dari database server WordIT
           const response = await finishGame(realGameId!, {
               scoreValue: score,
               maxScore: configuredMaxScore,
               accuracy: finalAccuracy,
-              timeSpent: 0,
+              timeSpent: elapsedTimeSeconds,
               answersDetail: breakdown
           });
 
