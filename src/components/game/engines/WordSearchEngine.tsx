@@ -10,7 +10,6 @@ export default function WordSearchEngine({ data, onGameOver, onIntermission }: {
     const roomCode = data?.shareCode || "";
 
     const gameConfig = useMemo(() => Array.isArray(data?.gameJson) ? data.gameJson[0] : data?.gameJson, [data]);
-    const size = gameConfig?.gridSize || 8;
     const wordsToFind = useMemo(() => {
         return (gameConfig?.words || [])
             .map((w: any) => {
@@ -19,6 +18,12 @@ export default function WordSearchEngine({ data, onGameOver, onIntermission }: {
             })
             .filter((w: string) => w.trim().length > 0);
     }, [gameConfig]);
+
+    const size = useMemo(() => {
+        const longestWord = wordsToFind.reduce((max: number, w: string) => Math.max(max, w.length), 0);
+        const configSize = gameConfig?.gridSize ? Number(gameConfig.gridSize) : 8;
+        return Math.max(configSize, longestWord + 1);
+    }, [gameConfig, wordsToFind]);
 
     const [grid, setGrid] = useState<string[][]>([]);
     const [foundWords, setFoundWords] = useState<string[]>([]);
@@ -82,17 +87,28 @@ export default function WordSearchEngine({ data, onGameOver, onIntermission }: {
             let attempts = 0;
             while (!placed && attempts < 100) {
                 const isVertical = Math.random() > 0.5;
-                const row = Math.floor(Math.random() * (isVertical ? (size - word.length + 1) : size));
-                const col = Math.floor(Math.random() * (isVertical ? size : (size - word.length + 1)));
+                const rowLimit = isVertical ? (size - word.length + 1) : size;
+                const colLimit = isVertical ? size : (size - word.length + 1);
+                const row = rowLimit > 0 ? Math.floor(Math.random() * rowLimit) : 0;
+                const col = colLimit > 0 ? Math.floor(Math.random() * colLimit) : 0;
                 let canPlace = true;
                 for (let i = 0; i < word.length; i++) {
-                    const char = isVertical ? newGrid[row + i][col] : newGrid[row][col + i];
+                    const rowIdx = isVertical ? row + i : row;
+                    const colIdx = isVertical ? col : col + i;
+                    if (rowIdx < 0 || rowIdx >= size || colIdx < 0 || colIdx >= size || !newGrid[rowIdx]) {
+                        canPlace = false;
+                        break;
+                    }
+                    const char = newGrid[rowIdx][colIdx];
                     if (char !== '' && char !== word[i]) { canPlace = false; break; }
                 }
                 if (canPlace) {
                     for (let i = 0; i < word.length; i++) {
-                        if (isVertical) newGrid[row + i][col] = word[i];
-                        else newGrid[row][col + i] = word[i];
+                        const rowIdx = isVertical ? row + i : row;
+                        const colIdx = isVertical ? col : col + i;
+                        if (newGrid[rowIdx]) {
+                            newGrid[rowIdx][colIdx] = word[i];
+                        }
                     }
                     placed = true;
                 }

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import GameRenderer from "../../../components/game/GameRenderer";
+import ErrorBoundary from "../../../components/ui/ErrorBoundary";
 import { getGameById } from "../../services/game.service";
 import { toast } from "react-hot-toast";
 
@@ -83,16 +84,18 @@ export default function PreviewGamePage() {
         </div>
 
         <div className="relative bg-white rounded-[4.5rem] shadow-2xl border-[14px] border-indigo-50 min-h-[600px] flex items-center justify-center overflow-hidden transition-all duration-500">
-          <GameRenderer 
-            key={previewKey}
-            templateType={game.templateType} 
-            gameData={game} 
-            onGameOver={(score, accuracy, breakdown) => {
-              console.log("🎮 Preview Game Over:", { score, accuracy, breakdown });
-              setResults({ score: score || 0, accuracy: accuracy || 0, breakdown: breakdown || [] });
-              setShowResults(true);
-            }}
-          />
+          <ErrorBoundary>
+            <GameRenderer 
+              key={previewKey}
+              templateType={game.templateType} 
+              gameData={game} 
+              onGameOver={(score, accuracy, breakdown) => {
+                console.log("🎮 Preview Game Over:", { score, accuracy, breakdown });
+                setResults({ score: score || 0, accuracy: accuracy || 0, breakdown: breakdown || [] });
+                setShowResults(true);
+              }}
+            />
+          </ErrorBoundary>
 
           {showResults && results && (
             <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-6 text-white animate-fade-in z-50">

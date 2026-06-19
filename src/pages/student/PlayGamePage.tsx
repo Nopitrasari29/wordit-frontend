@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import GameRenderer from "../../components/game/GameRenderer";
+import ErrorBoundary from "../../components/ui/ErrorBoundary";
 import { getGameById, getGameByCode, finishGame, playGame } from "../services/game.service";
 import socket from "../../hooks/useSocket";
 import { toast } from "react-hot-toast";
@@ -251,13 +252,15 @@ export default function PlayGamePage() {
       <div className="flex-1 flex flex-col p-4 md:p-8 relative z-10">
         <div className="bg-white flex-1 rounded-[3.5rem] border-[12px] border-slate-800 overflow-hidden relative flex items-center justify-center shadow-inner">
           {game && (
-            <GameRenderer
-              templateType={String(game.templateType)}
-              gameData={game}
-              onIntermission={handleIntermission}
-              // @ts-ignore
-              onGameOver={handleGameOver}
-            />
+            <ErrorBoundary>
+              <GameRenderer
+                templateType={String(game.templateType)}
+                gameData={game}
+                onIntermission={handleIntermission}
+                // @ts-ignore
+                onGameOver={handleGameOver}
+              />
+            </ErrorBoundary>
           )}
         </div>
       </div>

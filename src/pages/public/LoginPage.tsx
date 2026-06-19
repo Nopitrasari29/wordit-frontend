@@ -97,63 +97,90 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex justify-center items-center p-4 bg-gradient-to-br from-indigo-100 via-blue-50 to-white relative overflow-hidden font-sans pt-28 pb-12">
+    <div className="min-h-screen flex flex-col md:flex-row bg-slate-50 font-sans relative overflow-hidden">
+      {/* Branding Side (Twilight/Space theme) - Full height on desktop */}
+      <div className="bg-gradient-to-tr from-[#141235] via-[#211f5c] to-[#3b2478] p-12 text-white flex flex-col justify-center w-full md:w-5/12 relative overflow-hidden min-h-[400px] md:min-h-screen pt-32 pb-16">
+        {/* Glow Effects */}
+        <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-500/10 rounded-full blur-[100px] translate-x-1/2 -translate-y-1/2"></div>
+        <div className="absolute bottom-0 left-0 w-96 h-96 bg-purple-500/10 rounded-full blur-[100px] -translate-x-1/2 translate-y-1/2"></div>
+        
+        {/* Floating Game Tiles */}
+        <div className="absolute top-[18%] left-[12%] w-14 h-14 bg-white/[0.04] backdrop-blur-md rounded-2xl border border-white/10 flex items-center justify-center text-2xl font-black text-indigo-200/60 shadow-lg -rotate-12 animate-robot-idle" style={{ animationDelay: '0s', animationDuration: '5s' }}>W</div>
+        <div className="absolute top-[28%] right-[15%] w-10 h-10 bg-white/[0.03] backdrop-blur-sm rounded-xl border border-white/5 flex items-center justify-center text-xl font-black text-purple-200/50 shadow-md rotate-12 animate-robot-idle" style={{ animationDelay: '1s', animationDuration: '6s' }}>o</div>
+        <div className="absolute bottom-[35%] left-[10%] w-12 h-12 bg-white/[0.04] backdrop-blur-md rounded-2xl border border-white/10 flex items-center justify-center text-xl font-black text-indigo-300/60 shadow-md rotate-45 animate-robot-idle" style={{ animationDelay: '2s', animationDuration: '5.5s' }}>r</div>
+        <div className="absolute bottom-[20%] right-[15%] w-14 h-14 bg-white/[0.05] backdrop-blur-md rounded-2xl border border-white/10 flex items-center justify-center text-2xl font-black text-indigo-100/70 shadow-lg -rotate-6 animate-robot-idle" style={{ animationDelay: '1.5s', animationDuration: '4.8s' }}>d</div>
+        <div className="absolute top-[52%] right-[25%] w-8 h-8 bg-white/[0.03] backdrop-blur-sm rounded-lg border border-white/5 flex items-center justify-center text-md font-black text-indigo-300/40 shadow-sm rotate-12 animate-robot-idle" style={{ animationDelay: '0.5s', animationDuration: '6.5s' }}>I</div>
+        <div className="absolute bottom-[10%] left-[25%] w-10 h-10 bg-white/[0.04] backdrop-blur-sm rounded-xl border border-white/10 flex items-center justify-center text-lg font-black text-purple-300/60 shadow-md -rotate-12 animate-robot-idle" style={{ animationDelay: '2.5s', animationDuration: '5.2s' }}>T</div>
 
-      {/* Dekorasi Background */}
-      <div className="absolute top-10 left-10 w-96 h-96 bg-indigo-300 rounded-full mix-blend-multiply filter blur-3xl opacity-40 animate-blob"></div>
-      <div className="absolute bottom-10 right-10 w-96 h-96 bg-blue-300 rounded-full mix-blend-multiply filter blur-3xl opacity-40 animate-blob" style={{ animationDelay: '2s' }}></div>
-
-      {/* Card Login */}
-      <div className="bg-white/80 backdrop-blur-xl shadow-[0_20px_50px_rgba(0,0,0,0.05)] border border-white rounded-[2.5rem] p-8 md:p-12 w-full max-w-md relative z-10">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-black text-indigo-600 mb-2 tracking-tight">Login</h1>
-          <p className="text-slate-500 font-semibold text-sm">Masuk untuk mengelola kelasmu.</p>
+        <div className="relative z-10 max-w-md mx-auto md:mx-0 text-left">
+          <h2 className="text-5xl md:text-6xl font-black mb-6 tracking-tight leading-none italic uppercase">
+            Word<span className="text-indigo-400 drop-shadow-[0_0_15px_rgba(129,140,248,0.5)]">IT</span>
+          </h2>
+          <p className="text-slate-300 font-semibold text-lg leading-relaxed">
+            Portal masuk kuis interaktif, statistik kelas, dan manajemen arena belajar mandiri Anda.
+          </p>
+          <div className="mt-14 text-6xl hidden md:block animate-robot-idle text-indigo-400/90 drop-shadow-[0_0_10px_rgba(129,140,248,0.35)]">🎮</div>
         </div>
+      </div>
 
-        {errorMsg && (
-          <div className="mb-6 bg-rose-50 border-2 border-rose-100 text-rose-600 p-4 rounded-2xl text-sm font-bold animate-fade-in text-center">
-            {errorMsg} ⚠️
+      {/* Form Side */}
+      <div className="w-full md:w-7/12 bg-[#f8fafc]/60 px-8 py-16 md:px-16 md:py-28 flex items-center justify-center min-h-screen overflow-y-auto relative">
+        {/* Glow Effects in Form Side */}
+        <div className="absolute top-1/4 left-1/4 w-80 h-80 bg-indigo-500/5 rounded-full blur-[100px] animate-blob"></div>
+        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-purple-500/5 rounded-full blur-[100px] animate-blob" style={{ animationDelay: '3s' }}></div>
+
+        <div className="w-full max-w-lg bg-white/80 backdrop-blur-xl p-10 md:p-14 rounded-[3.5rem] shadow-[0_20px_50px_rgba(79,70,229,0.06)] border border-white/60 relative z-10">
+          <div className="mb-10 text-left">
+            <h1 className="text-4xl font-black text-slate-800 tracking-tight">Selamat Datang!</h1>
+            <p className="text-slate-400 font-bold text-xs uppercase tracking-widest mt-2">Masuk untuk mengelola kelas & kuis</p>
           </div>
-        )}
 
-        <form onSubmit={submit} className="space-y-6">
-          <Input
-            label="Email"
-            type="email"
-            placeholder="guru@sekolah.com"
-            value={email}
-            onChange={(e) => handleEmailChange(e.target.value)}
-            error={emailError}
-            required
-          />
+          {errorMsg && (
+            <div className="mb-6 bg-rose-50 border-2 border-rose-100 text-rose-600 p-4 rounded-2xl text-xs font-black animate-fade-in text-center flex items-center justify-center gap-2">
+              <span>⚠️</span>
+              <span>{errorMsg}</span>
+            </div>
+          )}
 
-          <div>
+          <form onSubmit={submit} className="space-y-6">
             <Input
-              label="Password"
-              type="password"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => handlePasswordChange(e.target.value)}
-              error={passwordError}
+              label="Email"
+              type="email"
+              placeholder="guru@sekolah.com"
+              value={email}
+              onChange={(e) => handleEmailChange(e.target.value)}
+              error={emailError}
               required
             />
-            <div className="flex justify-end mt-3 mr-2">
-              <Link to="/forgot-password" title="Lupa Password" className="text-sm font-bold text-indigo-500 hover:text-indigo-600 hover:underline transition-colors">
-                Forgot Password?
-              </Link>
+
+            <div>
+              <Input
+                label="Password"
+                type="password"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => handlePasswordChange(e.target.value)}
+                error={passwordError}
+                required
+              />
+              <div className="flex justify-end mt-3 mr-2">
+                <Link to="/forgot-password" title="Lupa Password" className="text-xs font-black text-indigo-600 hover:text-indigo-500 hover:underline transition-colors uppercase tracking-wider">
+                  Forgot Password?
+                </Link>
+              </div>
             </div>
-          </div>
 
-          <button type="submit" className="w-full bg-indigo-600 text-white font-black text-lg py-4 rounded-full shadow-[0_8px_20px_rgba(79,70,229,0.3)] hover:-translate-y-1 hover:shadow-lg transition-all active:scale-95">
-            Login
-          </button>
-        </form>
+            <button type="submit" className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white font-black text-sm uppercase tracking-widest py-4.5 rounded-full shadow-lg shadow-indigo-600/20 active:scale-98 transition-all duration-300">
+              Login 🚀
+            </button>
+          </form>
 
-        <p className="text-center mt-8 text-sm font-semibold text-slate-500">
-          Don't have an account?
-          <Link to="/register" className="text-indigo-600 font-black hover:underline ml-2">Register</Link>
-        </p>
+          <p className="text-center mt-10 text-xs font-black uppercase tracking-wider text-slate-400">
+            Belum punya akun?
+            <Link to="/register" className="text-indigo-600 font-black hover:underline ml-2 normal-case tracking-normal">Register di sini</Link>
+          </p>
+        </div>
       </div>
     </div>
-  )
+  );
 }

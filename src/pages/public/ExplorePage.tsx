@@ -16,6 +16,7 @@ export default function ExplorePage() {
   const [loadingPreview, setLoadingPreview] = useState(false)
 
   const { user } = useAuth()
+  const isTeacherOrSchoolAdmin = user?.role === "TEACHER" || user?.role === "SCHOOL_ADMIN"
   const navigate = useNavigate()
 
   const [search, setSearch] = useState<string>("")
@@ -111,12 +112,12 @@ export default function ExplorePage() {
                   <span 
                     key={oIdx} 
                     className={`text-xs px-3 py-1.5 rounded-xl border ${
-                      isCorrect && user?.role === "TEACHER"
+                      isCorrect && isTeacherOrSchoolAdmin
                         ? "bg-emerald-50 text-emerald-700 border-emerald-200 font-bold"
                         : "bg-white text-slate-500 border-slate-100"
                     }`}
                   >
-                    {opt} {isCorrect && user?.role === "TEACHER" && "✓"}
+                    {opt} {isCorrect && isTeacherOrSchoolAdmin && "✓"}
                   </span>
                 )
               })}
@@ -127,14 +128,14 @@ export default function ExplorePage() {
           {type === "TRUE_FALSE" && (
             <div className="mt-2 flex gap-2">
               <span className={`text-xs px-4 py-1.5 rounded-xl border ${
-                q.correctAnswer === true && user?.role === "TEACHER"
+                q.correctAnswer === true && isTeacherOrSchoolAdmin
                   ? "bg-emerald-50 text-emerald-700 border-emerald-200 font-bold"
                   : "bg-white text-slate-400 border-slate-100"
               }`}>
                 Benar
               </span>
               <span className={`text-xs px-4 py-1.5 rounded-xl border ${
-                q.correctAnswer === false && user?.role === "TEACHER"
+                q.correctAnswer === false && isTeacherOrSchoolAdmin
                   ? "bg-emerald-50 text-emerald-700 border-emerald-200 font-bold"
                   : "bg-white text-slate-400 border-slate-100"
               }`}>
@@ -405,7 +406,7 @@ export default function ExplorePage() {
             {/* Modal Footer Actions */}
             {!loadingPreview && previewGame && (
               <div className="p-6 md:p-8 bg-slate-50 border-t border-slate-100 flex flex-col sm:flex-row gap-3 justify-end">
-                {user?.role === "TEACHER" ? (
+                {isTeacherOrSchoolAdmin ? (
                   <>
                     <button 
                       onClick={() => {
