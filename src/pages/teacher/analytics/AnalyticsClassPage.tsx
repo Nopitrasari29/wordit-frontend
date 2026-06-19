@@ -219,7 +219,7 @@ export default function AnalyticsClassPage({
               <BarChart data={classData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                 <XAxis dataKey="groupName" axisLine={false} tickLine={false} tick={{ fill: "#64748b", fontWeight: 800 }} dy={10} />
-                <YAxis domain={[0, 100]} axisLine={false} tickLine={false} tick={{ fill: "#64748b", fontWeight: 800 }} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fill: "#64748b", fontWeight: 800 }} />
                 <Tooltip cursor={{ fill: "#f8fafc" }} contentStyle={{ borderRadius: "1.5rem", border: "none", fontWeight: "bold" }} />
                 <Legend verticalAlign="top" align="right" iconType="circle" wrapperStyle={{ paddingBottom: "20px", fontSize: "12px", fontWeight: "bold" }} />
                 <Bar name="Rata-Rata Skor" dataKey="averageScore" radius={[12, 12, 0, 0]} barSize={50}>
@@ -265,6 +265,7 @@ export default function AnalyticsClassPage({
               <tr className="border-b border-slate-100 text-slate-400 font-black text-xs uppercase tracking-widest bg-slate-50">
                 <th className="p-4 rounded-l-2xl">Nama Join Siswa</th>
                 <th className="p-4 text-center">Kelompok/Kelas</th>
+                <th className="p-4 text-center">Nama Game</th>
                 <th className="p-4 text-center">Akurasi</th>
                 <th className="p-4 text-center">Durasi Bermain</th>
                 <th className="p-4 text-center rounded-r-2xl">Skor Akhir</th>
@@ -280,6 +281,7 @@ export default function AnalyticsClassPage({
                         {student.className}
                       </span>
                     </td>
+                    <td className="p-4 text-center text-slate-700 font-semibold">{student.gameName || "-"}</td>
                     <td className="p-4 text-center text-emerald-500">{student.accuracy}%</td>
                     <td className="p-4 text-center text-slate-500 font-semibold">
                       {student.timeSpent ? `${Math.floor(student.timeSpent / 60)}m ${student.timeSpent % 60}s` : "-"}
@@ -289,7 +291,7 @@ export default function AnalyticsClassPage({
                 ))
               ) : (
                 <tr>
-                  <td colSpan={5} className="p-8 text-center text-slate-400 font-medium">Tidak ada riwayat pengerjaan nilai yang cocok.</td>
+                  <td colSpan={6} className="p-8 text-center text-slate-400 font-medium">Tidak ada riwayat pengerjaan nilai yang cocok.</td>
                 </tr>
               )}
             </tbody>

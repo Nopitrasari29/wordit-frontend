@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import GameRenderer from "../../components/game/GameRenderer";
 import ErrorBoundary from "../../components/ui/ErrorBoundary";
@@ -19,11 +19,21 @@ export default function PlayGamePage() {
 
   const { user } = useAuth();
   const isStudent = user && user.role === "STUDENT";
-  const playerName = sessionStorage.getItem("playerName") || user?.name || "Player";
+  const [resolvedPlayerName, setResolvedPlayerName] = useState<string>(
+    sessionStorage.getItem("playerName") || user?.name || "Player"
+  );
+
+  const isMounted = useRef(true);
 
   useEffect(() => {
-    const playerName = sessionStorage.getItem("playerName") || user?.name || "Player";
+    isMounted.current = true;
+    return () => {
+      isMounted.current = false;
+      (window as any)._worditFinishing = false;
+    };
+  }, []);
 
+  useEffect(() => {
     const loadGameArena = async () => {
       if (!gameId) return;
 
@@ -39,11 +49,36 @@ export default function PlayGamePage() {
         const finalData = (data as any).data || data;
         if (!finalData) throw new Error("Data game tidak ditemukan.");
 
+        let activeName = resolvedPlayerName;
+        // Jika kuis live lobi (memiliki shareCode) dan dimainkan oleh siswa
+        if (finalData.shareCode && isStudent) {
+          const formatRegex = /^[a-zA-Z0-9\s]+_.+/;
+          if (!formatRegex.test(activeName)) {
+            let promptName = window.prompt(
+              "Sesi kuis live memerlukan identitas kelas. Silakan masukkan dengan format: Kelas_Nama\n(Contoh: 7A_Budi)",
+              user?.name ? `_${user.name}` : ""
+            );
+            
+            while (promptName !== null && !formatRegex.test(promptName.trim())) {
+              promptName = window.prompt(
+                "Format salah! Harap gunakan format: Kelas_Nama\n(Contoh: 7A_Budi)",
+                promptName
+              );
+            }
+            
+            if (promptName) {
+              const trimmedName = promptName.trim();
+              sessionStorage.setItem("playerName", trimmedName);
+              setResolvedPlayerName(trimmedName);
+              activeName = trimmedName;
+            }
+          }
+        }
+
         // 🧠 Panggil endpoint /play untuk start session game & dapatkan rekomendasi difficulty (Hanya untuk Student)
         if (isStudent) {
           try {
-            const savedPlayerName = sessionStorage.getItem("playerName") || user?.name || "Player";
-            const sessionData = await playGame(finalData.id || finalData._id, savedPlayerName);
+            const sessionData = await playGame(finalData.id || finalData._id, activeName);
             if (sessionData && sessionData.recommendedDifficulty) {
               finalData.recommendedDifficulty = sessionData.recommendedDifficulty;
             }
@@ -54,7 +89,7 @@ export default function PlayGamePage() {
 
         setGame(finalData);
         if (finalData.shareCode) {
-          socket.emit("joinGame", { code: finalData.shareCode, playerName, userId: user?.id });
+          socket.emit("joinGame", { code: finalData.shareCode, playerName: activeName, userId: user?.id });
           if (isStudent) {
             sessionStorage.setItem("activeGameRoom", finalData.shareCode);
             sessionStorage.setItem("activeGameId", finalData.id || finalData._id);
@@ -69,11 +104,11 @@ export default function PlayGamePage() {
     };
 
     loadGameArena();
-  }, [gameId, navigate, isStudent]);
+  }, [gameId, navigate, isStudent, resolvedPlayerName]);
 
   useEffect(() => {
     const joinRoom = (shareCode: string) => {
-      socket.emit("joinGame", { code: shareCode, playerName, userId: user?.id });
+      socket.emit("joinGame", { code: shareCode, playerName: resolvedPlayerName, userId: user?.id });
     };
 
     const handleGameFinished = (finalLeaderboard?: any[]) => {
@@ -82,7 +117,7 @@ export default function PlayGamePage() {
 
       toast.error("Sesi telah berakhir.", { icon: "🛑" });
 
-      const myPlayerName = playerName || sessionStorage.getItem("playerName") || user?.name || "";
+      const myPlayerName = resolvedPlayerName || sessionStorage.getItem("playerName") || user?.name || "";
       const myData = Array.isArray(finalLeaderboard)
         ? finalLeaderboard.find((p: any) => p.name === myPlayerName)
         : null;
@@ -93,27 +128,35 @@ export default function PlayGamePage() {
       sessionStorage.setItem("lastScore", finalScore.toString());
       sessionStorage.setItem("lastAccuracy", finalAccuracy.toString());
 
-      navigate("/student/result", {
-        state: {
-          score: finalScore,
-          accuracy: finalAccuracy,
-          breakdown: myData?.answersDetail || JSON.parse(sessionStorage.getItem("lastBreakdown") || "[]"),
-        },
-      });
+      if (isMounted.current) {
+        navigate("/student/result", {
+          state: {
+            score: finalScore,
+            accuracy: finalAccuracy,
+            breakdown: myData?.answersDetail || JSON.parse(sessionStorage.getItem("lastBreakdown") || "[]"),
+          },
+        });
+      }
     };
 
     const handleUpdatePlayerList = (newList: any[]) => {
-      setLeaderboard(newList);
+      if (isMounted.current) {
+        setLeaderboard(newList);
+      }
     };
 
     const handlePlayerKicked = () => {
       toast.error("Anda telah dikeluarkan oleh guru.");
-      navigate("/student/join");
+      if (isMounted.current) {
+        navigate("/student/join");
+      }
     };
 
     const handleHostDisconnected = () => {
       toast.error("Guru mengakhiri sesi.");
-      navigate("/student/join");
+      if (isMounted.current) {
+        navigate("/student/join");
+      }
     };
 
     const handleConnect = () => {
@@ -135,7 +178,7 @@ export default function PlayGamePage() {
       socket.off("hostDisconnected", handleHostDisconnected);
       socket.off("connect", handleConnect);
     };
-  }, [navigate, gameId, game, playerName]);
+  }, [navigate, gameId, game, resolvedPlayerName]);
 
       const handleGameOver = async (scoreOverride?: number, accuracyOverride?: number, breakdownOverride?: any[]) => {
       // 🛠️ PERBAIKAN: Gunakan local variable tracking alih-alih mengandalkan state blocking instan
@@ -171,7 +214,9 @@ export default function PlayGamePage() {
       const finalAccuracy = totalQuestions > 0 ? Math.round((breakdown.filter((b: any) => b.isCorrect).length / totalQuestions) * 100) : accuracyRaw;
 
       if (!isStudent) {
-          setLocalScoreResult({ score, accuracy: finalAccuracy, breakdown });
+          if (isMounted.current) {
+              setLocalScoreResult({ score, accuracy: finalAccuracy, breakdown });
+          }
           (window as any)._worditFinishing = false;
           return;
       }
@@ -202,16 +247,39 @@ export default function PlayGamePage() {
           (window as any)._worditFinishing = false;
           
           // Alihkan halaman membawa skor ter-sinkronisasi dari backend
-          navigate("/student/result", {
-              state: { score: Number(savedScore), accuracy: Number(savedAccuracy), breakdown: savedBreakdown }
-          });
+          if (isMounted.current) {
+              navigate("/student/result", {
+                  state: { score: Number(savedScore), accuracy: Number(savedAccuracy), breakdown: savedBreakdown }
+              });
+          }
       } catch (e) {
           console.warn("Autosave gagal, menggunakan fallback local state.");
           (window as any)._worditFinishing = false;
-          navigate("/student/result", {
-              state: { score, accuracy: finalAccuracy, breakdown }
-          });
+          if (isMounted.current) {
+              navigate("/student/result", {
+                  state: { score, accuracy: finalAccuracy, breakdown }
+              });
+          }
       }
+  };
+
+  const handleBack = () => {
+    if (isStudent) {
+      const confirmExit = window.confirm("Keluar dari game? Skor dan progres Anda saat ini akan disimpan ke database.");
+      if (confirmExit) {
+        const currentScore = Number(sessionStorage.getItem("lastScore") || "0");
+        const currentAccuracy = Number(sessionStorage.getItem("lastAccuracy") || "0");
+        let breakdown = [];
+        try {
+          breakdown = JSON.parse(sessionStorage.getItem("lastBreakdown") || "[]");
+        } catch {
+          breakdown = [];
+        }
+        handleGameOver(currentScore, currentAccuracy, breakdown);
+      }
+    } else {
+      navigate(-1);
+    }
   };
 
   // Instant next: tidak ada jeda antar soal, langsung lanjut
@@ -228,14 +296,14 @@ export default function PlayGamePage() {
   );
 
   const sortedLeaderboard = [...leaderboard].sort((a, b) => (b.score || 0) - (a.score || 0));
-  const myRankIndex = sortedLeaderboard.findIndex(p => p.name === playerName);
+  const myRankIndex = sortedLeaderboard.findIndex(p => p.name === resolvedPlayerName);
   const myRank = myRankIndex !== -1 ? myRankIndex + 1 : "-";
 
   return (
     <div className="min-h-screen bg-slate-900 flex flex-col font-sans relative overflow-hidden selection:bg-transparent">
       <div className="bg-slate-800/50 backdrop-blur-md px-8 py-4 flex justify-between items-center border-b border-white/5 z-10">
         <div className="flex items-center gap-4">
-          <button onClick={() => navigate(-1)} className="text-white opacity-50 hover:opacity-100 transition-opacity text-xl">❮</button>
+          <button onClick={handleBack} className="text-white opacity-50 hover:opacity-100 transition-opacity text-xl">❮</button>
           <div>
             <h1 className="font-black text-white text-lg tracking-tight">{game?.title}</h1>
             <div className="flex items-center gap-2 mt-0.5">

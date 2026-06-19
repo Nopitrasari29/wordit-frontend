@@ -231,7 +231,7 @@ export default function StudentDashboard() {
               {loadingAnalytics ? (
                 <div className="h-8 bg-slate-200 rounded w-16 animate-pulse mt-1"></div>
               ) : (
-                analytics?.totalXp || 0
+                Number(analytics?.totalXp || 0).toLocaleString("id-ID")
               )}
             </h2>
           </div>
