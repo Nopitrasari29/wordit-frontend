@@ -3,7 +3,7 @@ import { Link } from "react-router-dom"
 import { getImageUrl } from "../../utils/assets"
 import { useState } from "react"
 import { toast } from "react-hot-toast"
-import { requestSchoolAdmin } from "../../pages/services/user.service"
+import { requestSchoolAdmin, cancelSchoolAdmin } from "../../pages/services/user.service"
 
 export default function ProfilePage() {
   const { user, updateUser } = useAuth()
@@ -17,6 +17,20 @@ export default function ProfilePage() {
       toast.success("Permohonan Admin Sekolah berhasil dikirim! ✨")
     } catch (err: any) {
       toast.error(err.response?.data?.message || err.message || "Gagal mengirim permohonan")
+    } finally {
+      setRequesting(false)
+    }
+  }
+
+  const handleCancelSchoolAdmin = async () => {
+    if (!window.confirm("Apakah Anda yakin ingin membatalkan status Admin Sekolah? Peran Anda akan dikembalikan menjadi Teacher biasa.")) return;
+    try {
+      setRequesting(true)
+      const updatedUser = await cancelSchoolAdmin()
+      updateUser(updatedUser)
+      toast.success("Status Admin Sekolah dibatalkan. Peran kembali menjadi Teacher! ✨")
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || err.message || "Gagal membatalkan status admin")
     } finally {
       setRequesting(false)
     }
@@ -80,25 +94,54 @@ export default function ProfilePage() {
             Edit Profile ⚙️
           </Link>
 
-          {(user?.role === "TEACHER" || user?.role === "SCHOOL_ADMIN") && !user?.hasAdminAccess && (
-            <>
-              {user?.adminRequestStatus === "PENDING" ? (
+          {(user?.role === "TEACHER" || user?.role === "SCHOOL_ADMIN") && (
+            <div className="flex flex-col items-center gap-4">
+              {user?.role === "SCHOOL_ADMIN" && (
                 <button
-                  disabled
-                  className="bg-slate-100 text-slate-400 font-bold px-10 py-4 rounded-full border border-slate-200 cursor-not-allowed"
-                >
-                  Permohonan Admin Sekolah Ditinjau ⏳
-                </button>
-              ) : (
-                <button
-                  onClick={handleRequestSchoolAdmin}
+                  onClick={handleCancelSchoolAdmin}
                   disabled={requesting}
-                  className="bg-amber-500 hover:bg-amber-600 text-white font-bold px-10 py-4 rounded-full shadow-lg shadow-amber-100 hover:-translate-y-1 transition-all active:scale-95 disabled:opacity-50"
+                  className="bg-rose-600 hover:bg-rose-700 text-white font-bold px-10 py-4 rounded-full shadow-lg shadow-rose-100 hover:-translate-y-1 transition-all active:scale-95 disabled:opacity-50 animate-in fade-in"
                 >
-                  {requesting ? "Mengajukan..." : "Ajukan Sebagai Admin Sekolah 🏫"}
+                  {requesting ? "Memproses..." : "Batalkan Status Admin Sekolah 🏫"}
                 </button>
               )}
-            </>
+
+              {user?.role === "TEACHER" && (
+                <>
+                  {user?.adminRequestStatus === "PENDING" && (
+                    <button
+                      disabled
+                      className="bg-slate-100 text-slate-400 font-bold px-10 py-4 rounded-full border border-slate-200 cursor-not-allowed"
+                    >
+                      Permohonan Admin Sekolah Ditinjau ⏳
+                    </button>
+                  )}
+
+                  {user?.adminRequestStatus === "REJECTED" && (
+                    <div className="flex flex-col items-center gap-3 animate-in fade-in">
+                      <span className="text-xs text-rose-500 font-black uppercase tracking-wider bg-rose-50 px-4 py-1.5 rounded-full border border-rose-100">⚠️ Pengajuan Sebelumnya Ditolak</span>
+                      <button
+                        onClick={handleRequestSchoolAdmin}
+                        disabled={requesting}
+                        className="bg-amber-500 hover:bg-amber-600 text-white font-bold px-10 py-4 rounded-full shadow-lg shadow-amber-100 hover:-translate-y-1 transition-all active:scale-95 disabled:opacity-50"
+                      >
+                        {requesting ? "Mengajukan..." : "Ajukan Kembali Sebagai Admin Sekolah 🏫"}
+                      </button>
+                    </div>
+                  )}
+
+                  {user?.adminRequestStatus !== "PENDING" && user?.adminRequestStatus !== "REJECTED" && (
+                    <button
+                      onClick={handleRequestSchoolAdmin}
+                      disabled={requesting}
+                      className="bg-amber-500 hover:bg-amber-600 text-white font-bold px-10 py-4 rounded-full shadow-lg shadow-amber-100 hover:-translate-y-1 transition-all active:scale-95 disabled:opacity-50"
+                    >
+                      {requesting ? "Mengajukan..." : "Ajukan Sebagai Admin Sekolah 🏫"}
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
           )}
         </div>
 

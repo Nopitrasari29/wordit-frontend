@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { getImageUrl } from "../../utils/assets";
 import api from "../../pages/services/api";
 import socket from "../../hooks/useSocket";
+import { toast } from "react-hot-toast";
 
 export default function Navbar() {
   const { user, logout } = useAuth();
@@ -26,9 +27,15 @@ export default function Navbar() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // ✅ FE-NEW-07: Fetch jumlah user PENDING jika role SUPER_ADMIN atau SCHOOL_ADMIN
+  // ✅ FE-NEW-07: Fetch jumlah user PENDING & gabung socket room secara real-time
   useEffect(() => {
-    if (user?.role !== "SUPER_ADMIN" && user?.role !== "SCHOOL_ADMIN") return;
+    if (user?.id) {
+      socket.emit("join_user_room", user.id);
+    }
+
+    if (user?.role === "SUPER_ADMIN" || user?.role === "SCHOOL_ADMIN") {
+      socket.emit("join_admin_room");
+    }
 
     async function fetchPendingCount() {
       try {
@@ -43,30 +50,45 @@ export default function Navbar() {
           setPendingCount(count);
         }
       } catch (err) {
-        // Abaikan error, badge tidak kritis
         console.warn("Tidak bisa fetch pending count:", err);
       }
     }
 
-    fetchPendingCount();
-
-    // ✅ FE-NEW-07: Update badge secara real-time via socket
-    socket.emit("join_admin_room");
+    if (user?.role === "SUPER_ADMIN" || user?.role === "SCHOOL_ADMIN") {
+      fetchPendingCount();
+    }
 
     socket.on("admin_refresh", () => {
-      fetchPendingCount();
+      if (user?.role === "SUPER_ADMIN" || user?.role === "SCHOOL_ADMIN") {
+        fetchPendingCount();
+      }
     });
 
     socket.on("new_teacher_registered", () => {
-      // Langsung tambah badge +1 saat ada guru baru daftar (optimistic update)
-      setPendingCount((prev) => prev + 1);
+      if (user?.role === "SUPER_ADMIN" || user?.role === "SCHOOL_ADMIN") {
+        setPendingCount((prev) => prev + 1);
+      }
+    });
+
+    socket.on("user_notification", (data: any) => {
+      if (data.type === "ADMIN_REQUEST_DECISION") {
+        if (data.status === "APPROVED") {
+          toast.success(data.message, { duration: 5000 });
+        } else {
+          toast.error(data.message, { duration: 5000 });
+        }
+        setTimeout(() => {
+          window.location.reload();
+        }, 2000);
+      }
     });
 
     return () => {
       socket.off("admin_refresh");
       socket.off("new_teacher_registered");
+      socket.off("user_notification");
     };
-  }, [user?.role]);
+  }, [user?.role, user?.id]);
 
   return (
     <div className="fixed top-6 left-0 w-full z-50 flex justify-center px-4 font-sans pointer-events-none">

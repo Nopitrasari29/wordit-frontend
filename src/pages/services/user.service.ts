@@ -147,3 +147,11 @@ export async function approveSchoolAdmin(id: string, action: "APPROVE" | "REJECT
   }
   return res.data.data;
 }
+
+export async function cancelSchoolAdmin() {
+  const res = await api.patch("/users/cancel-school-admin");
+  if (res.data.status !== "success" && !res.data.success) {
+    throw new Error(res.data.message || "Gagal membatalkan status Admin Sekolah");
+  }
+  return res.data.data;
+}
