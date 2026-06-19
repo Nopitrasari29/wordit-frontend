@@ -85,6 +85,27 @@ const badgeStyles: Record<string, {
     glow: "shadow-emerald-100 hover:shadow-emerald-300/60",
     iconBg: "bg-gradient-to-tr from-emerald-400 to-teal-500",
     textColor: "text-emerald-700"
+  },
+  "Speedrun Demon": {
+    bg: "bg-amber-50/70 backdrop-blur-md",
+    border: "border-amber-200/60",
+    glow: "shadow-amber-100 hover:shadow-amber-300/60",
+    iconBg: "bg-gradient-to-tr from-amber-400 to-orange-500",
+    textColor: "text-amber-700"
+  },
+  "Unstoppable": {
+    bg: "bg-orange-50/70 backdrop-blur-md",
+    border: "border-orange-200/60",
+    glow: "shadow-orange-100 hover:shadow-orange-300/60",
+    iconBg: "bg-gradient-to-tr from-orange-400 to-red-500 animate-pulse",
+    textColor: "text-orange-700"
+  },
+  "Underdog Hero": {
+    bg: "bg-indigo-50/70 backdrop-blur-md",
+    border: "border-indigo-200/60",
+    glow: "shadow-indigo-100 hover:shadow-indigo-300/60",
+    iconBg: "bg-gradient-to-tr from-indigo-400 to-violet-500",
+    textColor: "text-indigo-700"
   }
 };
 
