@@ -209,7 +209,7 @@ export default function HangmanEngine({
                     </div>
                 </div>
                 <div className={`px-5 py-1.5 rounded-full font-black text-base border ${timeLeft <= 10 ? 'text-rose-500 border-rose-500/20 bg-rose-500/10 animate-pulse' : 'text-indigo-300 border-indigo-500/10 bg-indigo-500/5'}`}>
-                    ⏱️ {timeLeft}s
+                    ⏱️ {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}
                 </div>
                 <div className="text-right flex flex-col">
                     <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Skor</span>

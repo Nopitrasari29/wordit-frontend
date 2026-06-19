@@ -203,7 +203,7 @@ export default function SpinWheelEngine({ data, onIntermission, onGameOver }: { 
                 <div className="flex flex-col items-center">
                     <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest text-center mb-0.5">Sisa Waktu</span>
                     <span className={`text-xl font-black px-4 py-0.5 rounded-full border ${selectedQuestion && !isAnswered && timeLeft <= 5 ? 'text-rose-500 border-rose-500/20 bg-rose-500/10 animate-pulse' : 'text-indigo-300 border-indigo-500/10 bg-indigo-500/5'}`}>
-                        {selectedQuestion && !isAnswered ? `${timeLeft}s` : "--"}
+                        {selectedQuestion && !isAnswered ? `${Math.floor(timeLeft / 60)}:${(timeLeft % 60).toString().padStart(2, '0')}` : "--"}
                     </span>
                 </div>
                 <div className="text-right flex flex-col font-black">

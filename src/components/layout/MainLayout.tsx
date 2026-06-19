@@ -19,24 +19,33 @@ export default function MainLayout() {
         location.pathname === "/profile/edit" ||
         location.pathname === "/teacher/projects" ||
         location.pathname.startsWith("/teacher/create") ||
-        location.pathname.startsWith("/teacher/edit");
+        location.pathname.startsWith("/teacher/edit") ||
+        location.pathname.startsWith("/teacher/game/preview/") ||
+        location.pathname.startsWith("/teacher/session/");
+
+    // Khusus halaman game, lobby, dan host session tidak menggunakan Navbar/Footer dan pt-28 agar benar-benar full screen
+    const isGamePlayPage =
+        location.pathname.startsWith("/play/") ||
+        location.pathname.startsWith("/student/game/") ||
+        location.pathname.startsWith("/teacher/game/preview/") ||
+        location.pathname.startsWith("/teacher/session/");
 
     // Khusus Landing Page tidak pakai padding atas agar Hero terlihat menyatu
     const isHeroPage = location.pathname === "/";
 
     return (
         <div className="min-h-screen flex flex-col bg-white">
-            <Navbar />
+            {!isGamePlayPage && <Navbar />}
 
             <main
                 className={`flex-1 w-full 
-                    ${isHeroPage ? "" : "pt-28"} 
+                    ${(isHeroPage || isGamePlayPage) ? "" : "pt-28"} 
                     ${isStandalonePage ? "" : "max-w-7xl mx-auto px-6 py-8"}`}
             >
                 <Outlet />
             </main>
 
-            <Footer />
+            {!isGamePlayPage && <Footer />}
         </div>
     )
 }

@@ -4,10 +4,39 @@ import { getImageUrl } from "../../utils/assets"
 import { useState } from "react"
 import { toast } from "react-hot-toast"
 import { requestSchoolAdmin, cancelSchoolAdmin } from "../../pages/services/user.service"
+import ConfirmModal from "../../components/ui/ConfirmModal"
 
 export default function ProfilePage() {
   const { user, updateUser } = useAuth()
   const [requesting, setRequesting] = useState(false)
+
+  const [confirmConfig, setConfirmConfig] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: () => {},
+  });
+
+  const showConfirm = (title: string, message: string, onConfirm: () => void) => {
+    setConfirmConfig({
+      isOpen: true,
+      title,
+      message,
+      onConfirm: () => {
+        onConfirm();
+        closeConfirm();
+      },
+    });
+  };
+
+  const closeConfirm = () => {
+    setConfirmConfig((prev) => ({ ...prev, isOpen: false }));
+  };
 
   const handleRequestSchoolAdmin = async () => {
     try {
@@ -22,18 +51,23 @@ export default function ProfilePage() {
     }
   }
 
-  const handleCancelSchoolAdmin = async () => {
-    if (!window.confirm("Apakah Anda yakin ingin membatalkan status Admin Sekolah? Peran Anda akan dikembalikan menjadi Teacher biasa.")) return;
-    try {
-      setRequesting(true)
-      const updatedUser = await cancelSchoolAdmin()
-      updateUser(updatedUser)
-      toast.success("Status Admin Sekolah dibatalkan. Peran kembali menjadi Teacher! ✨")
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || err.message || "Gagal membatalkan status admin")
-    } finally {
-      setRequesting(false)
-    }
+  const handleCancelSchoolAdmin = () => {
+    showConfirm(
+      "Batalkan Status Admin Sekolah",
+      "Apakah Anda yakin ingin membatalkan status Admin Sekolah? Peran Anda akan dikembalikan menjadi Teacher biasa.",
+      async () => {
+        try {
+          setRequesting(true)
+          const updatedUser = await cancelSchoolAdmin()
+          updateUser(updatedUser)
+          toast.success("Status Admin Sekolah dibatalkan. Peran kembali menjadi Teacher! ✨")
+        } catch (err: any) {
+          toast.error(err.response?.data?.message || err.message || "Gagal membatalkan status admin")
+        } finally {
+          setRequesting(false)
+        }
+      }
+    );
   }
 
   if (!user) {
@@ -202,6 +236,13 @@ export default function ProfilePage() {
           )}
         </div>
       </div>
+      <ConfirmModal
+        isOpen={confirmConfig.isOpen}
+        title={confirmConfig.title}
+        message={confirmConfig.message}
+        onConfirm={confirmConfig.onConfirm}
+        onCancel={closeConfirm}
+      />
     </div>
   )
 }

@@ -117,14 +117,18 @@ export default function AnagramEngine({ data, onIntermission, onGameOver }: { da
         playSound('timeout');
         setFeedback('timeout');
         setUsedIndices([]);
-        setBreakdown(prev => [...prev, { word: targetWord, isCorrect: false, time: gameConfig?.timeLimit ? Number(gameConfig.timeLimit) : 15 }]);
+        const nextBreakdown = [...breakdown, { word: targetWord, isCorrect: false, time: gameConfig?.timeLimit ? Number(gameConfig.timeLimit) : 15 }];
+        setBreakdown(nextBreakdown);
+        sessionStorage.setItem("lastBreakdown", JSON.stringify(nextBreakdown));
         setTimeout(() => {
             if (onIntermission && currentIndex < quizWords.length - 1) onIntermission();
-            setTimeout(() => moveToNext(), onIntermission ? 3000 : 0);
+            setTimeout(() => moveToNext(nextBreakdown, score), onIntermission ? 3000 : 0);
         }, 1500);
     }
 
-    function moveToNext() {
+    function moveToNext(currentBreakdown?: any[], currentScore?: number) {
+        const finalBreakdown = currentBreakdown || breakdown;
+        const finalScore = currentScore !== undefined ? currentScore : score;
         if (currentIndex < quizWords.length - 1) {
             setCurrentIndex(prev => prev + 1);
             setAnswer("");
@@ -134,23 +138,23 @@ export default function AnagramEngine({ data, onIntermission, onGameOver }: { da
         } else {
             setIsFinished(true);
             const accuracy = Math.round((correctCountRef.current / quizWords.length) * 100);
-            const finalBreakdown = breakdown;
             const timeSpent = Math.round((Date.now() - startTimeRef.current) / 1000);
+            const maxScoreConfig = Number(gameConfig?.maxScore);
 
             const payload = {
-                scoreValue: score,
-                maxScore: quizWords.length * 250,
+                scoreValue: finalScore,
+                maxScore: maxScoreConfig || quizWords.length * 250,
                 accuracy,
                 timeSpent,
                 answersDetail: finalBreakdown,
             };
 
-            sessionStorage.setItem("lastScore", score.toString());
+            sessionStorage.setItem("lastScore", finalScore.toString());
             sessionStorage.setItem("lastAccuracy", accuracy.toString());
             sessionStorage.setItem("lastBreakdown", JSON.stringify(finalBreakdown));
 
             if (onGameOver) {
-                onGameOver(score, accuracy, finalBreakdown);
+                onGameOver(finalScore, accuracy, finalBreakdown);
                 return;
             }
 
@@ -181,7 +185,19 @@ export default function AnagramEngine({ data, onIntermission, onGameOver }: { da
             setFeedback('correct');
             correctCountRef.current += 1;
             
-            const points = 100 + (timeLeft * 10);
+            const maxScoreConfig = Number(gameConfig?.maxScore);
+            const totalQuestions = quizWords.length;
+            let points = 100;
+            if (maxScoreConfig && maxScoreConfig > 0 && totalQuestions > 0) {
+                if (currentIndex === totalQuestions - 1 && correctCountRef.current === totalQuestions) {
+                    points = maxScoreConfig - score;
+                } else {
+                    points = Math.floor(maxScoreConfig / totalQuestions);
+                }
+            } else {
+                points = 100 + (timeLeft * 10);
+            }
+            
             const newScore = score + points;
             setScore(newScore);
 
@@ -190,17 +206,11 @@ export default function AnagramEngine({ data, onIntermission, onGameOver }: { da
             sessionStorage.setItem("lastAccuracy", runningAccuracy.toString());
 
             const currentTimeSpent = (gameConfig?.timeLimit ? Number(gameConfig.timeLimit) : 15) - timeLeft;
-            setBreakdown(prev => {
-                const newBd = [...prev, { word: targetWord, isCorrect: true, time: currentTimeSpent }];
-                if (currentIndex === quizWords.length - 1) {
-                    sessionStorage.setItem("lastBreakdown", JSON.stringify(newBd));
-                }
-                return newBd;
-            });
+            const nextBreakdown = [...breakdown, { word: targetWord, isCorrect: true, time: currentTimeSpent }];
+            setBreakdown(nextBreakdown);
+            sessionStorage.setItem("lastBreakdown", JSON.stringify(nextBreakdown));
 
             if (roomCode) {
-                const runningAccuracy = Math.round((correctCountRef.current / (currentIndex + 1)) * 105);
-
                 socket.emit("updateScore", {
                     code: roomCode,
                     score: newScore,
@@ -215,7 +225,7 @@ export default function AnagramEngine({ data, onIntermission, onGameOver }: { da
 
             setTimeout(() => {
                 if (onIntermission && currentIndex < quizWords.length - 1) onIntermission();
-                setTimeout(() => moveToNext(), onIntermission ? 3000 : 0);
+                setTimeout(() => moveToNext(nextBreakdown, newScore), onIntermission ? 3000 : 0);
             }, 1500);
         } else {
             playSound('incorrect');
@@ -238,8 +248,14 @@ export default function AnagramEngine({ data, onIntermission, onGameOver }: { da
         );
     }
 
-    let containerClass = "flex flex-col items-center justify-center p-6 space-y-6 font-sans w-full max-w-2xl mx-auto transition-all duration-500 rounded-[2.5rem]";
-    let inputClass = "w-full max-w-md border-2 px-5 py-4 rounded-2xl text-center text-xl font-black outline-none transition-all uppercase ";
+    const maxScoreConfig = Number(gameConfig?.maxScore);
+    const totalQuestions = quizWords.length;
+    const currentQuestionPoints = maxScoreConfig && maxScoreConfig > 0 && totalQuestions > 0
+        ? Math.floor(maxScoreConfig / totalQuestions)
+        : (100 + (timeLeft * 10));
+
+    let containerClass = "flex flex-col items-center justify-center p-6 md:p-8 space-y-8 font-sans w-full max-w-4xl mx-auto transition-all duration-500 rounded-[2.5rem]";
+    let inputClass = "w-full max-w-lg border-2 px-6 py-5 rounded-[2rem] text-center text-2xl md:text-3xl font-black outline-none transition-all uppercase ";
     
     if (feedback === 'correct') {
         containerClass += " bg-emerald-50/50 scale-102";
@@ -271,22 +287,22 @@ export default function AnagramEngine({ data, onIntermission, onGameOver }: { da
                     Soal {currentIndex + 1} / {quizWords.length}
                 </div>
                 <div className={`flex items-center gap-2 px-5 py-1.5 rounded-full font-black text-base border ${timeLeft <= 5 ? 'text-rose-500 border-rose-500/20 bg-rose-500/10 animate-pulse' : 'text-indigo-300 border-indigo-500/10 bg-indigo-500/5'}`}>
-                    ⏱️ 00:{timeLeft.toString().padStart(2, '0')}
+                    ⏱️ {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}
                 </div>
             </div>
 
             {/* Hint Panel */}
-            <div className="text-center w-full max-w-lg">
-                <div className="bg-white border-2 border-indigo-50 px-6 py-4 rounded-2xl shadow-sm">
-                    <span className="text-[9px] font-black text-indigo-400 uppercase tracking-widest block mb-1">Petunjuk Kata</span>
-                    <p className="text-slate-800 font-bold italic text-lg leading-relaxed">
+            <div className="text-center w-full max-w-2xl px-4">
+                <div className="bg-white border-2 border-indigo-50 px-8 py-6 rounded-[2rem] shadow-sm">
+                    <span className="text-xs font-black text-indigo-400 uppercase tracking-widest block mb-2">Petunjuk Kata</span>
+                    <p className="text-slate-800 font-extrabold italic text-2xl md:text-3xl leading-relaxed text-balance">
                         " {currentQuestion?.hint || "Tidak ada petunjuk"} "
                     </p>
                 </div>
             </div>
 
             {/* Letter Blocks */}
-            <div className="flex flex-wrap justify-center gap-2.5">
+            <div className="flex flex-wrap justify-center gap-3.5 my-4">
                 {shuffled.map((letter: string, i: number) => {
                     const isUsed = usedIndices.includes(i);
                     return (
@@ -294,7 +310,7 @@ export default function AnagramEngine({ data, onIntermission, onGameOver }: { da
                             key={`${currentIndex}-${i}`} 
                             disabled={feedback !== 'none' || isUsed}
                             onClick={() => handleLetterClick(letter, i)}
-                            className={`w-12 h-12 md:w-14 md:h-14 border-[3px] rounded-xl flex items-center justify-center text-2xl font-black shadow-sm transition-all
+                            className={`w-14 h-14 md:w-20 md:h-20 border-[4px] rounded-2xl flex items-center justify-center text-3xl md:text-5xl font-black shadow-md transition-all
                                 ${feedback === 'correct' ? 'bg-emerald-500 border-emerald-400 text-white scale-105' : 
                                   feedback === 'incorrect' ? 'bg-rose-50 border-rose-200 text-rose-600' :
                                   feedback === 'timeout' ? 'bg-amber-100 border-amber-200 text-amber-500 grayscale' :
@@ -308,10 +324,10 @@ export default function AnagramEngine({ data, onIntermission, onGameOver }: { da
             </div>
 
             {/* Input & Action */}
-            <div className="w-full flex flex-col items-center gap-4 relative max-w-md">
+            <div className="w-full flex flex-col items-center gap-4 relative max-w-lg">
                 {feedback === 'correct' && (
                     <div className="absolute -top-10 bg-emerald-500 text-white px-5 py-1 rounded-full font-black text-[10px] uppercase tracking-widest animate-bounce shadow-lg">
-                        + {100 + (timeLeft * 10)} PTS!
+                        + {currentQuestionPoints} PTS!
                     </div>
                 )}
                 {feedback === 'incorrect' && (
@@ -348,7 +364,7 @@ export default function AnagramEngine({ data, onIntermission, onGameOver }: { da
                 <button
                     onClick={submit}
                     disabled={feedback !== 'none'}
-                    className={`w-full font-black text-lg py-4 rounded-2xl transition-all uppercase tracking-widest text-white shadow-lg border
+                    className={`w-full font-black text-xl md:text-2xl py-5 rounded-[2rem] transition-all uppercase tracking-widest text-white shadow-lg border
                         ${feedback === 'none' 
                             ? 'bg-indigo-600 hover:bg-indigo-500 hover:-translate-y-0.5 active:scale-98 shadow-indigo-600/10 border-indigo-500/20' 
                             : 'bg-slate-300 cursor-not-allowed opacity-50 border-slate-200'}`}

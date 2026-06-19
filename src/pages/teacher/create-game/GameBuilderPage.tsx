@@ -211,7 +211,7 @@ export default function GameBuilderPage() {
       // 🎯 PAYLOAD FINAL: gameJson dikirim sebagai Object {} sesuai Zod Backend terbaru
       // Tambahkan konfigurasi tambahan ke dalam gameJson atau langsung ke root sesuai schema
       if (timeLimit) {
-        quizContent.timeLimit = Number(timeLimit);
+        quizContent.timeLimit = Number(timeLimit) * 60; // Simpan dalam detik
       }
       if (maxScore) {
         quizContent.maxScore = Number(maxScore);
@@ -364,10 +364,10 @@ export default function GameBuilderPage() {
                       value={timeLimit}
                       onChange={(e) => setTimeLimit(e.target.value ? Number(e.target.value) : "")}
                     />
-                    <span className="text-slate-500 text-sm font-bold">Detik</span>
+                    <span className="text-slate-500 text-sm font-bold">Menit</span>
                   </div>
                   <p className="text-rose-500 text-[10px] font-bold mt-1.5 leading-relaxed">
-                    * Catatan: Ini adalah batas waktu total pengerjaan kuis keseluruhan, bukan batas waktu per soal.
+                    * Catatan: Ini adalah batas waktu total pengerjaan kuis keseluruhan (dalam Menit).
                   </p>
                 </div>
 

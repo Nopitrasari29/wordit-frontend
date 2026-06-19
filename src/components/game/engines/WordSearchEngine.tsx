@@ -48,12 +48,13 @@ export default function WordSearchEngine({ data, onGameOver, onIntermission }: {
         setIsFinished(true);
         if (timerRef.current) clearInterval(timerRef.current);
 
+        const maxScoreConfig = Number(gameConfig?.maxScore);
         const accuracy = wordsToFind.length > 0
             ? Math.round((finalFound.length / wordsToFind.length) * 100)
             : 0;
         const payload = {
             scoreValue: finalScore,
-            maxScore: wordsToFind.length * 100,
+            maxScore: maxScoreConfig || wordsToFind.length * 100,
             accuracy: accuracy,
             timeSpent: (gameConfig?.timeLimit ? Number(gameConfig.timeLimit) : 120) - timeLeft,
             answersDetail: finalHistory.length > 0 ? finalHistory : finalFound.map(w => ({ word: w, isCorrect: true })),
@@ -186,15 +187,25 @@ export default function WordSearchEngine({ data, onGameOver, onIntermission }: {
         const foundWord = wordsToFind.find((w: string) => (w === selectedStr || w === reversed) && !foundWords.includes(w));
 
         if (foundWord) {
-            const newFound = [...foundWords, foundWord];
-            const newScore = score + 100;
-            const newHistory = [...history, { word: foundWord, isCorrect: true }];
+             const newFound = [...foundWords, foundWord];
+             const maxScoreConfig = Number(gameConfig?.maxScore);
+             const totalQuestions = wordsToFind.length;
+             let points = 100;
+             if (maxScoreConfig && maxScoreConfig > 0 && totalQuestions > 0) {
+                 if (newFound.length === totalQuestions) {
+                     points = maxScoreConfig - score;
+                 } else {
+                     points = Math.floor(maxScoreConfig / totalQuestions);
+                 }
+             }
+             const newScore = score + points;
+             const newHistory = [...history, { word: foundWord, isCorrect: true }];
 
-            setScore(newScore);
-            setFoundWords(newFound);
-            setFoundCells(prev => [...prev, ...selection]);
-            setHistory(newHistory);
-            toast.success(`Ditemukan: ${foundWord}! ✨`);
+             setScore(newScore);
+             setFoundWords(newFound);
+             setFoundCells(prev => [...prev, ...selection]);
+             setHistory(newHistory);
+             toast.success(`Ditemukan: ${foundWord}! ✨`);
 
             if (roomCode) {
                 const accuracy = Math.round((newFound.length / wordsToFind.length) * 100);
@@ -308,7 +319,7 @@ export default function WordSearchEngine({ data, onGameOver, onIntermission }: {
                                         handleMouseEnter(tr, tc);
                                     }
                                 }}
-                                className={`w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-xl font-black text-sm sm:text-base md:text-lg flex items-center justify-center transition-all select-none touch-none ${cellClass}`}
+                                className={`w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-xl font-black text-sm sm:text-base md:text-xl flex items-center justify-center transition-all select-none touch-none ${cellClass}`}
                             >
                                 {char}
                             </button>

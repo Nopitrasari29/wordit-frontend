@@ -154,7 +154,7 @@ export default function PlayGamePage() {
         breakdown = [];
       }
 
-      const totalQuestions = game?.gameJson?.questions?.length || game?.gameJson?.words?.length || game?.gameJson?.pairs?.length || 0;
+      const totalQuestions = game?.gameJson?.questions?.length || game?.gameJson?.words?.length || game?.gameJson?.pairs?.length || game?.gameJson?.cards?.length || 0;
       
       if (totalQuestions > breakdown.length) {
           const remainingCount = totalQuestions - breakdown.length;
