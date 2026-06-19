@@ -320,7 +320,7 @@ export default function ClassPage() {
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart
                     data={chartData}
-                    margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
+                    margin={{ top: 10, right: 10, left: 10, bottom: 0 }}
                   >
                     <CartesianGrid
                       strokeDasharray="3 3"
@@ -338,6 +338,7 @@ export default function ClassPage() {
                       axisLine={false}
                       tickLine={false}
                       tick={{ fill: "#64748b", fontWeight: 800, fontSize: 12 }}
+                      width={60}
                     />
                     <Tooltip
                       cursor={{ fill: "#f8fafc" }}
@@ -346,12 +347,13 @@ export default function ClassPage() {
                         border: "none",
                         boxShadow: "0 10px 15px -3px rgb(0 0 0 / 0.1)",
                         fontWeight: "bold",
+                        fontFamily: "sans-serif"
                       }}
                     />
                     <Bar
                       dataKey="RataRataSkor"
-                      radius={[8, 8, 0, 0]}
-                      barSize={50}
+                      radius={[10, 10, 0, 0]}
+                      barSize={45}
                     >
                       {chartData.map((entry, index) => (
                         <Cell

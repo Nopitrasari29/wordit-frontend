@@ -12,7 +12,7 @@ export default function ScoreChart({ data }: { data: any[] }) {
     return (
         <div className="h-72 w-full">
             <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <BarChart data={data} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
 
                     {/* Grid halus sesuai gaya Bubbly */}
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
@@ -29,6 +29,7 @@ export default function ScoreChart({ data }: { data: any[] }) {
                         axisLine={false}
                         tickLine={false}
                         tick={{ fill: '#64748b', fontWeight: 800, fontSize: 12 }}
+                        width={60}
                     />
 
                     <Tooltip

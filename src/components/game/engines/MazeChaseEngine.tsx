@@ -69,6 +69,11 @@ export default function MazeChaseEngine({ data, onGameOver, onIntermission }: { 
 
     useEffect(() => { initLevel(); }, [initLevel]);
 
+    const timeLeftRef = useRef(timeLeft);
+    useEffect(() => {
+        timeLeftRef.current = timeLeft;
+    }, [timeLeft]);
+
     const handleAction = useCallback(async (type: "PORTAL" | "TIMEOUT", cell: any) => {
         if (isBusy.current) return;
         isBusy.current = true;
@@ -112,7 +117,7 @@ export default function MazeChaseEngine({ data, onGameOver, onIntermission }: { 
             selectedAnswer: isCorrect ? cell?.text : null,
             question: questions[currentIdx]?.question || `Soal ${currentIdx + 1}`,
             isCorrect, 
-            time: (gameConfig?.timeLimit ? Number(gameConfig.timeLimit) : 15) - timeLeft,
+            time: (gameConfig?.timeLimit ? Number(gameConfig.timeLimit) : 15) - timeLeftRef.current,
             pointsEarned: earnedPoints
         };
         const updatedHistory = [...history, currentHistoryItem];
@@ -150,7 +155,12 @@ export default function MazeChaseEngine({ data, onGameOver, onIntermission }: { 
                 setCurrentIdx(prev => prev + 1);
             }
         }, 800);
-    }, [score, lives, history, currentIdx, questions.length, realGameId, navigate, onGameOver, onIntermission, timeLeft, roomCode, gameConfig]);
+    }, [score, lives, history, currentIdx, questions.length, realGameId, navigate, onGameOver, onIntermission, roomCode, gameConfig]);
+
+    const handleActionRef = useRef(handleAction);
+    useEffect(() => {
+        handleActionRef.current = handleAction;
+    }, [handleAction]);
 
     useEffect(() => { initLevel(); }, [initLevel]);
 
@@ -160,14 +170,14 @@ export default function MazeChaseEngine({ data, onGameOver, onIntermission }: { 
             setTimeLeft((prev) => {
                 if (prev <= 1) {
                     if (timerRef.current) clearInterval(timerRef.current);
-                    handleAction("TIMEOUT", null);
+                    handleActionRef.current("TIMEOUT", null);
                     return 0;
                 }
                 return prev - 1;
             });
         }, 1000);
         return () => { if (timerRef.current) clearInterval(timerRef.current); };
-    }, [currentIdx, handleAction]);
+    }, [currentIdx]);
 
     const movePlayer = useCallback((dr: number, dc: number) => {
         if (isBusy.current || lives <= 0) return;

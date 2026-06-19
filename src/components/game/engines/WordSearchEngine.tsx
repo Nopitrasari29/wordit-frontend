@@ -40,6 +40,11 @@ export default function WordSearchEngine({ data, onGameOver, onIntermission }: {
 
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+    const timeLeftRef = useRef(timeLeft);
+    useEffect(() => {
+        timeLeftRef.current = timeLeft;
+    }, [timeLeft]);
+
     const handleFinish = useCallback(async (finalFound: string[], finalScore: number, finalHistory: any[]) => {
         if (isSavingRef.current) return;
         isSavingRef.current = true;
@@ -56,7 +61,7 @@ export default function WordSearchEngine({ data, onGameOver, onIntermission }: {
             scoreValue: finalScore,
             maxScore: maxScoreConfig || wordsToFind.length * 100,
             accuracy: accuracy,
-            timeSpent: (gameConfig?.timeLimit ? Number(gameConfig.timeLimit) : 120) - timeLeft,
+            timeSpent: (gameConfig?.timeLimit ? Number(gameConfig.timeLimit) : 120) - timeLeftRef.current,
             answersDetail: finalHistory.length > 0 ? finalHistory : finalFound.map(w => ({ word: w, isCorrect: true })),
         };
 
@@ -76,7 +81,7 @@ export default function WordSearchEngine({ data, onGameOver, onIntermission }: {
         }
 
         navigate("/student/result", { state: payload });
-    }, [isFinished, onGameOver, onIntermission, realGameId, wordsToFind, gameConfig, timeLeft, navigate]);
+    }, [isFinished, onGameOver, onIntermission, realGameId, wordsToFind, gameConfig, navigate]);
 
     const generateGrid = useCallback(() => {
         if (wordsToFind.length === 0) return;
@@ -125,20 +130,34 @@ export default function WordSearchEngine({ data, onGameOver, onIntermission }: {
         setGrid(newGrid);
     }, [wordsToFind, size]);
 
+    // Stabilize grid generation and timer
     useEffect(() => {
         generateGrid();
+    }, [generateGrid]);
+
+    const foundWordsRef = useRef(foundWords);
+    const scoreRef = useRef(score);
+    const historyRef = useRef(history);
+    const handleFinishRef = useRef(handleFinish);
+
+    useEffect(() => { foundWordsRef.current = foundWords; }, [foundWords]);
+    useEffect(() => { scoreRef.current = score; }, [score]);
+    useEffect(() => { historyRef.current = history; }, [history]);
+    useEffect(() => { handleFinishRef.current = handleFinish; }, [handleFinish]);
+
+    useEffect(() => {
         timerRef.current = setInterval(() => {
             setTimeLeft((prev) => {
                 if (prev <= 1) {
                     if (timerRef.current) clearInterval(timerRef.current);
-                    handleFinish(foundWords, score, []);
+                    handleFinishRef.current(foundWordsRef.current, scoreRef.current, historyRef.current);
                     return 0;
                 }
                 return prev - 1;
             });
         }, 1000);
         return () => { if (timerRef.current) clearInterval(timerRef.current); };
-    }, [generateGrid, foundWords, score, handleFinish]);
+    }, []);
 
     const getCellsBetween = (start: [number, number], end: [number, number]): string[] => {
         const cells: string[] = [];

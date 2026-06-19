@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from "react";
+import Swal from "sweetalert2";
 import { useParams, useNavigate } from "react-router-dom";
 import GameRenderer from "../../components/game/GameRenderer";
 import ErrorBoundary from "../../components/ui/ErrorBoundary";
@@ -265,18 +266,38 @@ export default function PlayGamePage() {
 
   const handleBack = () => {
     if (isStudent) {
-      const confirmExit = window.confirm("Keluar dari game? Skor dan progres Anda saat ini akan disimpan ke database.");
-      if (confirmExit) {
-        const currentScore = Number(sessionStorage.getItem("lastScore") || "0");
-        const currentAccuracy = Number(sessionStorage.getItem("lastAccuracy") || "0");
-        let breakdown = [];
-        try {
-          breakdown = JSON.parse(sessionStorage.getItem("lastBreakdown") || "[]");
-        } catch {
-          breakdown = [];
+      Swal.fire({
+        title: "Keluar dari Game?",
+        text: "Skor dan progres Anda saat ini akan disimpan ke database.",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#4f46e5",
+        cancelButtonColor: "#334155",
+        confirmButtonText: "Ya, Keluar!",
+        cancelButtonText: "Batal",
+        background: "#1e293b",
+        color: "#ffffff",
+        customClass: {
+          popup: "rounded-[2.5rem] border border-slate-700 shadow-2xl font-sans p-6",
+          title: "text-xl font-black text-white mt-2",
+          htmlContainer: "text-xs text-slate-300 font-medium mb-4",
+          confirmButton: "px-5 py-3 rounded-full text-xs font-black uppercase tracking-wider transition-all active:scale-95 mx-2 bg-indigo-600 text-white",
+          cancelButton: "px-5 py-3 rounded-full text-xs font-black uppercase tracking-wider transition-all active:scale-95 mx-2 bg-slate-700 text-slate-300",
+        },
+        buttonsStyling: false,
+      }).then((result) => {
+        if (result.isConfirmed) {
+          const currentScore = Number(sessionStorage.getItem("lastScore") || "0");
+          const currentAccuracy = Number(sessionStorage.getItem("lastAccuracy") || "0");
+          let breakdown = [];
+          try {
+            breakdown = JSON.parse(sessionStorage.getItem("lastBreakdown") || "[]");
+          } catch {
+            breakdown = [];
+          }
+          handleGameOver(currentScore, currentAccuracy, breakdown);
         }
-        handleGameOver(currentScore, currentAccuracy, breakdown);
-      }
+      });
     } else {
       navigate(-1);
     }
