@@ -131,7 +131,8 @@ export default function LoginPage() {
 
         <div className="w-full max-w-lg bg-white/80 backdrop-blur-xl p-10 md:p-14 rounded-[3.5rem] shadow-[0_20px_50px_rgba(79,70,229,0.06)] border border-white/60 relative z-10">
           <div className="mb-10 text-left">
-            <h1 className="text-4xl font-black text-slate-800 tracking-tight">Selamat Datang!</h1>
+            <h1 className="text-5xl font-black text-indigo-600 tracking-tight mb-2 uppercase">Login</h1>
+            <h2 className="text-2xl font-black text-slate-800 tracking-tight">Selamat Datang!</h2>
             <p className="text-slate-400 font-bold text-xs uppercase tracking-widest mt-2">Masuk untuk mengelola kelas & kuis</p>
           </div>
 

@@ -47,12 +47,13 @@ export default function SystemLogsPage() {
         toast.error("Tidak ada log untuk diekspor!");
         return;
       }
-      const headers = ["Waktu", "Aksi/Aktivitas", "Detail", "User"];
+      const headers = ["Waktu", "Aksi/Aktivitas", "Detail", "User Name", "User Email"];
       const rows = allLogs.map((l: any) => [
         new Date(l.createdAt).toLocaleString("id-ID"),
         l.action,
         l.details || "-",
         l.userName || "-",
+        l.userEmail || "-",
       ]);
       const csvContent = [headers, ...rows]
         .map((e) => e.map((val: any) => `"${String(val).replace(/"/g, '""')}"`).join(","))
@@ -574,7 +575,7 @@ export default function SystemLogsPage() {
                       )}
                       {log.userName && (
                         <p className="text-[10px] text-indigo-500 mt-1 uppercase tracking-widest font-black">
-                          USER: {log.userName}
+                          USER: {log.userName} {log.userEmail ? `(${log.userEmail})` : ""}
                         </p>
                       )}
                     </div>

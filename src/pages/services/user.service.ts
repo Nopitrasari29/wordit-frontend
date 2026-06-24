@@ -96,8 +96,8 @@ export async function deleteUser(id: string) {
 /* ============================== */
 /* GET STUDENT LEADERBOARD        */
 /* ============================== */
-export async function getStudentLeaderboard() {
-  const res = await api.get("/users/leaderboard");
+export async function getStudentLeaderboard(schoolOrigin?: string) {
+  const res = await api.get("/users/leaderboard", { params: { schoolOrigin } });
   if (res.data.status !== "success" && !res.data.success) {
     throw new Error(res.data.message || "Failed to fetch student leaderboard");
   }

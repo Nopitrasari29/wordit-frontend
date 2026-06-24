@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import ConfirmModal from "../../components/ui/ConfirmModal";
 import { useAuth } from "../../context/AuthContext";
+import api from "../services/api";
 
 interface PaginationMeta {
   page: number;
@@ -49,6 +50,8 @@ export default function UserManagementPage() {
 
   // ─── Detail Modal ────────────────────────────────────────────
   const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [promoteEmail, setPromoteEmail] = useState("");
+  const [isPromoting, setIsPromoting] = useState(false);
 
   // ─── Import Modal ────────────────────────────────────────────
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
@@ -188,6 +191,33 @@ export default function UserManagementPage() {
       if (next.has(id)) next.delete(id); else next.add(id);
       return next;
     });
+  };
+
+  const handlePromoteByEmail = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!promoteEmail.trim()) return;
+
+    setIsPromoting(true);
+    const toastId = toast.loading("Memperbarui peran pengguna...");
+    try {
+      const res = await api.patch(`/users/${encodeURIComponent(promoteEmail.trim())}/role`, {
+        role: "SCHOOL_ADMIN",
+        hasAdminAccess: true,
+      });
+
+      if (res.data.status === "success") {
+        toast.success(`Pengguna dengan email ${promoteEmail} berhasil dijadikan Admin Sekolah!`, { id: toastId });
+        setPromoteEmail("");
+        loadUsers(currentPage, search, statusFilter);
+      } else {
+        toast.error(res.data.message || "Gagal memperbarui peran.", { id: toastId });
+      }
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.response?.data?.message || "User tidak ditemukan atau terjadi kesalahan sistem.", { id: toastId });
+    } finally {
+      setIsPromoting(false);
+    }
   };
 
   // ─── Actions ─────────────────────────────────────────────────
@@ -439,6 +469,33 @@ export default function UserManagementPage() {
           </button>
         </div>
       </div>
+
+      {/* ── QUICK PROMOTE BY EMAIL (SUPER ADMIN ONLY) ── */}
+      {currentAdmin?.role === "SUPER_ADMIN" && (
+        <form onSubmit={handlePromoteByEmail} className="bg-gradient-to-r from-indigo-50 to-violet-50 p-6 rounded-2xl border border-indigo-100/60 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div className="max-w-md">
+            <h3 className="text-sm font-black text-indigo-900 uppercase tracking-wider">Jadikan Admin Sekolah Langsung</h3>
+            <p className="text-[11px] text-indigo-600/80 font-bold mt-0.5">Masukkan email guru atau pengguna terdaftar untuk langsung mempromosikannya menjadi Admin Sekolah.</p>
+          </div>
+          <div className="flex gap-2 w-full sm:w-auto shrink-0 items-center">
+            <input
+              type="email"
+              placeholder="Contoh: guru@sekolah.com"
+              required
+              value={promoteEmail}
+              onChange={(e) => setPromoteEmail(e.target.value)}
+              className="bg-white border-2 border-indigo-100/80 focus:border-indigo-500 rounded-xl px-4 py-2 text-xs font-bold text-slate-700 outline-none w-full sm:w-64 transition-all"
+            />
+            <button
+              type="submit"
+              disabled={isPromoting || !promoteEmail.trim()}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider shadow-md disabled:opacity-50 shrink-0"
+            >
+              Jadikan Admin
+            </button>
+          </div>
+        </form>
+      )}
 
       {/* ── BULK ACTION TOOLBAR (muncul saat ada yang dipilih) ── */}
       {someSelected && (

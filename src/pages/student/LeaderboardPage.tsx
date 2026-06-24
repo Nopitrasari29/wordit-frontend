@@ -8,6 +8,15 @@ export default function LeaderboardPage() {
     const [students, setStudents] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
     const [activeTab, setActiveTab] = useState<"games" | "students">("games")
+    const [schoolFilter, setSchoolFilter] = useState("")
+    const [debouncedSchool, setDebouncedSchool] = useState("")
+
+    useEffect(() => {
+        const handler = setTimeout(() => {
+            setDebouncedSchool(schoolFilter)
+        }, 500)
+        return () => clearTimeout(handler)
+    }, [schoolFilter])
 
     useEffect(() => {
         async function loadData() {
@@ -15,7 +24,7 @@ export default function LeaderboardPage() {
                 setLoading(true)
                 const [gamesData, studentsData] = await Promise.all([
                     getGames(),
-                    getStudentLeaderboard().catch(err => {
+                    getStudentLeaderboard(debouncedSchool || undefined).catch(err => {
                         console.error("Gagal memuat leaderboard siswa:", err)
                         return []
                     })
@@ -39,7 +48,7 @@ export default function LeaderboardPage() {
             }
         }
         loadData()
-    }, [])
+    }, [debouncedSchool])
 
     return (
         <div className="min-h-screen bg-slate-50 font-sans pb-20 pt-28">
@@ -66,7 +75,7 @@ export default function LeaderboardPage() {
             </div>
 
             {/* TAB SWITCHER */}
-            <div className="max-w-4xl mx-auto px-6 mb-8 flex justify-center">
+            <div className="max-w-4xl mx-auto px-6 mb-8 flex flex-col items-center gap-4">
                 <div className="bg-slate-200/60 p-1.5 rounded-full flex gap-1 border border-slate-300/30">
                     <button
                         onClick={() => setActiveTab("games")}
@@ -89,6 +98,30 @@ export default function LeaderboardPage() {
                         👑 Siswa Teraktif
                     </button>
                 </div>
+
+                {/* SCHOOL FILTER */}
+                {activeTab === "students" && (
+                    <div className="relative w-full max-w-sm">
+                        <input
+                            type="text"
+                            placeholder="Cari berdasarkan asal sekolah (Sekolah A, B...)..."
+                            value={schoolFilter}
+                            onChange={(e) => setSchoolFilter(e.target.value)}
+                            className="w-full bg-white border-2 border-slate-100 focus:border-indigo-500 focus:bg-white pl-10 pr-4 py-3.5 rounded-full text-xs font-bold outline-none transition-all text-slate-700 shadow-sm placeholder:text-slate-400"
+                        />
+                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 select-none pointer-events-none">
+                            🏫
+                        </div>
+                        {schoolFilter && (
+                            <button
+                                onClick={() => setSchoolFilter("")}
+                                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs font-bold"
+                            >
+                                Clear
+                            </button>
+                        )}
+                    </div>
+                )}
             </div>
 
             {/* LIST SECTION */}
@@ -172,6 +205,11 @@ export default function LeaderboardPage() {
 
                                         <div className="flex-1 font-black text-slate-700 text-lg md:text-xl truncate px-4 group-hover:text-indigo-600 transition-colors uppercase italic">
                                             {s.name}
+                                            {s.schoolOrigin && (
+                                                <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest normal-case tracking-normal block mt-0.5">
+                                                    🏫 {s.schoolOrigin}
+                                                </div>
+                                            )}
                                         </div>
 
                                         <div className="w-36 text-right">

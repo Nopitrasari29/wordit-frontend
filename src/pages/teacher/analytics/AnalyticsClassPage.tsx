@@ -31,7 +31,13 @@ export default function AnalyticsClassPage({
   const [selectedGameId, setSelectedGameId] = useState<string>("");
   const [levelFilter, setLevelFilter] = useState<string>("ALL");
   const [gradeFilter, setGradeFilter] = useState<string>("ALL");
-  const [searchQuery, setSearchQuery] = useState<string>(""); 
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [selectedStudent, setSelectedStudent] = useState<any>(null);
+  const [editingQuestionIdx, setEditingQuestionIdx] = useState<number | null>(null);
+  const [newScore, setNewScore] = useState<number>(0);
+  const [justification, setJustification] = useState<string>("");
+  const [submittingScore, setSubmittingScore] = useState(false);
+  const [refreshTrigger, setRefreshTrigger] = useState(0); 
 
   useEffect(() => {
     setGradeFilter("ALL");
@@ -46,7 +52,7 @@ export default function AnalyticsClassPage({
   }, [games, levelFilter, gradeFilter]);
 
   useEffect(() => {
-    if (data) {
+    if (data && refreshTrigger === 0) {
       setAnalyticsData(data);
       return;
     }
@@ -107,7 +113,56 @@ export default function AnalyticsClassPage({
       }
     };
     fetchStandalone();
-  }, [data, games, groupFilter, selectedGameId, levelFilter, gradeFilter]);
+  }, [data, games, groupFilter, selectedGameId, levelFilter, gradeFilter, refreshTrigger]);
+
+  const handleUpdateScore = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedStudent || editingQuestionIdx === null) return;
+
+    setSubmittingScore(true);
+    const toastId = toast.loading("Memperbarui nilai...");
+    try {
+      const res = await api.patch(`/analytics/results/${selectedStudent.id}/score`, {
+        questionIndex: editingQuestionIdx,
+        newScore: newScore,
+        justification: justification,
+      });
+
+      if (res.data.status === "success") {
+        toast.success("Nilai berhasil diperbarui!", { id: toastId });
+        
+        // Update local state for selectedStudent modal
+        const updatedAnswers = selectedStudent.answersDetail.map((ans: any) => {
+          if (ans.questionIndex === editingQuestionIdx) {
+            return {
+              ...ans,
+              pointsEarned: newScore,
+              isCorrect: newScore >= 60,
+              justification: justification ? `[DIKOREKSI GURU]: ${justification}` : `[DIKOREKSI GURU]`,
+            };
+          }
+          return ans;
+        });
+
+        setSelectedStudent({
+          ...selectedStudent,
+          answersDetail: updatedAnswers,
+        });
+
+        setEditingQuestionIdx(null);
+        setNewScore(0);
+        setJustification("");
+        setRefreshTrigger((prev) => prev + 1);
+      } else {
+        toast.error(res.data.message || "Gagal memperbarui nilai.", { id: toastId });
+      }
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.response?.data?.message || "Terjadi kesalahan sistem.", { id: toastId });
+    } finally {
+      setSubmittingScore(false);
+    }
+  };
 
   const handleExportIndividualCSV = () => {
     const students = analyticsData?.allStudentsData || [];
@@ -274,8 +329,13 @@ export default function AnalyticsClassPage({
             <tbody className="text-sm font-bold text-slate-600 divide-y divide-slate-50">
               {filteredStudents.length > 0 ? (
                 filteredStudents.map((student: any) => (
-                  <tr key={student.id} className="hover:bg-slate-50/80 transition">
-                    <td className="p-4 text-slate-800 font-black">{student.name}</td>
+                  <tr key={student.id} onClick={() => setSelectedStudent(student)} className="hover:bg-slate-50/80 transition cursor-pointer">
+                    <td className="p-4 text-slate-800 font-black">
+                      <div className="flex items-center gap-2">
+                        <span>{student.name}</span>
+                        <span className="text-[9px] bg-indigo-50 text-indigo-600 px-1.5 py-0.5 rounded font-black tracking-widest uppercase">Detail</span>
+                      </div>
+                    </td>
                     <td className="p-4 text-center">
                       <span className="bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full text-xs">
                         {student.className}
@@ -322,6 +382,174 @@ export default function AnalyticsClassPage({
                 </span>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* STUDENT DETAIL & SCORE CORRECTION MODAL */}
+      {selectedStudent && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white w-full max-w-2xl rounded-[2.5rem] shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[85vh] animate-in fade-in zoom-in duration-200">
+            {/* Modal Header */}
+            <div className="p-6 md:p-8 border-b border-slate-100 flex justify-between items-start">
+              <div>
+                <span className="bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest">
+                  Detail Jawaban Siswa
+                </span>
+                <h2 className="text-2xl font-black text-slate-800 tracking-tight leading-tight mt-2">
+                  {selectedStudent.name}
+                </h2>
+                <p className="text-slate-400 font-bold text-xs uppercase tracking-widest mt-1">
+                  Kuis: {selectedStudent.gameName} ({selectedStudent.score} XP / {selectedStudent.accuracy}% Akurasi)
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  setSelectedStudent(null);
+                  setEditingQuestionIdx(null);
+                }}
+                className="text-slate-400 hover:text-slate-600 text-2xl font-bold bg-slate-50 hover:bg-slate-100 w-10 h-10 rounded-full flex items-center justify-center transition-all"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 md:p-8 overflow-y-auto flex-1 space-y-6">
+              {/* List Jawaban Detail */}
+              {selectedStudent.answersDetail && Array.isArray(selectedStudent.answersDetail) && selectedStudent.answersDetail.length > 0 ? (
+                <div className="space-y-4">
+                  {selectedStudent.answersDetail.map((ans: any, idx: number) => {
+                    const isEssay = selectedStudent.templateType === "ESSAY";
+                    const isEditing = editingQuestionIdx === ans.questionIndex;
+
+                    return (
+                      <div
+                        key={idx}
+                        className={`p-5 rounded-2xl border transition-all ${
+                          ans.isCorrect ? "bg-emerald-50/50 border-emerald-100" : "bg-rose-50/50 border-rose-100"
+                        }`}
+                      >
+                        <div className="flex justify-between items-start gap-4">
+                          <div>
+                            <span className="text-[10px] text-slate-400 font-black uppercase tracking-wider">
+                              Pertanyaan #{idx + 1}
+                            </span>
+                            <h4 className="font-black text-slate-800 text-sm mt-0.5">{ans.question || `Soal #${idx + 1}`}</h4>
+                          </div>
+                          <span
+                            className={`text-xs font-black px-2.5 py-1 rounded-full uppercase shrink-0 ${
+                              ans.isCorrect ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700"
+                            }`}
+                          >
+                            {ans.pointsEarned ?? (ans.isCorrect ? 100 : 0)} Poin
+                          </span>
+                        </div>
+
+                        {/* Jawaban Siswa */}
+                        <div className="mt-4 bg-white p-3.5 rounded-xl border border-slate-100/80">
+                          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">Jawaban Siswa:</p>
+                          <p className="text-slate-700 text-sm font-semibold whitespace-pre-wrap">{ans.selectedAnswer || "-"}</p>
+                        </div>
+
+                        {/* Kunci Jawaban / Koreksi */}
+                        {ans.correctAnswer && (
+                          <div className="mt-3 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-0.5">Kunci Jawaban / Keyword:</p>
+                            <p className="text-slate-600 text-xs font-semibold">{ans.correctAnswer}</p>
+                          </div>
+                        )}
+
+                        {/* Justifikasi AI / Guru */}
+                        {ans.justification && (
+                          <div className="mt-3 text-xs text-slate-500 bg-slate-100/50 p-3 rounded-xl">
+                            <span className="font-bold">Keterangan:</span> {ans.justification}
+                          </div>
+                        )}
+
+                        {/* Essay Score Adjustment Form */}
+                        {isEssay && (
+                          <div className="mt-4 pt-4 border-t border-slate-100 flex flex-col items-stretch">
+                            {isEditing ? (
+                              <form onSubmit={handleUpdateScore} className="space-y-3 bg-white p-4 rounded-xl border border-indigo-100">
+                                <div className="flex flex-col sm:flex-row gap-3 items-center">
+                                  <div className="w-full sm:w-1/3">
+                                    <label className="text-[10px] font-black text-indigo-600 uppercase tracking-widest block mb-1">Skor Baru (0-100)</label>
+                                    <input
+                                      type="number"
+                                      min="0"
+                                      max="100"
+                                      required
+                                      value={newScore}
+                                      onChange={(e) => setNewScore(Math.min(100, Math.max(0, Number(e.target.value))))}
+                                      className="w-full bg-slate-50 border-2 border-indigo-100 rounded-lg px-3 py-2 text-sm font-bold outline-none focus:border-indigo-500"
+                                    />
+                                  </div>
+                                  <div className="w-full sm:w-2/3">
+                                    <label className="text-[10px] font-black text-indigo-600 uppercase tracking-widest block mb-1">Alasan Koreksi (Opsional)</label>
+                                    <input
+                                      type="text"
+                                      placeholder="Contoh: Jawaban cukup tepat..."
+                                      value={justification}
+                                      onChange={(e) => setJustification(e.target.value)}
+                                      className="w-full bg-slate-50 border-2 border-indigo-100 rounded-lg px-3 py-2 text-sm font-bold outline-none focus:border-indigo-500"
+                                    />
+                                  </div>
+                                </div>
+                                <div className="flex gap-2 justify-end">
+                                  <button
+                                    type="button"
+                                    onClick={() => setEditingQuestionIdx(null)}
+                                    className="px-3.5 py-1.5 rounded-lg text-xs font-bold text-slate-500 hover:bg-slate-100"
+                                  >
+                                    Batal
+                                  </button>
+                                  <button
+                                    type="submit"
+                                    disabled={submittingScore}
+                                    className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider shadow disabled:opacity-50"
+                                  >
+                                    Simpan Nilai
+                                  </button>
+                                </div>
+                              </form>
+                            ) : (
+                              <button
+                                onClick={() => {
+                                  setEditingQuestionIdx(ans.questionIndex);
+                                  setNewScore(ans.pointsEarned ?? 0);
+                                  setJustification("");
+                                }}
+                                className="text-xs text-indigo-600 font-black uppercase tracking-widest hover:underline self-end flex items-center gap-1"
+                              >
+                                ✏️ Koreksi Nilai Essay AI
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-slate-400 font-bold">
+                  Tidak ada detail rincian jawaban untuk sesi kuis ini.
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-6 border-t border-slate-100 flex justify-end">
+              <button
+                onClick={() => {
+                  setSelectedStudent(null);
+                  setEditingQuestionIdx(null);
+                }}
+                className="bg-slate-100 hover:bg-slate-200 text-slate-600 font-black text-xs uppercase tracking-wider px-6 py-3 rounded-2xl transition-all"
+              >
+                Tutup
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -8,6 +8,8 @@ export const getGames = async (params?: {
   educationLevel?: EducationLevel;
   templateType?: TemplateType;
   search?: string;
+  classGrade?: string;
+  subject?: string;
   page?: number;
   limit?: number;
 }) => {

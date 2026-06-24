@@ -21,30 +21,42 @@ export default function ExplorePage() {
 
   const [search, setSearch] = useState<string>("")
   const [debouncedSearch, setDebouncedSearch] = useState<string>("")
+  const [classGrade, setClassGrade] = useState<string>("ALL")
+  const [subject, setSubject] = useState<string>("")
+  const [debouncedSubject, setDebouncedSubject] = useState<string>("")
 
-  // Debounce search input
+  // Debounce search and subject inputs
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedSearch(search)
+      setDebouncedSubject(subject)
     }, 500)
 
     return () => {
       clearTimeout(handler)
     }
-  }, [search])
+  }, [search, subject])
 
-  async function loadGames(levelFilter?: string, searchFilter?: string) {
+  async function loadGames(levelFilter?: string, searchFilter?: string, classFilter?: string, subjectFilter?: string) {
     setLoading(true)
     try {
       const params: any = {}
       const activeLevel = levelFilter !== undefined ? levelFilter : level
       const activeSearch = searchFilter !== undefined ? searchFilter : debouncedSearch
+      const activeClass = classFilter !== undefined ? classFilter : classGrade
+      const activeSubject = subjectFilter !== undefined ? subjectFilter : debouncedSubject
 
       if (activeLevel && activeLevel !== "ALL") {
         params.educationLevel = activeLevel
       }
       if (activeSearch.trim()) {
         params.search = activeSearch.trim()
+      }
+      if (activeClass && activeClass !== "ALL") {
+        params.classGrade = activeClass
+      }
+      if (activeSubject.trim()) {
+        params.subject = activeSubject.trim()
       }
       const data = await getGames(params)
 
@@ -61,8 +73,8 @@ export default function ExplorePage() {
   }
 
   useEffect(() => {
-    loadGames(level, debouncedSearch)
-  }, [level, debouncedSearch])
+    loadGames(level, debouncedSearch, classGrade, debouncedSubject)
+  }, [level, debouncedSearch, classGrade, debouncedSubject])
 
   // Fetch detail game saat modal terpilih
   useEffect(() => {
@@ -222,17 +234,51 @@ export default function ExplorePage() {
       </div>
 
       <div className="max-w-6xl mx-auto px-4 sm:px-0">
-        {/* SEARCH BAR */}
-        <div className="relative mb-8 w-full max-w-md">
-          <input
-            type="text"
-            placeholder="Cari judul kuis..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full bg-white border-2 border-slate-100 focus:border-indigo-500 focus:bg-white pl-12 pr-6 py-4 rounded-[1.5rem] text-sm font-bold outline-none transition-all text-slate-700 shadow-sm placeholder:text-slate-400"
-          />
-          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 select-none pointer-events-none">
-            🔍
+        {/* SEARCH & FILTERS BAR */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+          {/* SEARCH BAR */}
+          <div className="relative w-full">
+            <input
+              type="text"
+              placeholder="Cari judul kuis..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full bg-white border-2 border-slate-100 focus:border-indigo-500 focus:bg-white pl-12 pr-6 py-4 rounded-[1.5rem] text-sm font-bold outline-none transition-all text-slate-700 shadow-sm placeholder:text-slate-400"
+            />
+            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 select-none pointer-events-none">
+              🔍
+            </div>
+          </div>
+
+          {/* SUBJECT FILTER */}
+          <div className="relative w-full">
+            <input
+              type="text"
+              placeholder="Cari mata pelajaran (cth: IPA)..."
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+              className="w-full bg-white border-2 border-slate-100 focus:border-indigo-500 focus:bg-white pl-12 pr-6 py-4 rounded-[1.5rem] text-sm font-bold outline-none transition-all text-slate-700 shadow-sm placeholder:text-slate-400"
+            />
+            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 select-none pointer-events-none">
+              📚
+            </div>
+          </div>
+
+          {/* CLASS/GRADE FILTER */}
+          <div className="relative w-full">
+            <select
+              value={classGrade}
+              onChange={(e) => setClassGrade(e.target.value)}
+              className="w-full bg-white border-2 border-slate-100 focus:border-indigo-500 focus:bg-white px-6 py-4 rounded-[1.5rem] text-sm font-bold outline-none transition-all text-slate-700 shadow-sm cursor-pointer appearance-none"
+            >
+              <option value="ALL">Semua Kelas</option>
+              {Array.from({ length: 12 }, (_, i) => String(i + 1)).map((grade) => (
+                <option key={grade} value={grade}>Kelas {grade}</option>
+              ))}
+            </select>
+            <div className="absolute right-6 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
+              ▼
+            </div>
           </div>
         </div>
         {/* FILTER BUTTONS */}
@@ -295,13 +341,23 @@ export default function ExplorePage() {
                 </h2>
 
                 {/* TAGS */}
-                <div className="flex items-center gap-2 mb-6">
+                <div className="flex items-center gap-2 mb-6 flex-wrap">
                   <span className="bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full text-xs font-bold capitalize">
                     {game.templateType.replaceAll("_", " ").toLowerCase()}
                   </span>
                   <span className="bg-slate-50 text-slate-600 px-3 py-1 rounded-full text-xs font-bold">
                     {game.educationLevel}
                   </span>
+                  {game.classGrade && (
+                    <span className="bg-violet-50 text-violet-600 px-3 py-1 rounded-full text-xs font-bold">
+                      Kelas {game.classGrade}
+                    </span>
+                  )}
+                  {game.subject && (
+                    <span className="bg-emerald-50 text-emerald-600 px-3 py-1 rounded-full text-xs font-bold truncate max-w-[120px]" title={game.subject}>
+                      {game.subject}
+                    </span>
+                  )}
                 </div>
 
                 {/* CTA BUTTON */}
