@@ -129,11 +129,11 @@ export default function LoginPage() {
         <div className="absolute top-1/4 left-1/4 w-80 h-80 bg-indigo-500/5 rounded-full blur-[100px] animate-blob"></div>
         <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-purple-500/5 rounded-full blur-[100px] animate-blob" style={{ animationDelay: '3s' }}></div>
 
-        <div className="w-full max-w-lg bg-white/80 backdrop-blur-xl p-10 md:p-14 rounded-[3.5rem] shadow-[0_20px_50px_rgba(79,70,229,0.06)] border border-white/60 relative z-10">
-          <div className="mb-10 text-left">
-            <h1 className="text-5xl font-black text-indigo-600 tracking-tight mb-2 uppercase">Login</h1>
-            <h2 className="text-2xl font-black text-slate-800 tracking-tight">Selamat Datang!</h2>
-            <p className="text-slate-400 font-bold text-xs uppercase tracking-widest mt-2">Masuk untuk mengelola kelas & kuis</p>
+        <div className="w-full max-w-2xl bg-white/80 backdrop-blur-xl p-12 md:p-16 rounded-[3.5rem] shadow-[0_20px_50px_rgba(79,70,229,0.06)] border border-white/60 relative z-10">
+          <div className="mb-10 text-center">
+            <h1 className="text-6xl md:text-7xl font-black text-indigo-600 tracking-tight mb-2 uppercase">Login</h1>
+            <h2 className="text-3xl font-black text-slate-800 tracking-tight">Selamat Datang!</h2>
+            <p className="text-slate-400 font-bold text-sm uppercase tracking-widest mt-2">Masuk untuk mengelola kelas & kuis</p>
           </div>
 
           {errorMsg && (
@@ -165,18 +165,18 @@ export default function LoginPage() {
                 required
               />
               <div className="flex justify-end mt-3 mr-2">
-                <Link to="/forgot-password" title="Lupa Password" className="text-xs font-black text-indigo-600 hover:text-indigo-500 hover:underline transition-colors uppercase tracking-wider">
+                <Link to="/forgot-password" title="Lupa Password" className="text-sm font-black text-indigo-600 hover:text-indigo-500 hover:underline transition-colors uppercase tracking-wider">
                   Forgot Password?
                 </Link>
               </div>
             </div>
 
-            <button type="submit" className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white font-black text-sm uppercase tracking-widest py-4.5 rounded-full shadow-lg shadow-indigo-600/20 active:scale-98 transition-all duration-300">
+            <button type="submit" className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white font-black text-lg uppercase tracking-widest py-5 rounded-full shadow-lg shadow-indigo-600/20 active:scale-98 transition-all duration-300">
               Login 🚀
             </button>
           </form>
 
-          <p className="text-center mt-10 text-xs font-black uppercase tracking-wider text-slate-400">
+          <p className="text-center mt-10 text-sm font-black uppercase tracking-wider text-slate-400">
             Belum punya akun?
             <Link to="/register" className="text-indigo-600 font-black hover:underline ml-2 normal-case tracking-normal">Register di sini</Link>
           </p>
