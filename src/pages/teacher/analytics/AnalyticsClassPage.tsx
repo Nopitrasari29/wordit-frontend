@@ -411,125 +411,137 @@ export default function AnalyticsClassPage({
             {/* Modal Body */}
             <div className="p-6 md:p-8 overflow-y-auto flex-1 space-y-6">
               {/* List Jawaban Detail */}
-              {selectedStudent.answersDetail && Array.isArray(selectedStudent.answersDetail) && selectedStudent.answersDetail.length > 0 ? (
-                <div className="space-y-4">
-                  {selectedStudent.answersDetail.map((ans: any, idx: number) => {
-                    const isEssay = selectedStudent.templateType === "ESSAY";
-                    const isEditing = editingQuestionIdx === ans.questionIndex;
-
-                    return (
-                      <div
-                        key={idx}
-                        className={`p-5 rounded-2xl border transition-all ${
-                          ans.isCorrect ? "bg-emerald-50/50 border-emerald-100" : "bg-rose-50/50 border-rose-100"
-                        }`}
-                      >
-                        <div className="flex justify-between items-start gap-4">
-                          <div>
-                            <span className="text-[10px] text-slate-400 font-black uppercase tracking-wider">
-                              Pertanyaan #{idx + 1}
-                            </span>
-                            <h4 className="font-black text-slate-800 text-sm mt-0.5">{ans.question || `Soal #${idx + 1}`}</h4>
-                          </div>
-                          <span
-                            className={`text-xs font-black px-2.5 py-1 rounded-full uppercase shrink-0 ${
-                              ans.isCorrect ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700"
-                            }`}
-                          >
-                            {ans.pointsEarned ?? (ans.isCorrect ? 100 : 0)} Poin
-                          </span>
-                        </div>
-
-                        {/* Jawaban Siswa */}
-                        <div className="mt-4 bg-white p-3.5 rounded-xl border border-slate-100/80">
-                          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">Jawaban Siswa:</p>
-                          <p className="text-slate-700 text-sm font-semibold whitespace-pre-wrap">{ans.selectedAnswer || "-"}</p>
-                        </div>
-
-                        {/* Kunci Jawaban / Koreksi */}
-                        {ans.correctAnswer && (
-                          <div className="mt-3 bg-slate-50 p-3 rounded-xl border border-slate-100">
-                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-0.5">Kunci Jawaban / Keyword:</p>
-                            <p className="text-slate-600 text-xs font-semibold">{ans.correctAnswer}</p>
-                          </div>
-                        )}
-
-                        {/* Justifikasi AI / Guru */}
-                        {ans.justification && (
-                          <div className="mt-3 text-xs text-slate-500 bg-slate-100/50 p-3 rounded-xl">
-                            <span className="font-bold">Keterangan:</span> {ans.justification}
-                          </div>
-                        )}
-
-                        {/* Essay Score Adjustment Form */}
-                        {isEssay && (
-                          <div className="mt-4 pt-4 border-t border-slate-100 flex flex-col items-stretch">
-                            {isEditing ? (
-                              <form onSubmit={handleUpdateScore} className="space-y-3 bg-white p-4 rounded-xl border border-indigo-100">
-                                <div className="flex flex-col sm:flex-row gap-3 items-center">
-                                  <div className="w-full sm:w-1/3">
-                                    <label className="text-[10px] font-black text-indigo-600 uppercase tracking-widest block mb-1">Skor Baru (0-100)</label>
-                                    <input
-                                      type="number"
-                                      min="0"
-                                      max="100"
-                                      required
-                                      value={newScore}
-                                      onChange={(e) => setNewScore(Math.min(100, Math.max(0, Number(e.target.value))))}
-                                      className="w-full bg-slate-50 border-2 border-indigo-100 rounded-lg px-3 py-2 text-sm font-bold outline-none focus:border-indigo-500"
-                                    />
-                                  </div>
-                                  <div className="w-full sm:w-2/3">
-                                    <label className="text-[10px] font-black text-indigo-600 uppercase tracking-widest block mb-1">Alasan Koreksi (Opsional)</label>
-                                    <input
-                                      type="text"
-                                      placeholder="Contoh: Jawaban cukup tepat..."
-                                      value={justification}
-                                      onChange={(e) => setJustification(e.target.value)}
-                                      className="w-full bg-slate-50 border-2 border-indigo-100 rounded-lg px-3 py-2 text-sm font-bold outline-none focus:border-indigo-500"
-                                    />
-                                  </div>
-                                </div>
-                                <div className="flex gap-2 justify-end">
-                                  <button
-                                    type="button"
-                                    onClick={() => setEditingQuestionIdx(null)}
-                                    className="px-3.5 py-1.5 rounded-lg text-xs font-bold text-slate-500 hover:bg-slate-100"
-                                  >
-                                    Batal
-                                  </button>
-                                  <button
-                                    type="submit"
-                                    disabled={submittingScore}
-                                    className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider shadow disabled:opacity-50"
-                                  >
-                                    Simpan Nilai
-                                  </button>
-                                </div>
-                              </form>
-                            ) : (
-                              <button
-                                onClick={() => {
-                                  setEditingQuestionIdx(ans.questionIndex);
-                                  setNewScore(ans.pointsEarned ?? 0);
-                                  setJustification("");
-                                }}
-                                className="text-xs text-indigo-600 font-black uppercase tracking-widest hover:underline self-end flex items-center gap-1"
-                              >
-                                ✏️ Koreksi Nilai Essay AI
-                              </button>
-                            )}
-                          </div>
-                        )}
+              {(() => {
+                const isEssay = selectedStudent.templateType === "ESSAY";
+                return (
+                  <>
+                    {!isEssay && (
+                      <div className="bg-slate-50 border border-slate-200 text-slate-500 p-4 rounded-2xl text-xs font-bold flex items-center gap-2 mb-4">
+                        <span>ℹ️</span>
+                        <span>Koreksi nilai manual tidak tersedia karena tipe kuis bukan ESSAY.</span>
                       </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="text-center py-8 text-slate-400 font-bold">
-                  Tidak ada detail rincian jawaban untuk sesi kuis ini.
-                </div>
-              )}
+                    )}
+                    {selectedStudent.answersDetail && Array.isArray(selectedStudent.answersDetail) && selectedStudent.answersDetail.length > 0 ? (
+                      <div className="space-y-4">
+                        {selectedStudent.answersDetail.map((ans: any, idx: number) => {
+                          const isEditing = editingQuestionIdx === ans.questionIndex;
+
+                          return (
+                            <div
+                              key={idx}
+                              className={`p-5 rounded-2xl border transition-all ${
+                                ans.isCorrect ? "bg-emerald-50/50 border-emerald-100" : "bg-rose-50/50 border-rose-100"
+                              }`}
+                            >
+                              <div className="flex justify-between items-start gap-4">
+                                <div>
+                                  <span className="text-[10px] text-slate-400 font-black uppercase tracking-wider">
+                                    Pertanyaan #{idx + 1}
+                                  </span>
+                                  <h4 className="font-black text-slate-800 text-sm mt-0.5">{ans.question || `Soal #${idx + 1}`}</h4>
+                                </div>
+                                <span
+                                  className={`text-xs font-black px-2.5 py-1 rounded-full uppercase shrink-0 ${
+                                    ans.isCorrect ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700"
+                                  }`}
+                                >
+                                  {ans.pointsEarned ?? (ans.isCorrect ? 100 : 0)} Poin
+                                </span>
+                              </div>
+
+                              {/* Jawaban Siswa */}
+                              <div className="mt-4 bg-white p-3.5 rounded-xl border border-slate-100/80">
+                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">Jawaban Siswa:</p>
+                                <p className="text-slate-700 text-sm font-semibold whitespace-pre-wrap">{ans.selectedAnswer || "-"}</p>
+                              </div>
+
+                              {/* Kunci Jawaban / Koreksi */}
+                              {ans.correctAnswer && (
+                                <div className="mt-3 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-0.5">Kunci Jawaban / Keyword:</p>
+                                  <p className="text-slate-600 text-xs font-semibold">{ans.correctAnswer}</p>
+                                </div>
+                              )}
+
+                              {/* Justifikasi AI / Guru */}
+                              {ans.justification && (
+                                <div className="mt-3 text-xs text-slate-500 bg-slate-100/50 p-3 rounded-xl">
+                                  <span className="font-bold">Keterangan:</span> {ans.justification}
+                                </div>
+                              )}
+
+                              {/* Essay Score Adjustment Form */}
+                              {isEssay && (
+                                <div className="mt-4 pt-4 border-t border-slate-100 flex flex-col items-stretch">
+                                  {isEditing ? (
+                                    <form onSubmit={handleUpdateScore} className="space-y-3 bg-white p-4 rounded-xl border border-indigo-100">
+                                      <div className="flex flex-col sm:flex-row gap-3 items-center">
+                                        <div className="w-full sm:w-1/3">
+                                          <label className="text-[10px] font-black text-indigo-600 uppercase tracking-widest block mb-1">Skor Baru (0-100)</label>
+                                          <input
+                                            type="number"
+                                            min="0"
+                                            max="100"
+                                            required
+                                            value={newScore}
+                                            onChange={(e) => setNewScore(Math.min(100, Math.max(0, Number(e.target.value))))}
+                                            className="w-full bg-slate-50 border-2 border-indigo-100 rounded-lg px-3 py-2 text-sm font-bold outline-none focus:border-indigo-500"
+                                          />
+                                        </div>
+                                        <div className="w-full sm:w-2/3">
+                                          <label className="text-[10px] font-black text-indigo-600 uppercase tracking-widest block mb-1">Alasan Koreksi (Opsional)</label>
+                                          <input
+                                            type="text"
+                                            placeholder="Contoh: Jawaban cukup tepat..."
+                                            value={justification}
+                                            onChange={(e) => setJustification(e.target.value)}
+                                            className="w-full bg-slate-50 border-2 border-indigo-100 rounded-lg px-3 py-2 text-sm font-bold outline-none focus:border-indigo-500"
+                                          />
+                                        </div>
+                                      </div>
+                                      <div className="flex gap-2 justify-end">
+                                        <button
+                                          type="button"
+                                          onClick={() => setEditingQuestionIdx(null)}
+                                          className="px-3.5 py-1.5 rounded-lg text-xs font-bold text-slate-500 hover:bg-slate-100"
+                                        >
+                                          Batal
+                                        </button>
+                                        <button
+                                          type="submit"
+                                          disabled={submittingScore}
+                                          className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider shadow disabled:opacity-50"
+                                        >
+                                          Simpan Nilai
+                                        </button>
+                                      </div>
+                                    </form>
+                                  ) : (
+                                    <button
+                                      onClick={() => {
+                                        setEditingQuestionIdx(ans.questionIndex);
+                                        setNewScore(ans.pointsEarned ?? 0);
+                                        setJustification("");
+                                      }}
+                                      className="text-xs text-indigo-600 font-black uppercase tracking-widest hover:underline self-end flex items-center gap-1"
+                                    >
+                                      ✏️ Koreksi Nilai Essay AI
+                                    </button>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="text-center py-8 text-slate-400 font-bold">
+                        Tidak ada detail rincian jawaban untuk sesi kuis ini.
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
             </div>
 
             {/* Modal Footer */}

@@ -215,7 +215,7 @@ export default function LeaderboardPage() {
                                         <div className="flex-1 font-black text-slate-700 text-lg md:text-xl truncate px-4 group-hover:text-indigo-600 transition-colors uppercase italic">
                                             {s.name}
                                             {s.schoolOrigin && (
-                                                <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest normal-case tracking-normal block mt-0.5">
+                                                <div className="text-[10px] text-slate-400 font-bold normal-case tracking-normal block mt-0.5">
                                                     🏫 {s.schoolOrigin}
                                                 </div>
                                             )}
