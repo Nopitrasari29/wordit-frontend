@@ -56,23 +56,52 @@ export default function PlayGamePage() {
         if (finalData.shareCode && isStudent) {
           const formatRegex = /^[a-zA-Z0-9\s]+_.+/;
           if (!formatRegex.test(activeName)) {
-            let promptName = window.prompt(
-              "Sesi kuis live memerlukan identitas kelas. Silakan masukkan dengan format: Kelas_Nama\n(Contoh: 7A_Budi)",
-              user?.name ? `_${user.name}` : ""
-            );
-            
-            while (promptName !== null && !formatRegex.test(promptName.trim())) {
-              promptName = window.prompt(
-                "Format salah! Harap gunakan format: Kelas_Nama\n(Contoh: 7A_Budi)",
-                promptName
-              );
-            }
-            
-            if (promptName) {
-              const trimmedName = promptName.trim();
-              sessionStorage.setItem("playerName", trimmedName);
-              setResolvedPlayerName(trimmedName);
-              activeName = trimmedName;
+            // Ganti window.prompt() dengan Swal modal agar tidak bisa di-bypass dengan Cancel
+            let isValidName = false;
+            let inputValue = user?.name ? `_${user.name}` : "";
+
+            while (!isValidName) {
+              const { value, isDismissed } = await Swal.fire({
+                title: "Identitas Kelas Diperlukan",
+                html: `
+                  <p style="font-size:13px; color:#94a3b8; margin-bottom:12px;">
+                    Masukkan dengan format: <strong style="color:#818cf8">Kelas_Nama</strong><br/>
+                    <span style="font-size:11px;">Contoh: 7A_Budi atau 10IPA_Sari</span>
+                  </p>
+                `,
+                input: "text",
+                inputPlaceholder: "Contoh: 7A_BudiSantoso",
+                inputValue,
+                background: "#1e293b",
+                color: "#ffffff",
+                confirmButtonText: "Masuk ke Kuis ▶",
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                inputAttributes: { autocapitalize: "off" },
+                customClass: {
+                  popup: "rounded-[2.5rem] border border-slate-700 shadow-2xl font-sans p-6",
+                  title: "text-xl font-black text-white mt-2",
+                  htmlContainer: "text-xs text-slate-300 font-medium",
+                  confirmButton: "px-5 py-3 rounded-full text-xs font-black uppercase tracking-wider bg-indigo-600 text-white mt-2",
+                  input: "rounded-xl border border-slate-600 bg-slate-700 text-white px-4 py-2 text-sm mt-2",
+                },
+                buttonsStyling: false,
+                preConfirm: (val: string) => {
+                  if (!val || !formatRegex.test(val.trim())) {
+                    Swal.showValidationMessage("Format salah! Gunakan format: Kelas_Nama (Contoh: 7A_Budi)");
+                    return false;
+                  }
+                  return val.trim();
+                },
+              });
+
+              if (!isDismissed && value) {
+                inputValue = value;
+                isValidName = true;
+                sessionStorage.setItem("playerName", value);
+                setResolvedPlayerName(value);
+                activeName = value;
+              }
             }
           }
         }

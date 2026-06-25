@@ -22,6 +22,7 @@ export default function SystemLogsPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [filterAction, setFilterAction] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [limit, setLimit] = useState(10);
   const [timeRange, setTimeRange] = useState("ALL");
   const [dateFrom, setDateFrom] = useState("");
@@ -93,7 +94,7 @@ export default function SystemLogsPage() {
           page: pageNum,
           limit,
           action: filterAction || undefined,
-          search: searchQuery || undefined,
+          search: debouncedSearch || undefined,
           timeRange: timeRange !== "ALL" ? timeRange : undefined,
           dateFrom: dateFrom || undefined,
           dateTo: dateTo || undefined,
@@ -111,10 +112,19 @@ export default function SystemLogsPage() {
     }
   }
 
+  // Debounce search query: auto-trigger 400ms setelah user berhenti mengetik
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+      setPage(1);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [searchQuery]); // eslint-disable-line
+
   useEffect(() => {
     fetchQuotaStatus();
     fetchLogs(page);
-}, [page, filterAction, limit, timeRange, dateFrom, dateTo]);
+  }, [page, filterAction, limit, timeRange, dateFrom, dateTo, debouncedSearch]); // eslint-disable-line
 
   useEffect(() => {
     socket.emit("join_admin_room");

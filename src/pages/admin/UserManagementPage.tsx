@@ -197,6 +197,13 @@ export default function UserManagementPage() {
     e.preventDefault();
     if (!promoteEmail.trim()) return;
 
+    // Validasi format email sebelum kirim request
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(promoteEmail.trim())) {
+      toast.error("Format email tidak valid! Gunakan format: nama@domain.com");
+      return;
+    }
+
     setIsPromoting(true);
     const toastId = toast.loading("Memperbarui peran pengguna...");
     try {

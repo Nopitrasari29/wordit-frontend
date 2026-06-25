@@ -43,13 +43,7 @@ export default function AnalyticsClassPage({
     setGradeFilter("ALL");
   }, [levelFilter]);
 
-  useEffect(() => {
-    // 🛠️ FIX REVISI: Biarkan selectedGameId defaultnya tetap "" agar menampilkan analitik semua kelas / semua game secara langsung
-    // Jangan menimpa selectedGameId dengan game pertama secara otomatis.
-    if (!selectedGameId) {
-      setSelectedGameId("");
-    }
-  }, [games, levelFilter, gradeFilter]);
+  // selectedGameId default "" menampilkan analitik semua kelas/game — tidak perlu di-reset ulang via useEffect
 
   useEffect(() => {
     if (data && refreshTrigger === 0) {

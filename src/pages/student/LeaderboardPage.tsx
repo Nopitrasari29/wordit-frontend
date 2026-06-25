@@ -18,37 +18,46 @@ export default function LeaderboardPage() {
         return () => clearTimeout(handler)
     }, [schoolFilter])
 
+    // Load games sekali saat mount
     useEffect(() => {
-        async function loadData() {
+        async function loadGamesData() {
             try {
                 setLoading(true)
-                const [gamesData, studentsData] = await Promise.all([
-                    getGames(),
-                    getStudentLeaderboard(debouncedSchool || undefined).catch(err => {
-                        console.error("Gagal memuat leaderboard siswa:", err)
-                        return []
-                    })
-                ])
-                
-                // Pastikan data adalah array
+                const gamesData = await getGames()
                 const gameList = Array.isArray(gamesData) ? gamesData : []
-                const studentList = Array.isArray(studentsData) ? studentsData : []
-                
-                // Urutkan game berdasarkan playCount terbanyak (High to Low)
-                const sortedGames = [...gameList].sort((a, b) => 
+                const sortedGames = [...gameList].sort((a, b) =>
                     (b.playCount || 0) - (a.playCount || 0)
                 )
-                
                 setGames(sortedGames)
-                setStudents(studentList)
             } catch (error) {
-                console.error("Gagal memuat leaderboard:", error)
+                console.error("Gagal memuat games:", error)
             } finally {
                 setLoading(false)
             }
         }
-        loadData()
-    }, [debouncedSchool])
+        loadGamesData()
+    }, [])
+
+    // Load leaderboard siswa hanya saat tab students aktif atau filter berubah
+    useEffect(() => {
+        if (activeTab !== "students") return
+        async function loadStudentsData() {
+            try {
+                setLoading(true)
+                const studentsData = await getStudentLeaderboard(debouncedSchool || undefined).catch(err => {
+                    console.error("Gagal memuat leaderboard siswa:", err)
+                    return []
+                })
+                const studentList = Array.isArray(studentsData) ? studentsData : []
+                setStudents(studentList)
+            } catch (error) {
+                console.error("Gagal memuat leaderboard siswa:", error)
+            } finally {
+                setLoading(false)
+            }
+        }
+        loadStudentsData()
+    }, [activeTab, debouncedSchool])
 
     return (
         <div className="min-h-screen bg-slate-50 font-sans pb-20 pt-28">
