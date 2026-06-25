@@ -108,7 +108,7 @@ export default function AnalyticsClassPage({
         }
       } catch (e) {
         console.error("Gagal memuat analytics kelas:", e);
-      } {
+      } finally {
         setIsLoading(false);
       }
     };
