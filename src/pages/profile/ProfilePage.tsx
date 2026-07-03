@@ -5,6 +5,10 @@ import { useState } from "react"
 import { toast } from "react-hot-toast"
 import { requestSchoolAdmin, cancelSchoolAdmin } from "../../pages/services/user.service"
 import ConfirmModal from "../../components/ui/ConfirmModal"
+import {
+  Settings, FolderOpen, BarChart2, ShieldCheck, School,
+  CheckCircle2, Clock, XCircle, User, Phone, Building2
+} from "lucide-react"
 
 export default function ProfilePage() {
   const { user, updateUser } = useAuth()
@@ -43,7 +47,7 @@ export default function ProfilePage() {
       setRequesting(true)
       const updatedUser = await requestSchoolAdmin()
       updateUser(updatedUser)
-      toast.success("Permohonan Admin Sekolah berhasil dikirim! ✨")
+      toast.success("Permohonan Admin Sekolah berhasil dikirim!")
     } catch (err: any) {
       toast.error(err.response?.data?.message || err.message || "Gagal mengirim permohonan")
     } finally {
@@ -60,7 +64,7 @@ export default function ProfilePage() {
           setRequesting(true)
           const updatedUser = await cancelSchoolAdmin()
           updateUser(updatedUser)
-          toast.success("Status Admin Sekolah dibatalkan. Peran kembali menjadi Teacher! ✨")
+          toast.success("Status Admin Sekolah dibatalkan. Peran kembali menjadi Teacher!")
         } catch (err: any) {
           toast.error(err.response?.data?.message || err.message || "Gagal membatalkan status admin")
         } finally {
@@ -68,6 +72,18 @@ export default function ProfilePage() {
         }
       }
     );
+  }
+
+  // Initials fallback for avatar
+  const initials = user?.name
+    ? user.name.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase()
+    : "?"
+
+  const roleLabel: Record<string, string> = {
+    STUDENT: "Siswa",
+    TEACHER: "Guru",
+    SCHOOL_ADMIN: "Admin Sekolah",
+    ADMIN: "Administrator",
   }
 
   if (!user) {
@@ -79,88 +95,111 @@ export default function ProfilePage() {
     )
   }
 
-  return (
-    // min-h-screen dan bg-white/gradient agar background penuh ke pinggir
-    <div className="min-h-screen bg-white font-sans selection:bg-indigo-100 selection:text-indigo-900 pt-28 pb-20 relative overflow-hidden">
+  const maskedPhone = user?.phoneNumber
+    ? user.phoneNumber.length > 8
+      ? `${user.phoneNumber.slice(0, 4)}****${user.phoneNumber.slice(-4)}`
+      : user.phoneNumber
+    : null
 
-      {/* Dekorasi Background Blob Lembut (Mirip Edit Profile) */}
-      <div className="absolute top-20 -left-10 w-96 h-96 bg-indigo-50 rounded-full blur-3xl opacity-60 animate-blob"></div>
-      <div className="absolute top-60 -right-10 w-96 h-96 bg-cyan-50 rounded-full blur-3xl opacity-60 animate-blob" style={{ animationDelay: '2s' }}></div>
+  return (
+    <div className="min-h-screen bg-white font-sans selection:bg-indigo-100 selection:text-indigo-900 pt-28 pb-24 relative overflow-hidden">
+
+      {/* Background decorations */}
+      <div className="absolute top-20 -left-10 w-96 h-96 bg-indigo-50 rounded-full blur-3xl opacity-60 pointer-events-none" />
+      <div className="absolute top-60 -right-10 w-96 h-96 bg-cyan-50 rounded-full blur-3xl opacity-60 pointer-events-none" />
 
       <div className="max-w-4xl mx-auto px-6 text-center relative z-10">
 
-        {/* AVATAR SECTION (Bersih tanpa banner ungu) */}
-        <div className="flex flex-col items-center gap-6 mb-12">
-          <div className="relative group">
-            <img
-              src={getImageUrl(user?.photoUrl)}
-              alt="Profile Avatar"
-              className="w-40 h-40 md:w-48 md:h-48 rounded-full object-cover border-8 border-white shadow-2xl bg-slate-50 transition-all group-hover:scale-105"
-            />
-            <div className="absolute -bottom-2 -right-2 bg-indigo-600 w-12 h-12 rounded-full flex items-center justify-center text-xl shadow-lg border-4 border-white">👤</div>
-          </div>
-          <div className="flex justify-center">
-            <span className="bg-white/70 backdrop-blur-sm border border-slate-200 text-slate-600 px-6 py-2 rounded-full font-black text-xs tracking-widest uppercase flex items-center gap-1.5">
-              <span>{user?.role}</span>
-              {user?.educationLevels && user.educationLevels.length > 0 && (
-                <>
-                  <span className="text-slate-300 font-bold">•</span>
-                  <span className="text-indigo-600 font-black">{user.educationLevels.join(", ")}</span>
-                </>
+        {/* ─── AVATAR SECTION ─────────────────────────────────────── */}
+        <div className="flex flex-col items-center gap-5 mb-10">
+
+          {/* Avatar with ring */}
+          <div className="relative">
+            <div className="w-36 h-36 md:w-44 md:h-44 rounded-full p-1 bg-gradient-to-br from-indigo-400 via-violet-400 to-cyan-400 shadow-2xl">
+              {user?.photoUrl ? (
+                <img
+                  src={getImageUrl(user.photoUrl)}
+                  alt={user.name}
+                  className="w-full h-full rounded-full object-cover bg-white border-4 border-white"
+                />
+              ) : (
+                <div className="w-full h-full rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center border-4 border-white">
+                  <span className="text-white font-black text-4xl tracking-tight">{initials}</span>
+                </div>
               )}
-            </span>
+            </div>
+            {/* Status dot */}
+            <span className="absolute bottom-2 right-2 w-5 h-5 bg-emerald-400 rounded-full border-2 border-white shadow-sm" title="Online" />
           </div>
+
+          {/* Role badge */}
+          <span className="inline-flex items-center gap-2 bg-indigo-50 border border-indigo-100 text-indigo-700 px-5 py-1.5 rounded-full font-black text-xs tracking-widest uppercase">
+            <User size={12} />
+            {roleLabel[user?.role] || user?.role}
+            {user?.educationLevels && user.educationLevels.length > 0 && (
+              <>
+                <span className="text-indigo-200 font-bold">|</span>
+                <span className="text-indigo-500 font-black">{user.educationLevels.join(", ")}</span>
+              </>
+            )}
+          </span>
         </div>
 
-        {/* INFO PENGGUNA */}
-        <h1 className="text-4xl md:text-5xl font-black text-slate-800 mb-2 tracking-tight">
-          {user?.name}
-        </h1>
-        <p className="text-slate-500 font-bold mb-8 text-lg leading-relaxed">
-          {user?.email}
-        </p>
+        {/* ─── NAMA & EMAIL ───────────────────────────────────────── */}
+        <h1 className="text-4xl md:text-5xl font-black text-slate-800 mb-2 tracking-tight">{user?.name}</h1>
+        <p className="text-slate-400 font-semibold mb-8 text-base">{user?.email}</p>
 
-        {/* INFO CARD DETAIL */}
-        <div className="max-w-md mx-auto bg-slate-50 border border-slate-100 rounded-3xl p-6 mb-10 flex flex-col gap-4 text-left shadow-inner">
-          <div className="flex justify-between items-center border-b border-slate-200/60 pb-3">
-            <span className="text-xs font-black text-slate-400 uppercase tracking-wider">Asal Sekolah</span>
-            <span className="text-sm font-bold text-slate-700">{user?.schoolOrigin || "Belum diisi"}</span>
-          </div>
-          <div className="flex justify-between items-center border-b border-slate-200/60 pb-3">
-            <span className="text-xs font-black text-slate-400 uppercase tracking-wider">No. HP / WhatsApp</span>
-            <span className="text-sm font-bold text-slate-700">
-              {user?.phoneNumber ? (user.phoneNumber.length > 8 ? `${user.phoneNumber.slice(0, 4)}****${user.phoneNumber.slice(-4)}` : user.phoneNumber) : "Belum diisi"}
+        {/* ─── INFO CARD ─────────────────────────────────────────── */}
+        <div className="max-w-sm mx-auto bg-slate-50 border border-slate-100 rounded-2xl p-5 mb-8 text-left divide-y divide-slate-100">
+          <div className="flex items-center justify-between py-3 first:pt-0">
+            <span className="flex items-center gap-2 text-xs font-black text-slate-400 uppercase tracking-wider">
+              <Building2 size={13} /> Asal Sekolah
             </span>
+            <span className="text-sm font-bold text-slate-700">{user?.schoolOrigin || "—"}</span>
           </div>
-          <div className="flex justify-between items-center">
-            <span className="text-xs font-black text-slate-400 uppercase tracking-wider">Status Akun</span>
-            <span className={`text-[11px] font-black uppercase tracking-wider px-3 py-1 rounded-full border ${
+          <div className="flex items-center justify-between py-3">
+            <span className="flex items-center gap-2 text-xs font-black text-slate-400 uppercase tracking-wider">
+              <Phone size={13} /> No. HP
+            </span>
+            <span className="text-sm font-bold text-slate-700">{maskedPhone || "—"}</span>
+          </div>
+          <div className="flex items-center justify-between py-3 last:pb-0">
+            <span className="flex items-center gap-2 text-xs font-black text-slate-400 uppercase tracking-wider">
+              <CheckCircle2 size={13} /> Status Akun
+            </span>
+            <span className={`inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider px-3 py-1 rounded-full border ${
               user?.approvalStatus === "APPROVED"
                 ? "bg-emerald-50 border-emerald-200 text-emerald-600"
                 : "bg-amber-50 border-amber-200 text-amber-600"
             }`}>
-              {user?.approvalStatus || "PENDING"}
+              {user?.approvalStatus === "APPROVED"
+                ? <><CheckCircle2 size={10} /> Aktif</>
+                : <><Clock size={10} /> {user?.approvalStatus || "PENDING"}</>
+              }
             </span>
           </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row justify-center items-center gap-4 mb-16">
+        {/* ─── ACTION BUTTONS ─────────────────────────────────────── */}
+        <div className="flex flex-col sm:flex-row justify-center items-center gap-3 mb-14">
           <Link
             to="/settings"
-            className="bg-slate-950 text-white font-black px-12 py-4 rounded-full shadow-lg shadow-slate-200 hover:bg-indigo-600 hover:-translate-y-1 transition-all active:scale-95"
+            className="inline-flex items-center gap-2 bg-slate-950 text-white font-black px-10 py-3.5 rounded-full shadow-lg shadow-slate-200 hover:bg-indigo-600 hover:-translate-y-1 transition-all active:scale-95 text-sm"
           >
-            Pengaturan Akun ⚙️
+            <Settings size={16} />
+            Pengaturan Akun
           </Link>
 
           {(user?.role === "TEACHER" || user?.role === "SCHOOL_ADMIN") && (
-            <div className="flex flex-col items-center gap-4">
+            <div className="flex flex-col items-center gap-3">
               {user?.role === "SCHOOL_ADMIN" && (
                 <button
                   onClick={handleCancelSchoolAdmin}
                   disabled={requesting}
-                  className="bg-rose-600 hover:bg-rose-700 text-white font-bold px-10 py-4 rounded-full shadow-lg shadow-rose-100 hover:-translate-y-1 transition-all active:scale-95 disabled:opacity-50 animate-in fade-in"
+                  className="inline-flex items-center gap-2 bg-rose-600 hover:bg-rose-700 text-white font-bold px-10 py-3.5 rounded-full shadow-lg shadow-rose-100 hover:-translate-y-1 transition-all active:scale-95 disabled:opacity-50 text-sm"
                 >
-                  {requesting ? "Memproses..." : "Batalkan Status Admin Sekolah 🏫"}
+                  <School size={16} />
+                  {requesting ? "Memproses..." : "Batalkan Status Admin Sekolah"}
                 </button>
               )}
 
@@ -169,21 +208,25 @@ export default function ProfilePage() {
                   {user?.adminRequestStatus === "PENDING" && (
                     <button
                       disabled
-                      className="bg-slate-100 text-slate-400 font-bold px-10 py-4 rounded-full border border-slate-200 cursor-not-allowed"
+                      className="inline-flex items-center gap-2 bg-slate-100 text-slate-400 font-bold px-10 py-3.5 rounded-full border border-slate-200 cursor-not-allowed text-sm"
                     >
-                      Permohonan Admin Sekolah Ditinjau ⏳
+                      <Clock size={16} />
+                      Permohonan Admin Sekolah Sedang Ditinjau
                     </button>
                   )}
 
                   {user?.adminRequestStatus === "REJECTED" && (
-                    <div className="flex flex-col items-center gap-3 animate-in fade-in">
-                      <span className="text-xs text-rose-500 font-black uppercase tracking-wider bg-rose-50 px-4 py-1.5 rounded-full border border-rose-100">⚠️ Pengajuan Sebelumnya Ditolak</span>
+                    <div className="flex flex-col items-center gap-3">
+                      <span className="inline-flex items-center gap-1.5 text-xs text-rose-500 font-black uppercase tracking-wider bg-rose-50 px-4 py-1.5 rounded-full border border-rose-100">
+                        <XCircle size={12} /> Pengajuan Sebelumnya Ditolak
+                      </span>
                       <button
                         onClick={handleRequestSchoolAdmin}
                         disabled={requesting}
-                        className="bg-amber-500 hover:bg-amber-600 text-white font-bold px-10 py-4 rounded-full shadow-lg shadow-amber-100 hover:-translate-y-1 transition-all active:scale-95 disabled:opacity-50"
+                        className="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white font-bold px-10 py-3.5 rounded-full shadow-lg shadow-amber-100 hover:-translate-y-1 transition-all active:scale-95 disabled:opacity-50 text-sm"
                       >
-                        {requesting ? "Mengajukan..." : "Ajukan Kembali Sebagai Admin Sekolah 🏫"}
+                        <School size={16} />
+                        {requesting ? "Mengajukan..." : "Ajukan Kembali Sebagai Admin Sekolah"}
                       </button>
                     </div>
                   )}
@@ -192,9 +235,10 @@ export default function ProfilePage() {
                     <button
                       onClick={handleRequestSchoolAdmin}
                       disabled={requesting}
-                      className="bg-amber-500 hover:bg-amber-600 text-white font-bold px-10 py-4 rounded-full shadow-lg shadow-amber-100 hover:-translate-y-1 transition-all active:scale-95 disabled:opacity-50"
+                      className="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white font-bold px-10 py-3.5 rounded-full shadow-lg shadow-amber-100 hover:-translate-y-1 transition-all active:scale-95 disabled:opacity-50 text-sm"
                     >
-                      {requesting ? "Mengajukan..." : "Ajukan Sebagai Admin Sekolah 🏫"}
+                      <School size={16} />
+                      {requesting ? "Mengajukan..." : "Ajukan Sebagai Admin Sekolah"}
                     </button>
                   )}
                 </>
@@ -203,63 +247,56 @@ export default function ProfilePage() {
           )}
         </div>
 
-        {/* GRID MENU (Value Cards) */}
-        <div className="grid grid-cols-1 max-w-md mx-auto w-full gap-8 text-left">
-          {/* Project Card */}
+        {/* ─── QUICK ACCESS CARDS ────────────────────────────────── */}
+        <div className="grid grid-cols-1 max-w-sm mx-auto w-full gap-4 text-left">
           {user?.role === "TEACHER" && (
             <Link
               to="/teacher/projects"
-              className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100 hover:shadow-xl hover:-translate-y-2 transition-all duration-300 group flex flex-col"
+              className="bg-white p-7 rounded-3xl shadow-sm border border-slate-100 hover:shadow-xl hover:-translate-y-2 transition-all duration-300 group flex items-center gap-5"
             >
-              <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center text-3xl mb-4 group-hover:scale-110 transition-transform">
-                📁
+              <div className="w-14 h-14 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                <FolderOpen size={26} />
               </div>
-              <h3 className="text-2xl font-black text-slate-800 mb-2 tracking-tight leading-tight">
-                My Projects
-              </h3>
-              <p className="text-slate-500 font-semibold text-sm leading-relaxed text-balance">
-                Manage your created games, education activities, and resources.
-              </p>
+              <div>
+                <h3 className="text-lg font-black text-slate-800 mb-0.5">My Projects</h3>
+                <p className="text-slate-500 font-semibold text-xs leading-relaxed">Kelola game, aktivitas belajar, dan resource buatan Anda.</p>
+              </div>
             </Link>
           )}
 
-          {/* Result Card */}
           {user?.role === "STUDENT" && (
             <Link
               to="/student/dashboard"
-              className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100 hover:shadow-xl hover:-translate-y-2 transition-all duration-300 group flex flex-col"
+              className="bg-white p-7 rounded-3xl shadow-sm border border-slate-100 hover:shadow-xl hover:-translate-y-2 transition-all duration-300 group flex items-center gap-5"
             >
-              <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center text-3xl mb-4 group-hover:scale-110 transition-transform">
-                📊
+              <div className="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                <BarChart2 size={26} />
               </div>
-              <h3 className="text-2xl font-black text-slate-800 mb-2 tracking-tight leading-tight">
-                My Results
-              </h3>
-              <p className="text-slate-500 font-semibold text-sm leading-relaxed text-balance">
-                View your game history, achievement scores, and learning progress.
-              </p>
+              <div>
+                <h3 className="text-lg font-black text-slate-800 mb-0.5">My Results</h3>
+                <p className="text-slate-500 font-semibold text-xs leading-relaxed">Riwayat game, skor pencapaian, dan progres belajar Anda.</p>
+              </div>
             </Link>
           )}
 
-          {/* Admin Dashboard Card */}
           {user?.role === "ADMIN" && (
             <Link
               to="/admin/dashboard"
-              className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100 hover:shadow-xl hover:-translate-y-2 transition-all duration-300 group flex flex-col"
+              className="bg-white p-7 rounded-3xl shadow-sm border border-slate-100 hover:shadow-xl hover:-translate-y-2 transition-all duration-300 group flex items-center gap-5"
             >
-              <div className="w-16 h-16 bg-purple-50 text-purple-600 rounded-2xl flex items-center justify-center text-3xl mb-4 group-hover:scale-110 transition-transform">
-                🛡️
+              <div className="w-14 h-14 bg-purple-50 text-purple-600 rounded-2xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                <ShieldCheck size={26} />
               </div>
-              <h3 className="text-2xl font-black text-slate-800 mb-2 tracking-tight leading-tight">
-                Admin Area
-              </h3>
-              <p className="text-slate-500 font-semibold text-sm leading-relaxed text-balance">
-                Monitor system performance, application stats, and view server logs.
-              </p>
+              <div>
+                <h3 className="text-lg font-black text-slate-800 mb-0.5">Admin Area</h3>
+                <p className="text-slate-500 font-semibold text-xs leading-relaxed">Monitor performa sistem, statistik aplikasi, dan server logs.</p>
+              </div>
             </Link>
           )}
         </div>
+
       </div>
+
       <ConfirmModal
         isOpen={confirmConfig.isOpen}
         title={confirmConfig.title}

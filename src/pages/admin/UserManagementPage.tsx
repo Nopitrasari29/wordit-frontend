@@ -1018,12 +1018,13 @@ export default function UserManagementPage() {
               {!importResults ? (
                 <>
                   <div className="bg-slate-50 border border-slate-100 p-4 rounded-2xl space-y-2.5">
-                    <h4 className="text-xs font-black uppercase tracking-wider text-slate-700">📋 Petunjuk Format CSV</h4>
+                    <h4 className="text-xs font-black uppercase tracking-wider text-slate-700">Petunjuk Format CSV</h4>
                     <p className="text-xs text-slate-500 font-bold leading-relaxed">
-                      1. Header kolom: <span className="text-indigo-600 font-mono font-black">Nama, Email, Password, Role, Jenjang</span><br />
+                      1. Header kolom wajib: <span className="text-indigo-600 font-mono font-black">Nama, Email, Password, Role, Jenjang, AsalSekolah, NomorHP</span><br />
                       2. <span className="font-black text-slate-700">Role</span>: <span className="font-mono text-indigo-600">STUDENT</span> atau <span className="font-mono text-indigo-600">TEACHER</span>.<br />
-                      3. <span className="font-black text-slate-700">Jenjang</span> (khusus guru): <span className="font-mono text-indigo-600">SD;SMP;SMA</span><br />
-                      4. Password minimal <span className="font-black text-slate-700">6 karakter</span>.
+                      3. <span className="font-black text-slate-700">Jenjang</span> (khusus guru): <span className="font-mono text-indigo-600">SD;SMP;SMA;UNIVERSITY</span><br />
+                      4. <span className="font-black text-slate-700">AsalSekolah</span> &amp; <span className="font-black text-slate-700">NomorHP</span>: opsional, boleh dikosongkan.<br />
+                      5. Password minimal <span className="font-black text-slate-700">6 karakter</span>.
                     </p>
                     <button onClick={handleDownloadTemplate} className="text-xs font-black text-indigo-600 hover:underline flex items-center gap-1.5 pt-1.5">
                       <Download size={12} /> Unduh Template Contoh CSV

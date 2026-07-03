@@ -5,6 +5,7 @@ import { getImageUrl } from "../../utils/assets"
 import Input from "../../components/ui/Input"
 import { updateProfile } from "../../pages/services/user.service"
 import { toast } from "react-hot-toast"
+import { ArrowLeft, User, Image, GraduationCap, Lock, Camera, Save, Key } from "lucide-react"
 
 type Section = "info" | "photo" | "education" | "security"
 
@@ -75,7 +76,7 @@ export default function EditProfilePage() {
       if (isLevelsChanged) {
         toast.success("Pengajuan perubahan jenjang berhasil dikirim ke Admin! (2-3 hari kerja)")
       } else {
-        toast.success("Pengaturan berhasil disimpan! âœ¨")
+        toast.success("Pengaturan berhasil disimpan!")
       }
       setCurrentPassword(""); setNewPassword(""); setConfirmPassword(""); setPhoto(null)
     } catch (err: any) {
@@ -85,13 +86,13 @@ export default function EditProfilePage() {
     }
   }
 
-  const navItems: { id: Section; label: string; icon: string; desc: string }[] = [
-    { id: "info",      label: "Informasi Pribadi", icon: "ðŸ‘¤", desc: "Nama, email, HP, sekolah" },
-    { id: "photo",     label: "Foto & Bio",         icon: "ðŸ–¼ï¸", desc: "Foto profil dan deskripsi" },
+  const navItems: { id: Section; label: string; icon: React.ReactNode; desc: string }[] = [
+    { id: "info",      label: "Informasi Pribadi", icon: <User size={18} />,          desc: "Nama, email, HP, sekolah" },
+    { id: "photo",     label: "Foto & Bio",         icon: <Image size={18} />,         desc: "Foto profil dan deskripsi" },
     ...(user?.role === "TEACHER" || user?.role === "SCHOOL_ADMIN"
-      ? [{ id: "education" as Section, label: "Jenjang Mengajar", icon: "ðŸŽ“", desc: "Level kelas yang Anda ajar" }]
+      ? [{ id: "education" as Section, label: "Jenjang Mengajar", icon: <GraduationCap size={18} />, desc: "Level kelas yang Anda ajar" }]
       : []),
-    { id: "security",  label: "Keamanan Akun",      icon: "ðŸ”’", desc: "Ubah password akun" },
+    { id: "security",  label: "Keamanan Akun",      icon: <Lock size={18} />,          desc: "Ubah password akun" },
   ]
 
   return (
@@ -104,12 +105,12 @@ export default function EditProfilePage() {
         <div className="mb-8 flex items-center gap-4">
           <button
             onClick={() => navigate("/profile")}
-            className="w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-100 transition-all shadow-sm font-bold"
+            className="w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-100 transition-all shadow-sm"
           >
-            ←
+            <ArrowLeft size={18} />
           </button>
           <div>
-            <h1 className="text-2xl md:text-3xl font-black text-slate-800 tracking-tight">Pengaturan Akun ⚙️</h1>
+            <h1 className="text-2xl md:text-3xl font-black text-slate-800 tracking-tight">Pengaturan Akun</h1>
             <p className="text-sm text-slate-500 font-medium">Kelola informasi pribadi dan keamanan akun Anda</p>
           </div>
         </div>
@@ -128,7 +129,7 @@ export default function EditProfilePage() {
                     : "hover:bg-white/60"
                 }`}
               >
-                <span className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0 transition-all ${
+                <span className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-all ${
                   activeSection === item.id
                     ? "bg-indigo-600 text-white shadow-lg shadow-indigo-200"
                     : "bg-slate-100 text-slate-500 group-hover:bg-indigo-50"
@@ -151,18 +152,24 @@ export default function EditProfilePage() {
             {/* -- INFORMASI PRIBADI -- */}
             {activeSection === "info" && (
               <div className="space-y-5">
-                <div className="pb-4 border-b border-slate-100">
-                  <h2 className="text-lg font-black text-slate-800">ðŸ‘¤ Informasi Pribadi</h2>
-                  <p className="text-xs text-slate-500 font-medium mt-0.5">Perubahan email mungkin memerlukan verifikasi ulang.</p>
+                <div className="pb-4 border-b border-slate-100 flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600">
+                    <User size={18} />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-black text-slate-800">Informasi Pribadi</h2>
+                    <p className="text-xs text-slate-500 font-medium mt-0.5">Perubahan email mungkin memerlukan verifikasi ulang.</p>
+                  </div>
                 </div>
                 <Input label="Nama Lengkap" value={name} onChange={(e) => setName(e.target.value)} placeholder="Nama lengkap Anda" required />
                 <Input label="Alamat Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email@contoh.com" required />
                 <div>
                   <Input label="Nomor HP / WhatsApp (Opsional)" type="tel" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} placeholder="Contoh: 08123456789" />
-                  <p className="text-[11px] text-slate-400 font-medium mt-1.5 ml-1">â„¹ï¸ Untuk komunikasi darurat dan verifikasi oleh Admin.</p>
+                  <p className="text-[11px] text-slate-400 font-medium mt-1.5 ml-1">Untuk komunikasi darurat dan verifikasi oleh Admin.</p>
                 </div>
                 <Input label="Asal Sekolah / Institusi" value={schoolOrigin} onChange={(e) => setSchoolOrigin(e.target.value)} placeholder="Contoh: SMAN 1 Surabaya" />
-                <button type="submit" disabled={saving} className="w-full bg-indigo-600 text-white font-black text-base py-3.5 rounded-2xl shadow-lg shadow-indigo-200 hover:bg-indigo-700 hover:-translate-y-0.5 transition-all disabled:opacity-50 active:scale-95">
+                <button type="submit" disabled={saving} className="w-full bg-indigo-600 text-white font-black text-base py-3.5 rounded-2xl shadow-lg shadow-indigo-200 hover:bg-indigo-700 hover:-translate-y-0.5 transition-all disabled:opacity-50 active:scale-95 flex items-center justify-center gap-2">
+                  <Save size={16} />
                   {saving ? "Menyimpan..." : "Simpan Informasi Pribadi"}
                 </button>
               </div>
@@ -171,20 +178,37 @@ export default function EditProfilePage() {
             {/* -- FOTO & BIO -- */}
             {activeSection === "photo" && (
               <div className="space-y-5">
-                <div className="pb-4 border-b border-slate-100">
-                  <h2 className="text-lg font-black text-slate-800">ðŸ–¼ï¸ Foto Profil & Bio</h2>
-                  <p className="text-xs text-slate-500 font-medium mt-0.5">Foto ditampilkan di seluruh platform WordIT.</p>
+                <div className="pb-4 border-b border-slate-100 flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-violet-50 flex items-center justify-center text-violet-600">
+                    <Image size={18} />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-black text-slate-800">Foto Profil & Bio</h2>
+                    <p className="text-xs text-slate-500 font-medium mt-0.5">Foto ditampilkan di seluruh platform WordIT.</p>
+                  </div>
                 </div>
                 <div className="flex flex-col items-center gap-4">
                   <div className="relative group cursor-pointer">
-                    <img src={preview} className="w-32 h-32 rounded-full object-cover border-4 border-indigo-50 shadow-lg group-hover:opacity-80 transition-all bg-slate-100" alt="Foto Profil" />
-                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-full bg-black/30">
-                      <span className="text-white text-xs font-black">ðŸ“· Ubah</span>
+                    <img
+                      src={preview}
+                      className="w-32 h-32 rounded-full object-cover border-4 border-indigo-50 shadow-lg group-hover:opacity-75 transition-all bg-slate-100"
+                      alt="Foto Profil"
+                    />
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-full bg-black/40">
+                      <div className="flex flex-col items-center gap-1 text-white">
+                        <Camera size={20} />
+                        <span className="text-[10px] font-black uppercase tracking-wide">Ubah</span>
+                      </div>
                     </div>
                     <input type="file" onChange={handlePhoto} className="absolute inset-0 opacity-0 cursor-pointer" accept="image/*" />
                   </div>
                   {photo
-                    ? <p className="text-xs text-emerald-600 font-bold">âœ… Foto baru: {photo.name}</p>
+                    ? <p className="text-xs text-emerald-600 font-bold flex items-center gap-1.5">
+                        <span className="w-4 h-4 rounded-full bg-emerald-500 flex items-center justify-center">
+                          <svg width="8" height="8" viewBox="0 0 8 8" fill="none"><path d="M1 4l2 2 4-4" stroke="white" strokeWidth="1.5" strokeLinecap="round"/></svg>
+                        </span>
+                        Foto baru siap diunggah: {photo.name}
+                      </p>
                     : <p className="text-[11px] text-slate-400 font-medium uppercase tracking-widest">Klik foto untuk mengganti</p>
                   }
                 </div>
@@ -199,7 +223,8 @@ export default function EditProfilePage() {
                   />
                   <span className="text-[11px] text-right font-bold text-slate-400">{bio.length}/250 karakter</span>
                 </div>
-                <button type="submit" disabled={saving} className="w-full bg-indigo-600 text-white font-black text-base py-3.5 rounded-2xl shadow-lg shadow-indigo-200 hover:bg-indigo-700 hover:-translate-y-0.5 transition-all disabled:opacity-50 active:scale-95">
+                <button type="submit" disabled={saving} className="w-full bg-violet-600 text-white font-black text-base py-3.5 rounded-2xl shadow-lg shadow-violet-200 hover:bg-violet-700 hover:-translate-y-0.5 transition-all disabled:opacity-50 active:scale-95 flex items-center justify-center gap-2">
+                  <Save size={16} />
                   {saving ? "Menyimpan..." : "Simpan Foto & Bio"}
                 </button>
               </div>
@@ -208,9 +233,14 @@ export default function EditProfilePage() {
             {/* -- JENJANG MENGAJAR -- */}
             {activeSection === "education" && (user?.role === "TEACHER" || user?.role === "SCHOOL_ADMIN") && (
               <div className="space-y-5">
-                <div className="pb-4 border-b border-slate-100">
-                  <h2 className="text-lg font-black text-slate-800">ðŸŽ“ Jenjang Mengajar</h2>
-                  <p className="text-xs text-slate-500 font-medium mt-0.5">Perubahan jenjang memerlukan persetujuan Admin (2-3 hari kerja).</p>
+                <div className="pb-4 border-b border-slate-100 flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600">
+                    <GraduationCap size={18} />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-black text-slate-800">Jenjang Mengajar</h2>
+                    <p className="text-xs text-slate-500 font-medium mt-0.5">Perubahan jenjang memerlukan persetujuan Admin (2-3 hari kerja).</p>
+                  </div>
                 </div>
                 <div className="flex flex-wrap gap-3">
                   {["SD", "SMP", "SMA", "UNIVERSITY"].map((level) => {
@@ -233,18 +263,19 @@ export default function EditProfilePage() {
                             : "bg-slate-50 text-slate-500 border-slate-200 hover:bg-amber-50 hover:border-amber-200 hover:text-amber-600"
                         }`}
                       >
-                        {level === "SD" ? "ðŸ§’ SD" : level === "SMP" ? "ðŸ“˜ SMP" : level === "SMA" ? "ðŸŽ’ SMA" : "ðŸŽ“ Universitas"}
+                        {level === "SD" ? "SD" : level === "SMP" ? "SMP" : level === "SMA" ? "SMA" : "Universitas"}
                       </button>
                     )
                   })}
                 </div>
                 <div className="bg-amber-50 border border-amber-200 p-4 rounded-2xl">
-                  <p className="text-xs font-black text-amber-800 uppercase tracking-wide mb-1">âš ï¸ Catatan Penting</p>
+                  <p className="text-xs font-black text-amber-800 uppercase tracking-wide mb-1">Catatan Penting</p>
                   <p className="text-[11px] text-amber-700 font-medium leading-relaxed">
                     Mengubah jenjang akan mengirimkan permohonan ke Admin WordIT. Status akun ditinjau ulang dalam <strong>maksimal 2-3 hari kerja</strong>.
                   </p>
                 </div>
-                <button type="submit" disabled={saving} className="w-full bg-amber-500 text-white font-black text-base py-3.5 rounded-2xl shadow-lg shadow-amber-100 hover:bg-amber-600 hover:-translate-y-0.5 transition-all disabled:opacity-50 active:scale-95">
+                <button type="submit" disabled={saving} className="w-full bg-amber-500 text-white font-black text-base py-3.5 rounded-2xl shadow-lg shadow-amber-100 hover:bg-amber-600 hover:-translate-y-0.5 transition-all disabled:opacity-50 active:scale-95 flex items-center justify-center gap-2">
+                  <GraduationCap size={16} />
                   {saving ? "Mengajukan..." : "Ajukan Perubahan Jenjang"}
                 </button>
               </div>
@@ -253,25 +284,31 @@ export default function EditProfilePage() {
             {/* -- KEAMANAN -- */}
             {activeSection === "security" && (
               <div className="space-y-5">
-                <div className="pb-4 border-b border-slate-100">
-                  <h2 className="text-lg font-black text-slate-800">ðŸ”’ Keamanan Akun</h2>
-                  <p className="text-xs text-slate-500 font-medium mt-0.5">Gunakan password yang kuat dan unik.</p>
+                <div className="pb-4 border-b border-slate-100 flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center text-slate-600">
+                    <Lock size={18} />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-black text-slate-800">Keamanan Akun</h2>
+                    <p className="text-xs text-slate-500 font-medium mt-0.5">Gunakan password yang kuat dan unik.</p>
+                  </div>
                 </div>
                 <Input type="password" label="Password Saat Ini" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} placeholder="Masukkan password lama Anda" />
                 <Input type="password" label="Password Baru" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Minimal 8 karakter" />
                 <Input type="password" label="Konfirmasi Password Baru" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Ulangi password baru" />
                 {newPassword && confirmPassword && newPassword !== confirmPassword && (
-                  <p className="text-xs text-rose-500 font-bold">âš ï¸ Password baru dan konfirmasi tidak cocok</p>
+                  <p className="text-xs text-rose-500 font-bold">Password baru dan konfirmasi tidak cocok</p>
                 )}
                 {newPassword.length >= 8 && newPassword === confirmPassword && (
-                  <p className="text-xs text-emerald-600 font-bold">âœ… Password valid!</p>
+                  <p className="text-xs text-emerald-600 font-bold">Password valid dan cocok</p>
                 )}
                 <button
                   type="submit"
                   disabled={saving || !currentPassword || !newPassword || newPassword !== confirmPassword}
-                  className="w-full bg-slate-900 text-white font-black text-base py-3.5 rounded-2xl shadow-lg shadow-slate-200 hover:bg-indigo-700 hover:-translate-y-0.5 transition-all disabled:opacity-40 disabled:cursor-not-allowed active:scale-95"
+                  className="w-full bg-slate-900 text-white font-black text-base py-3.5 rounded-2xl shadow-lg shadow-slate-200 hover:bg-indigo-700 hover:-translate-y-0.5 transition-all disabled:opacity-40 disabled:cursor-not-allowed active:scale-95 flex items-center justify-center gap-2"
                 >
-                  {saving ? "Memperbarui..." : "Perbarui Password ðŸ”’"}
+                  <Key size={16} />
+                  {saving ? "Memperbarui..." : "Perbarui Password"}
                 </button>
               </div>
             )}
