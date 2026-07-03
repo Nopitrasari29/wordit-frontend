@@ -9,6 +9,12 @@ import { ArrowLeft, User, Image, GraduationCap, Lock, Camera, Save, Key } from "
 
 type Section = "info" | "photo" | "education" | "security"
 
+/** Inisialen dari nama user (maks 2 huruf) */
+function getInitials(name?: string | null) {
+  if (!name) return "?"
+  return name.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase()
+}
+
 export default function EditProfilePage() {
   const { user, updateUser } = useAuth()
   const navigate = useNavigate()
@@ -18,13 +24,15 @@ export default function EditProfilePage() {
   // Section: Info Pribadi
   const [name, setName] = useState(user?.name || "")
   const [email, setEmail] = useState(user?.email || "")
-  const [phoneNumber, setPhoneNumber] = useState((user as any)?.phoneNumber || "")
-  const [schoolOrigin, setSchoolOrigin] = useState((user as any)?.schoolOrigin || "")
+  const [phoneNumber, setPhoneNumber] = useState(user?.phoneNumber || "")
+  const [schoolOrigin, setSchoolOrigin] = useState(user?.schoolOrigin || "")
 
   // Section: Foto & Bio
   const [bio, setBio] = useState(user?.profile?.bio || "")
   const [photo, setPhoto] = useState<File | null>(null)
-  const [preview, setPreview] = useState(getImageUrl(user?.photoUrl))
+  const [preview, setPreview] = useState<string | null>(
+    user?.photoUrl ? getImageUrl(user.photoUrl) : null
+  )
 
   // Section: Jenjang (Teacher)
   const [educationLevels, setEducationLevels] = useState<string[]>(user?.educationLevels || [])
@@ -36,14 +44,14 @@ export default function EditProfilePage() {
 
   const [saving, setSaving] = useState(false)
 
-  function handlePhoto(e: any) {
-    const file = e.target.files[0]
+  function handlePhoto(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
     if (!file) return
     setPhoto(file)
     setPreview(URL.createObjectURL(file))
   }
 
-  async function submit(e: any) {
+  async function submit(e: React.FormEvent) {
     e.preventDefault()
     if (activeSection === "security") {
       if (!currentPassword) return toast.error("Masukkan password saat ini!")
@@ -72,6 +80,11 @@ export default function EditProfilePage() {
       }
 
       updateUser(updatedData)
+
+      // Sinkronkan preview foto jika backend kirim photoUrl baru
+      if (updatedData?.photoUrl) {
+        setPreview(getImageUrl(updatedData.photoUrl))
+      }
 
       if (isLevelsChanged) {
         toast.success("Pengajuan perubahan jenjang berhasil dikirim ke Admin! (2-3 hari kerja)")
@@ -187,13 +200,26 @@ export default function EditProfilePage() {
                     <p className="text-xs text-slate-500 font-medium mt-0.5">Foto ditampilkan di seluruh platform WordIT.</p>
                   </div>
                 </div>
+
+                {/* Avatar Preview */}
                 <div className="flex flex-col items-center gap-4">
                   <div className="relative group cursor-pointer">
-                    <img
-                      src={preview}
-                      className="w-32 h-32 rounded-full object-cover border-4 border-indigo-50 shadow-lg group-hover:opacity-75 transition-all bg-slate-100"
-                      alt="Foto Profil"
-                    />
+                    {preview ? (
+                      <img
+                        src={preview}
+                        className="w-32 h-32 rounded-full object-cover border-4 border-indigo-50 shadow-lg group-hover:opacity-75 transition-all bg-slate-100"
+                        alt="Foto Profil"
+                        onError={() => setPreview(null)}
+                      />
+                    ) : (
+                      /* Initials fallback jika tidak ada foto */
+                      <div className="w-32 h-32 rounded-full border-4 border-indigo-50 shadow-lg bg-gradient-to-br from-indigo-400 to-violet-500 flex items-center justify-center group-hover:opacity-75 transition-all">
+                        <span className="text-white font-black text-3xl tracking-tight select-none">
+                          {getInitials(user?.name)}
+                        </span>
+                      </div>
+                    )}
+                    {/* Hover overlay */}
                     <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-full bg-black/40">
                       <div className="flex flex-col items-center gap-1 text-white">
                         <Camera size={20} />
@@ -202,16 +228,19 @@ export default function EditProfilePage() {
                     </div>
                     <input type="file" onChange={handlePhoto} className="absolute inset-0 opacity-0 cursor-pointer" accept="image/*" />
                   </div>
-                  {photo
-                    ? <p className="text-xs text-emerald-600 font-bold flex items-center gap-1.5">
-                        <span className="w-4 h-4 rounded-full bg-emerald-500 flex items-center justify-center">
-                          <svg width="8" height="8" viewBox="0 0 8 8" fill="none"><path d="M1 4l2 2 4-4" stroke="white" strokeWidth="1.5" strokeLinecap="round"/></svg>
-                        </span>
-                        Foto baru siap diunggah: {photo.name}
-                      </p>
-                    : <p className="text-[11px] text-slate-400 font-medium uppercase tracking-widest">Klik foto untuk mengganti</p>
-                  }
+
+                  {photo ? (
+                    <p className="text-xs text-emerald-600 font-bold flex items-center gap-1.5">
+                      <span className="w-4 h-4 rounded-full bg-emerald-500 flex items-center justify-center">
+                        <svg width="8" height="8" viewBox="0 0 8 8" fill="none"><path d="M1 4l2 2 4-4" stroke="white" strokeWidth="1.5" strokeLinecap="round"/></svg>
+                      </span>
+                      Foto baru siap diunggah: {photo.name}
+                    </p>
+                  ) : (
+                    <p className="text-[11px] text-slate-400 font-medium uppercase tracking-widest">Klik foto untuk mengganti</p>
+                  )}
                 </div>
+
                 <div className="flex flex-col gap-2">
                   <label className="text-sm font-black text-slate-700">Bio / Deskripsi Diri</label>
                   <textarea
@@ -263,7 +292,7 @@ export default function EditProfilePage() {
                             : "bg-slate-50 text-slate-500 border-slate-200 hover:bg-amber-50 hover:border-amber-200 hover:text-amber-600"
                         }`}
                       >
-                        {level === "SD" ? "SD" : level === "SMP" ? "SMP" : level === "SMA" ? "SMA" : "Universitas"}
+                        {level === "UNIVERSITY" ? "Universitas" : level}
                       </button>
                     )
                   })}

@@ -5,6 +5,7 @@ import { getImageUrl } from "../../utils/assets";
 import api from "../../pages/services/api";
 import socket from "../../hooks/useSocket";
 import { toast } from "react-hot-toast";
+import { UserCircle2, LogOut } from "lucide-react";
 
 export default function Navbar() {
   const { user, logout } = useAuth();
@@ -213,11 +214,21 @@ export default function Navbar() {
                 onClick={() => setOpen(!open)}
                 className="flex items-center gap-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 px-2 py-1.5 pr-4 rounded-full transition-colors"
               >
-                <img
-                  src={getImageUrl(user.photoUrl) || "/avatar.png"}
-                  className="w-8 h-8 rounded-full object-cover border-2 border-white shadow-sm bg-indigo-100"
-                  alt="Avatar"
-                />
+                {/* Avatar: foto jika ada, initials jika tidak */}
+                {user.photoUrl ? (
+                  <img
+                    src={getImageUrl(user.photoUrl)}
+                    className="w-8 h-8 rounded-full object-cover border-2 border-white shadow-sm bg-indigo-100"
+                    alt={user.name}
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+                  />
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center border-2 border-white shadow-sm shrink-0">
+                    <span className="text-white font-black text-[11px] tracking-tight">
+                      {user.name?.split(" ").map((w: string) => w[0]).slice(0, 2).join("").toUpperCase() || "?"}
+                    </span>
+                  </div>
+                )}
                 <span className="font-bold text-slate-700 text-sm hidden sm:block">
                   {user.name}
                 </span>
@@ -232,10 +243,8 @@ export default function Navbar() {
                       onClick={() => setOpen(false)}
                       className="flex items-center gap-3 px-4 py-3 rounded-2xl hover:bg-slate-50 transition-colors"
                     >
-                      <span className="text-lg">👤</span>
-                      <span className="font-bold text-slate-700 text-sm">
-                        Edit Profil
-                      </span>
+                      <UserCircle2 size={18} className="text-slate-500" />
+                      <span className="font-bold text-slate-700 text-sm">Profil Saya</span>
                     </Link>
                     <button
                       onClick={() => {
@@ -244,10 +253,8 @@ export default function Navbar() {
                       }}
                       className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl hover:bg-rose-50 transition-colors group"
                     >
-                      <span className="text-lg">🚪</span>
-                      <span className="font-bold text-slate-700 group-hover:text-rose-600 text-sm transition-colors">
-                        Logout
-                      </span>
+                      <LogOut size={18} className="text-slate-500 group-hover:text-rose-600 transition-colors" />
+                      <span className="font-bold text-slate-700 group-hover:text-rose-600 text-sm transition-colors">Logout</span>
                     </button>
                   </div>
                 </div>

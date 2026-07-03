@@ -3,7 +3,8 @@
  * Jika path kosong, mengembalikan avatar default.
  */
 export const getImageUrl = (path: string | null | undefined) => {
-  if (!path) return "/avatar.png";
+  if (!path) return "/avatar.svg";
+
   
   // Jika sudah berupa URL (misal dari Google OAuth atau external link), langsung kembalikan
   if (path.startsWith("http")) return path;
