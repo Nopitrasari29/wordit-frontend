@@ -294,82 +294,111 @@ export default function UserManagementPage() {
     );
   }
 
-  // ─── Export CSV ──────────────────────────────────────────────
-  const handleExportCSV = () => {
-    const headers = ["Nama", "Email", "Role", "Jenjang Pendidikan", "Status Approval", "Kuis Dibuat", "Poin XP", "Bio"];
-    const rows = users.map((u: any) => [
-      u.name, u.email, u.role,
-      (u.educationLevels || []).join("; "),
-      u.approvalStatus,
-      u._count?.gamesCreated ?? 0,
-      u.profile?.totalPoints ?? 0,
-      u.profile?.bio || "",
-    ]);
-    const csvContent = [headers, ...rows]
-      .map((e) => e.map((val) => `"${String(val).replace(/"/g, '""')}"`).join(","))
-      .join("\n");
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("download", `wordit-users-${new Date().toISOString().slice(0, 10)}.csv`);
-    link.style.visibility = "hidden";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    toast.success("Laporan pengguna berhasil diekspor ke CSV!");
+  // ─── CSV Import helpers ─────────────────────────────────────
+  /**
+   * Proper RFC 4180 CSV parser — handles:
+   * - Quoted fields: "Syamsul Alam, S.Sos.I." stays in ONE column
+   * - Escaped quotes: "" inside quoted fields
+   * - Trailing spaces / BOM
+   */
+  const parseCSVLine = (line: string): string[] => {
+    const result: string[] = [];
+    let i = 0;
+    while (i < line.length) {
+      // Skip leading spaces
+      while (i < line.length && line[i] === " ") i++;
+
+      if (line[i] === '"') {
+        // Quoted field
+        i++; // skip opening quote
+        let field = "";
+        while (i < line.length) {
+          if (line[i] === '"') {
+            if (line[i + 1] === '"') {
+              // Escaped quote ""
+              field += '"';
+              i += 2;
+            } else {
+              i++; // closing quote
+              break;
+            }
+          } else {
+            field += line[i++];
+          }
+        }
+        result.push(field.trim());
+        // Skip delimiter
+        while (i < line.length && line[i] === " ") i++;
+        if (line[i] === ",") i++;
+      } else {
+        // Unquoted field
+        const start = i;
+        while (i < line.length && line[i] !== ",") i++;
+        result.push(line.slice(start, i).trim());
+        if (line[i] === ",") i++;
+      }
+    }
+    return result;
   };
 
-  // ─── CSV Import helpers ──────────────────────────────────────
   const parseCSV = (text: string) => {
-    const lines = text.split(/\r?\n/).filter((l) => l.trim() !== "");
+    // Remove BOM if present
+    const cleanText = text.replace(/^\uFEFF/, "");
+    const lines = cleanText.split(/\r?\n/).filter((l) => l.trim() !== "");
     if (lines.length < 2) return [];
-    const headers = lines[0].split(",").map((h) => h.trim().toLowerCase());
+
+    const headers = parseCSVLine(lines[0]).map((h) => h.toLowerCase());
     const nameIdx    = headers.findIndex((h) => h.includes("nama") || h.includes("name"));
-    const emailIdx   = headers.findIndex((h) => h.includes("email") || h.includes("surel") || h.includes("pos"));
+    const emailIdx   = headers.findIndex((h) => h.includes("email") || h.includes("surel"));
     const passIdx    = headers.findIndex((h) => h.includes("pass") || h.includes("sandi"));
     const roleIdx    = headers.findIndex((h) => h.includes("role") || h.includes("peran"));
     const jenjangIdx = headers.findIndex((h) => h.includes("jenjang") || h.includes("level"));
-    // 🛠️ CRITICAL FIX: Tambah deteksi kolom Asal Sekolah & Nomor HP
     const schoolIdx  = headers.findIndex((h) => h.includes("sekolah") || h.includes("school") || h.includes("institusi") || h.includes("asal"));
     const phoneIdx   = headers.findIndex((h) => h.includes("hp") || h.includes("phone") || h.includes("telp") || h.includes("wa") || h.includes("nomor"));
+
     const parsedUsers: any[] = [];
     for (let i = 1; i < lines.length; i++) {
-      const cols = lines[i].split(",").map((c) => c.trim().replace(/^["']|["']$/g, ""));
-      const name = nameIdx !== -1 ? cols[nameIdx] : "";
-      const email = emailIdx !== -1 ? cols[emailIdx] : "";
-      const passwordRaw = passIdx !== -1 ? cols[passIdx] : "";
-      let rawRole = roleIdx !== -1 ? cols[roleIdx]?.toUpperCase() : "STUDENT";
+      const cols = parseCSVLine(lines[i]);
+      const name = nameIdx !== -1 ? cols[nameIdx] ?? "" : "";
+      const email = emailIdx !== -1 ? cols[emailIdx] ?? "" : "";
+      const passwordRaw = passIdx !== -1 ? cols[passIdx] ?? "" : "";
+      let rawRole = roleIdx !== -1 ? (cols[roleIdx] ?? "").toUpperCase() : "STUDENT";
       if (rawRole.includes("GURU") || rawRole.includes("TEACHER")) rawRole = "TEACHER";
-      else rawRole = "STUDENT";
-      const rawJenjang = jenjangIdx !== -1 ? cols[jenjangIdx] : "";
+      else if (!rawRole || rawRole === "") rawRole = "STUDENT";
+      else rawRole = rawRole.includes("STUDENT") ? "STUDENT" : "TEACHER";
+
+      const rawJenjang = jenjangIdx !== -1 ? (cols[jenjangIdx] ?? "") : "";
       const educationLevels = rawJenjang
         ? rawJenjang.split(";").map((l) => l.trim().toUpperCase()).filter((l) => ["SD", "SMP", "SMA", "UNIVERSITY"].includes(l))
         : [];
-      // 🛠️ CRITICAL FIX: Baca schoolOrigin & phoneNumber (boleh kosong — opsional untuk bulk import)
-      const schoolOrigin  = schoolIdx !== -1 ? (cols[schoolIdx] || "") : "";
-      const phoneNumber   = phoneIdx  !== -1 ? (cols[phoneIdx]  || "") : "";
-      if (name && email) parsedUsers.push({ name, email, passwordRaw, role: rawRole, educationLevels, schoolOrigin, phoneNumber });
+      const schoolOrigin = schoolIdx !== -1 ? (cols[schoolIdx] ?? "") : "";
+      const phoneNumber  = phoneIdx  !== -1 ? (cols[phoneIdx]  ?? "") : "";
+
+      if (name && email) {
+        parsedUsers.push({ name, email, passwordRaw, role: rawRole, educationLevels, schoolOrigin, phoneNumber });
+      }
     }
     return parsedUsers;
   };
 
   const handleDownloadTemplate = () => {
-    // 🛠️ CRITICAL FIX: Template diperluas sesuai field registrasi (HP opsional untuk bulk import)
+    // Template pakai quoted fields agar nama dengan koma (gelar) tetap 1 kolom
     const csvContent = [
-      "Nama,Email,Password,Role,Jenjang,Asal Sekolah,Nomor HP",
-      "Budi Santoso,budi@wordit.com,password123,STUDENT,,SMAN 1 Surabaya,(opsional)",
-      "Bu Sari,sari@wordit.com,password123,TEACHER,SD;SMP,SDIT Al-Hikmah,(opsional)",
-    ].join("\n");
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      'Nama,Email,Password,Role,Jenjang,AsalSekolah,NomorHP',
+      '"Budi Santoso, S.Pd.",budi@wordit.com,password123,TEACHER,SD;SMP,SD Luqman Al Hakim,081234567890',
+      'Siti Aminah,siti@wordit.com,password123,TEACHER,SMA,SMA Negeri 1 Surabaya,',
+      'Andi Pratama,andi@wordit.com,password123,STUDENT,,,',
+    ].join('\n');
+    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("download", "wordit-import-template.csv");
-    link.style.visibility = "hidden";
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'wordit-import-template.csv');
+    link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    toast.success('Template CSV berhasil diunduh!');
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -381,13 +410,22 @@ export default function UserManagementPage() {
       const text = event.target?.result as string;
       try {
         const parsed = parseCSV(text);
-        if (parsed.length === 0) { toast.error("Gagal membaca data dari file CSV. Periksa format header."); return; }
+        if (parsed.length === 0) {
+          toast.error("Gagal membaca data. Pastikan header CSV sesuai: Nama, Email, Password, Role, Jenjang, AsalSekolah, NomorHP");
+          return;
+        }
         setImportUsers(parsed);
-        toast.success(`Berhasil memuat ${parsed.length} baris data CSV!`);
-      } catch { toast.error("Gagal mem-parsing berkas CSV."); }
+        const teacherCount = parsed.filter((u: any) => u.role === "TEACHER").length;
+        const studentCount = parsed.filter((u: any) => u.role === "STUDENT").length;
+        toast.success(`Berhasil memuat ${parsed.length} pengguna (${teacherCount} guru, ${studentCount} siswa)!`);
+      } catch {
+        toast.error("Gagal mem-parsing berkas CSV. Pastikan file tidak rusak.");
+      }
     };
-    reader.readAsText(file);
+    // Baca dengan UTF-8 untuk handle BOM dari Excel
+    reader.readAsText(file, "UTF-8");
   };
+
 
   const handleBulkImportSubmit = async () => {
     if (importUsers.length === 0) return;
