@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import ProtectedRoute from "./ProtectedRoute";
 import MainLayout from "../components/layout/MainLayout";
 import AdminLayout from "../components/layout/AdminLayout";
@@ -67,7 +67,8 @@ export default function Router() {
           {/* ================= GENERAL PROTECTED (Auth Only) ================= */}
           <Route element={<ProtectedRoute />}>
             <Route path="/profile" element={<ProfilePage />} />
-            <Route path="/profile/edit" element={<EditProfilePage />} />
+            <Route path="/profile/edit" element={<Navigate to="/settings" replace />} />
+            <Route path="/settings" element={<EditProfilePage />} />
           </Route>
 
           {/* ================= STUDENT ROUTES ================= */}

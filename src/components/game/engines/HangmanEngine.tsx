@@ -103,7 +103,7 @@ export default function HangmanEngine({
 
             submitAnswer(realGameId, currentIndex, word, earnedPoints).catch(() => { });
         } else {
-            submitAnswer(realGameId, currentIndex, status === 'timeout' ? "TIMEOUT" : "WRONG", score).catch(() => { });
+            submitAnswer(realGameId, currentIndex, status === 'timeout' ? "TIMEOUT" : "WRONG", 0).catch(() => { });
         }
 
         const currentAnswerDetail = {
@@ -146,7 +146,7 @@ export default function HangmanEngine({
 
         const finalPayload = {
             scoreValue: finalScore,
-            maxScore: quizWords.length * 150,
+            maxScore: maxScoreConfig || quizWords.length * 100,
             accuracy,
             timeSpent: totalTimeRef.current,
             answersDetail: finalBreakdown,

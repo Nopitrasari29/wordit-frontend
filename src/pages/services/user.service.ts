@@ -12,7 +12,10 @@ export async function updateProfile(data: {
   photo?: File;
   bio?: string;
   // 🛠️ FIX TYPE: Tambahkan properti array jenjang pendidikan mengajar guru disini
-  educationLevels?: string[]; 
+  educationLevels?: string[];
+  // 🛠️ CRITICAL FIX: Tambahkan field registrasi yang sebelumnya tidak bisa diedit
+  phoneNumber?: string;
+  schoolOrigin?: string;
 }) {
   const formData = new FormData();
 
@@ -27,6 +30,9 @@ export async function updateProfile(data: {
   if (data.educationLevels) {
     formData.append("educationLevels", JSON.stringify(data.educationLevels));
   }
+  // 🛠️ CRITICAL FIX: Append phoneNumber & schoolOrigin agar bisa diedit di halaman settings
+  if (data.phoneNumber !== undefined) formData.append("phoneNumber", data.phoneNumber);
+  if (data.schoolOrigin !== undefined) formData.append("schoolOrigin", data.schoolOrigin);
 
   const res = await api.patch("/users/profile", formData, {
     headers: { "Content-Type": "multipart/form-data" },

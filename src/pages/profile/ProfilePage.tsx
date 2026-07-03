@@ -116,16 +116,40 @@ export default function ProfilePage() {
         <h1 className="text-4xl md:text-5xl font-black text-slate-800 mb-2 tracking-tight">
           {user?.name}
         </h1>
-        <p className="text-slate-500 font-bold mb-10 text-lg leading-relaxed">
+        <p className="text-slate-500 font-bold mb-8 text-lg leading-relaxed">
           {user?.email}
         </p>
 
+        {/* INFO CARD DETAIL */}
+        <div className="max-w-md mx-auto bg-slate-50 border border-slate-100 rounded-3xl p-6 mb-10 flex flex-col gap-4 text-left shadow-inner">
+          <div className="flex justify-between items-center border-b border-slate-200/60 pb-3">
+            <span className="text-xs font-black text-slate-400 uppercase tracking-wider">Asal Sekolah</span>
+            <span className="text-sm font-bold text-slate-700">{user?.schoolOrigin || "Belum diisi"}</span>
+          </div>
+          <div className="flex justify-between items-center border-b border-slate-200/60 pb-3">
+            <span className="text-xs font-black text-slate-400 uppercase tracking-wider">No. HP / WhatsApp</span>
+            <span className="text-sm font-bold text-slate-700">
+              {user?.phoneNumber ? (user.phoneNumber.length > 8 ? `${user.phoneNumber.slice(0, 4)}****${user.phoneNumber.slice(-4)}` : user.phoneNumber) : "Belum diisi"}
+            </span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-xs font-black text-slate-400 uppercase tracking-wider">Status Akun</span>
+            <span className={`text-[11px] font-black uppercase tracking-wider px-3 py-1 rounded-full border ${
+              user?.approvalStatus === "APPROVED"
+                ? "bg-emerald-50 border-emerald-200 text-emerald-600"
+                : "bg-amber-50 border-amber-200 text-amber-600"
+            }`}>
+              {user?.approvalStatus || "PENDING"}
+            </span>
+          </div>
+        </div>
+
         <div className="flex flex-col sm:flex-row justify-center items-center gap-4 mb-16">
           <Link
-            to="/profile/edit"
+            to="/settings"
             className="bg-slate-950 text-white font-black px-12 py-4 rounded-full shadow-lg shadow-slate-200 hover:bg-indigo-600 hover:-translate-y-1 transition-all active:scale-95"
           >
-            Edit Profile ⚙️
+            Pengaturan Akun ⚙️
           </Link>
 
           {(user?.role === "TEACHER" || user?.role === "SCHOOL_ADMIN") && (

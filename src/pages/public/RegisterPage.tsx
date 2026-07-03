@@ -191,7 +191,7 @@ export default function RegisterPage() {
             </div>
             
             <p className="text-[10px] text-slate-400 font-bold ml-2 text-left -mt-2">
-              📋 Asal sekolah dan nomor HP wajib diisi secara akurat untuk verifikasi oleh Admin Sekolah.
+              📋 Asal sekolah dan nomor HP/WhatsApp wajib diisi secara akurat untuk keperluan verifikasi akun.
             </p>
 
             {/* Row 4: Jenjang Pendidikan */}

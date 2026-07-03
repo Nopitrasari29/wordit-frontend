@@ -325,11 +325,14 @@ export default function UserManagementPage() {
     const lines = text.split(/\r?\n/).filter((l) => l.trim() !== "");
     if (lines.length < 2) return [];
     const headers = lines[0].split(",").map((h) => h.trim().toLowerCase());
-    const nameIdx = headers.findIndex((h) => h.includes("nama") || h.includes("name"));
-    const emailIdx = headers.findIndex((h) => h.includes("email") || h.includes("surel") || h.includes("pos"));
-    const passIdx = headers.findIndex((h) => h.includes("pass") || h.includes("sandi"));
-    const roleIdx = headers.findIndex((h) => h.includes("role") || h.includes("peran"));
+    const nameIdx    = headers.findIndex((h) => h.includes("nama") || h.includes("name"));
+    const emailIdx   = headers.findIndex((h) => h.includes("email") || h.includes("surel") || h.includes("pos"));
+    const passIdx    = headers.findIndex((h) => h.includes("pass") || h.includes("sandi"));
+    const roleIdx    = headers.findIndex((h) => h.includes("role") || h.includes("peran"));
     const jenjangIdx = headers.findIndex((h) => h.includes("jenjang") || h.includes("level"));
+    // 🛠️ CRITICAL FIX: Tambah deteksi kolom Asal Sekolah & Nomor HP
+    const schoolIdx  = headers.findIndex((h) => h.includes("sekolah") || h.includes("school") || h.includes("institusi") || h.includes("asal"));
+    const phoneIdx   = headers.findIndex((h) => h.includes("hp") || h.includes("phone") || h.includes("telp") || h.includes("wa") || h.includes("nomor"));
     const parsedUsers: any[] = [];
     for (let i = 1; i < lines.length; i++) {
       const cols = lines[i].split(",").map((c) => c.trim().replace(/^["']|["']$/g, ""));
@@ -343,13 +346,21 @@ export default function UserManagementPage() {
       const educationLevels = rawJenjang
         ? rawJenjang.split(";").map((l) => l.trim().toUpperCase()).filter((l) => ["SD", "SMP", "SMA", "UNIVERSITY"].includes(l))
         : [];
-      if (name && email) parsedUsers.push({ name, email, passwordRaw, role: rawRole, educationLevels });
+      // 🛠️ CRITICAL FIX: Baca schoolOrigin & phoneNumber (boleh kosong — opsional untuk bulk import)
+      const schoolOrigin  = schoolIdx !== -1 ? (cols[schoolIdx] || "") : "";
+      const phoneNumber   = phoneIdx  !== -1 ? (cols[phoneIdx]  || "") : "";
+      if (name && email) parsedUsers.push({ name, email, passwordRaw, role: rawRole, educationLevels, schoolOrigin, phoneNumber });
     }
     return parsedUsers;
   };
 
   const handleDownloadTemplate = () => {
-    const csvContent = "Nama,Email,Password,Role,Jenjang\nBudi Raharjo,budi@wordit.com,password123,STUDENT,\nBu Sari,sari@wordit.com,password123,TEACHER,SD;SMP";
+    // 🛠️ CRITICAL FIX: Template diperluas sesuai field registrasi (HP opsional untuk bulk import)
+    const csvContent = [
+      "Nama,Email,Password,Role,Jenjang,Asal Sekolah,Nomor HP",
+      "Budi Santoso,budi@wordit.com,password123,STUDENT,,SMAN 1 Surabaya,(opsional)",
+      "Bu Sari,sari@wordit.com,password123,TEACHER,SD;SMP,SDIT Al-Hikmah,(opsional)",
+    ].join("\n");
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { toast } from "react-hot-toast";
-import { generateGameWithAI } from "../../pages/services/ai.service";
+import { generateGameWithAI, extractTextFromFile } from "../../pages/services/ai.service";
 
 interface AIProps {
   level: string;
@@ -22,6 +22,10 @@ export default function AIQuizGenerator({
   const [topic, setTopic] = useState(() => {
     return sessionStorage.getItem(`${cacheKey}_topic`) || "";
   });
+  const [inputMode, setInputMode] = useState<"topic" | "document">("topic");
+  const [documentText, setDocumentText] = useState("");
+  const [uploadedFileName, setUploadedFileName] = useState("");
+  const [extracting, setExtracting] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showGuide, setShowGuide] = useState(false);
   const [itemsList, setItemsList] = useState<any[]>(() => {
@@ -75,13 +79,55 @@ export default function AIQuizGenerator({
     return items;
   };
 
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Ukuran file maksimal 5 MB!");
+      return;
+    }
+
+    setUploadedFileName(file.name);
+
+    if (file.name.endsWith(".txt") || file.name.endsWith(".md")) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const text = event.target?.result as string;
+        setDocumentText(text);
+        toast.success(`Berhasil memuat file: ${file.name}`);
+      };
+      reader.readAsText(file);
+    } else {
+      extractTextFromBackendFile(file);
+    }
+  };
+
+  const extractTextFromBackendFile = async (file: File) => {
+    setExtracting(true);
+    try {
+      const extractedText = await extractTextFromFile(file);
+      setDocumentText(extractedText);
+      toast.success(`Berhasil mengekstrak teks dari: ${file.name} 🎉`);
+    } catch (err: any) {
+      toast.error(err.message || "Gagal mengunggah file untuk ekstraksi teks.");
+      setUploadedFileName("");
+      setDocumentText("");
+    } finally {
+      setExtracting(false);
+    }
+  };
+
   async function generate() {
-    if (topic.length < 3) return toast.error("Topik minimal 3 huruf ya!");
+    const finalTopic = inputMode === "document" ? documentText : topic;
+    if (finalTopic.length < 3) {
+      return toast.error(inputMode === "document" ? "Konten dokumen minimal 3 huruf ya!" : "Topik kuis minimal 3 huruf ya!");
+    }
     setLoading(true);
     setCountWarning(null);
     try {
       const response = await generateGameWithAI({
-        topic,
+        topic: finalTopic,
         educationLevel: level as any,
         templateType: template as any,
         count: requestedCount,
@@ -89,7 +135,6 @@ export default function AIQuizGenerator({
       const items = getNormalizedItems(response);
       setItemsList(items);
 
-      // ✅ FE-17: Validasi strict count — tampilkan peringatan jika soal kurang
       if (items.length < requestedCount) {
         setCountWarning(
           `AI hanya menghasilkan ${items.length} soal dari ${requestedCount} yang diminta. Kamu tetap bisa menambahkan soal secara bertahap atau menggunakan soal ini.`,
@@ -108,13 +153,14 @@ export default function AIQuizGenerator({
   }
 
   async function generateMore() {
+    const finalTopic = inputMode === "document" ? documentText : topic;
     const missingCount = requestedCount - itemsList.length;
     if (missingCount <= 0) return;
 
     setLoading(true);
     try {
       const response = await generateGameWithAI({
-        topic,
+        topic: finalTopic,
         educationLevel: level as any,
         templateType: template as any,
         count: missingCount,
@@ -213,14 +259,93 @@ export default function AIQuizGenerator({
           </p>
         </div>
 
+        {/* TAB TOGGLE: Ketik Topik vs Upload Dokumen */}
+        <div className="flex gap-2 mb-6 bg-slate-800/40 p-1.5 rounded-2xl border border-slate-700/30 max-w-sm">
+          <button
+            type="button"
+            onClick={() => setInputMode("topic")}
+            className={`flex-1 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider transition-all ${
+              inputMode === "topic"
+                ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/20"
+                : "text-slate-400 hover:text-white"
+            }`}
+          >
+            📝 Ketik Topik
+          </button>
+          <button
+            type="button"
+            onClick={() => setInputMode("document")}
+            className={`flex-1 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 ${
+              inputMode === "document"
+                ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/20"
+                : "text-slate-400 hover:text-white"
+            }`}
+          >
+            📄 Upload Dokumen
+          </button>
+        </div>
+
         <div className="flex flex-col gap-4 mb-10">
-          <textarea
-            placeholder="Ketik topik atau prompt kuis (Misal: Ekosistem Laut, rantai makanan, dan terumbu karang)..."
-            value={topic}
-            onChange={(e) => setTopic(e.target.value)}
-            rows={3}
-            className="w-full bg-slate-800/40 backdrop-blur-md border border-slate-700/50 focus:border-indigo-500 rounded-2xl p-5 outline-none transition-all font-bold text-base text-white resize-none"
-          />
+          {inputMode === "topic" ? (
+            <textarea
+              placeholder="Ketik topik atau prompt kuis (Misal: Ekosistem Laut, rantai makanan, dan terumbu karang)..."
+              value={topic}
+              onChange={(e) => setTopic(e.target.value)}
+              rows={3}
+              className="w-full bg-slate-800/40 backdrop-blur-md border border-slate-700/50 focus:border-indigo-500 rounded-2xl p-5 outline-none transition-all font-bold text-base text-white resize-none"
+            />
+          ) : (
+            <div className="space-y-4 text-left">
+              <div className="relative border-2 border-dashed border-slate-700 rounded-2xl p-8 text-center hover:border-indigo-500 transition-all bg-slate-800/20">
+                <input
+                  type="file"
+                  onChange={handleFileUpload}
+                  className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                  accept=".txt,.md,.pdf,.docx,.jpg,.jpeg,.png"
+                  disabled={extracting}
+                />
+                <div className="flex flex-col items-center gap-3">
+                  <span className="text-3xl">📥</span>
+                  {uploadedFileName ? (
+                    <div>
+                      <p className="text-sm font-black text-emerald-400">File terpilih: {uploadedFileName}</p>
+                      <p className="text-[10px] text-slate-400 mt-1">Klik atau drag file baru untuk mengganti</p>
+                    </div>
+                  ) : (
+                    <div>
+                      <p className="text-sm font-bold text-slate-300">Pilih atau Seret Dokumen ke Sini</p>
+                      <p className="text-[10px] text-slate-500 mt-1">Format: PDF, Word (docx), Images (jpg, png), Text (txt, md) • Maks 5MB</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {extracting && (
+                <div className="flex items-center justify-center gap-2 py-3 bg-indigo-500/10 border border-indigo-500/20 rounded-xl">
+                  <span className="w-4 h-4 border-2 border-indigo-400 border-t-white rounded-full animate-spin" />
+                  <span className="text-xs font-black text-indigo-300 uppercase tracking-wider">Mengekstrak materi dokumen menggunakan AI...</span>
+                </div>
+              )}
+
+              {documentText && (
+                <div className="bg-slate-800/40 border border-slate-700/50 rounded-2xl p-4">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Preview Materi Ter-ekstrak</span>
+                    <button
+                      type="button"
+                      onClick={() => { setDocumentText(""); setUploadedFileName(""); }}
+                      className="text-[10px] font-black text-rose-400 hover:text-rose-300 uppercase tracking-widest"
+                    >
+                      Hapus 🗑️
+                    </button>
+                  </div>
+                  <p className="text-xs font-medium text-slate-300 line-clamp-4 leading-relaxed whitespace-pre-line italic">
+                    "{documentText}"
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
           <div className="flex flex-col sm:flex-row justify-between items-center gap-4 w-full">
             <div className="flex items-center gap-3 bg-slate-800/60 border border-slate-700/40 px-5 py-3 rounded-2xl w-full sm:w-auto">
               <label className="text-xs font-black text-slate-300 uppercase tracking-wider whitespace-nowrap">

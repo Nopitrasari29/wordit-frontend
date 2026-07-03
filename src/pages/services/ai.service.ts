@@ -42,4 +42,12 @@ export const getFeedbackForQuestion = async (
     response.data.data?.feedback ||
     "AI belum memberikan penjelasan untuk soal ini."
   );
+}// ✅ AI-DOCS-UPLOAD: Ekstraksi teks dari file dokumen (PDF, Word, Image, Txt)
+export const extractTextFromFile = async (file: File): Promise<string> => {
+  const formData = new FormData();
+  formData.append("file", file);
+  const response = await api.post("/ai/extract-text", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return response.data.data.text;
 };

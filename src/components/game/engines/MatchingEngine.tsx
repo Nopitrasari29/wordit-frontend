@@ -151,9 +151,10 @@ export default function MatchingEngine(props: { data: any, onGameOver?: any, onI
         const correctCount = finalMatches.filter(m => m.isCorrect).length;
         const realAccuracy = pairs.length > 0 ? Math.round((correctCount / pairs.length) * 100) : 0;
 
+        const maxScoreConfig = gameConfig?.maxScore ? Number(gameConfig.maxScore) : 0;
         const payload = {
             scoreValue: finalScore,
-            maxScore: pairs.length * 100,
+            maxScore: maxScoreConfig || pairs.length * 100,
             accuracy: realAccuracy,
             timeSpent: totalTimeSpent,
             answersDetail: completeHistory,

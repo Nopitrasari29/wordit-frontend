@@ -17,6 +17,7 @@ export default function MainLayout() {
         location.pathname.startsWith("/play/") ||
         location.pathname === "/profile" ||
         location.pathname === "/profile/edit" ||
+        location.pathname === "/settings" ||
         location.pathname === "/teacher/projects" ||
         location.pathname.startsWith("/teacher/create") ||
         location.pathname.startsWith("/teacher/edit") ||

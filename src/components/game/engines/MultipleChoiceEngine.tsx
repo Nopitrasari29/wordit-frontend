@@ -127,7 +127,7 @@ export default function MultipleChoiceEngine({ data, onGameOver, onIntermission 
 
         const payload = {
             scoreValue: finalScore,
-            maxScore: questions.length * 100,
+            maxScore: Number(gameConfig?.maxScore) || questions.length * 100,
             accuracy: realAccuracy,
             timeSpent: totalTimeSpent,
             answersDetail: completeHistory,
