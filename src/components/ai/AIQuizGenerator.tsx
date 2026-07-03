@@ -83,8 +83,8 @@ export default function AIQuizGenerator({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("Ukuran file maksimal 5 MB!");
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("Ukuran file maksimal 10 MB!");
       return;
     }
 
