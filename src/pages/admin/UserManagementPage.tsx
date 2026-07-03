@@ -294,6 +294,35 @@ export default function UserManagementPage() {
     );
   }
 
+  // ─── Export CSV ──────────────────────────────────────────────
+  const handleExportCSV = () => {
+    const headers = ["Nama", "Email", "Role", "Jenjang Pendidikan", "Asal Sekolah", "Status Approval", "Kuis Dibuat", "Poin XP", "Bio"];
+    const rows = users.map((u: any) => [
+      u.name,
+      u.email,
+      u.role,
+      (u.educationLevels || []).join("; "),
+      u.schoolOrigin || "",
+      u.approvalStatus,
+      u._count?.gamesCreated ?? 0,
+      u.profile?.totalPoints ?? 0,
+      u.profile?.bio || "",
+    ]);
+    const csvContent = [headers, ...rows]
+      .map((e) => e.map((val) => `"${String(val).replace(/"/g, '""')}"`).join(","))
+      .join("\n");
+    const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `wordit-users-${new Date().toISOString().slice(0, 10)}.csv`);
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success("Laporan pengguna berhasil diekspor ke CSV!");
+  };
+
   // ─── CSV Import helpers ─────────────────────────────────────
   /**
    * Proper RFC 4180 CSV parser — handles:
