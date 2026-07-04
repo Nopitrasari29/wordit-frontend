@@ -301,7 +301,7 @@ export default function AIQuizGenerator({
                   type="file"
                   onChange={handleFileUpload}
                   className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                  accept=".txt,.md,.pdf,.docx,.jpg,.jpeg,.png"
+                  accept=".txt,.md,.pdf,.docx,.jpg,.jpeg,.png,.webp"
                   disabled={extracting}
                 />
                 <div className="flex flex-col items-center gap-3">
@@ -314,7 +314,7 @@ export default function AIQuizGenerator({
                   ) : (
                     <div>
                       <p className="text-sm font-bold text-slate-300">Pilih atau Seret Dokumen ke Sini</p>
-                      <p className="text-[10px] text-slate-500 mt-1">Format: PDF, Word (docx), Images (jpg, png), Text (txt, md) • Maks 5MB</p>
+                      <p className="text-[10px] text-slate-500 mt-1">Format: PDF, Word (docx), Gambar (jpg, png, webp), Teks (txt, md) • Maks 10MB</p>
                     </div>
                   )}
                 </div>
