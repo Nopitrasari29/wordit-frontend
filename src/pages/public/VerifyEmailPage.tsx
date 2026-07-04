@@ -19,7 +19,7 @@ export default function VerifyEmailPage() {
           return;
         }
 
-        const apiUrl = (import.meta as unknown as { env: { VITE_API_URL?: string } }).env.VITE_API_URL || "http://localhost:3000";
+        const apiUrl = (import.meta as unknown as { env: { VITE_API_URL?: string } }).env.VITE_API_URL || "https://wordit.it-its.id";
         const response = await fetch(
           `${apiUrl}/api/auth/verify-email?token=${token}`
         );
