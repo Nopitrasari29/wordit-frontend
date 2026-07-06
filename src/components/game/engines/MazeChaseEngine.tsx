@@ -17,7 +17,12 @@ export default function MazeChaseEngine({ data, onGameOver, onIntermission }: { 
     const [lives, setLives] = useState(3);
     const [grid, setGrid] = useState<any[][]>([]);
     const [history, setHistory] = useState<any[]>([]);
-    const [timeLeft, setTimeLeft] = useState(gameConfig?.timeLimit ? Number(gameConfig.timeLimit) : 15);
+    const [isFinished, setIsFinished] = useState(false);
+    const [timeLeft, setTimeLeft] = useState(() => {
+        const gameLimit = gameConfig?.timeLimit ? Number(gameConfig.timeLimit) : 0;
+        return gameLimit > 0 ? gameLimit : questions.length * 20;
+    });
+    const questionStartTimeRef = useRef(gameConfig?.timeLimit ? Number(gameConfig.timeLimit) : questions.length * 20);
 
     const isBusy = useRef(false);
     const isSavingRef = useRef(false);
@@ -63,9 +68,9 @@ export default function MazeChaseEngine({ data, onGameOver, onIntermission }: { 
 
         setGrid(newGrid);
         setPlayerPos({ r: 2, c: 2 });
-        setTimeLeft(data?.gameJson?.timeLimit ? Number(data.gameJson.timeLimit) : 15);
+        questionStartTimeRef.current = timeLeft;
         isBusy.current = false;
-    }, [currentQ, questions, data]);
+    }, [currentQ, questions, data, timeLeft]);
 
     useEffect(() => { initLevel(); }, [initLevel]);
 
@@ -73,6 +78,42 @@ export default function MazeChaseEngine({ data, onGameOver, onIntermission }: { 
     useEffect(() => {
         timeLeftRef.current = timeLeft;
     }, [timeLeft]);
+
+    const triggerFinish = useCallback(async (finalScore: number, finalHistory: any[]) => {
+        if (timerRef.current) clearInterval(timerRef.current);
+        if (isSavingRef.current) return;
+        isSavingRef.current = true;
+        setIsFinished(true);
+        const correctCount = finalHistory.filter(h => h.isCorrect).length;
+        const totalQs = questions.length;
+        const accuracy = totalQs > 0 ? Math.round((correctCount / totalQs) * 100) : 0;
+        const timeSpent = Math.round((Date.now() - startTimeRef.current) / 1000);
+        const maxScoreConfig = gameConfig?.maxScore ? Number(gameConfig.maxScore) : 0;
+
+        const payload = {
+            scoreValue: finalScore,
+            maxScore: maxScoreConfig || totalQs * 100,
+            accuracy,
+            timeSpent,
+            answersDetail: finalHistory
+        };
+
+        sessionStorage.setItem("lastScore", finalScore.toString());
+        sessionStorage.setItem("lastAccuracy", accuracy.toString());
+        sessionStorage.setItem("lastBreakdown", JSON.stringify(finalHistory));
+
+        if (onGameOver) {
+            onGameOver(finalScore, accuracy, finalHistory);
+            return;
+        }
+
+        try {
+            await finishGame(realGameId, payload);
+        } catch (e) {
+            console.error("Gagal simpan skor akhir");
+        }
+        navigate("/student/result", { state: payload });
+    }, [realGameId, questions.length, gameConfig, onGameOver, navigate]);
 
     const handleAction = useCallback(async (type: "PORTAL" | "TIMEOUT", cell: any) => {
         if (isBusy.current) return;
@@ -117,7 +158,7 @@ export default function MazeChaseEngine({ data, onGameOver, onIntermission }: { 
             selectedAnswer: isCorrect ? cell?.text : null,
             question: questions[currentIdx]?.question || `Soal ${currentIdx + 1}`,
             isCorrect, 
-            time: (gameConfig?.timeLimit ? Number(gameConfig.timeLimit) : 15) - timeLeftRef.current,
+            time: Math.max(0, questionStartTimeRef.current - timeLeft),
             pointsEarned: earnedPoints
         };
         const updatedHistory = [...history, currentHistoryItem];
@@ -126,30 +167,7 @@ export default function MazeChaseEngine({ data, onGameOver, onIntermission }: { 
         transitionRef.current = setTimeout(() => {
             const isGameOver = newLives <= 0 || currentIdx + 1 >= questions.length;
             if (isGameOver) {
-                if (isSavingRef.current) return;
-                isSavingRef.current = true;
-                const correctCount = updatedHistory.filter(h => h.isCorrect).length;
-                const accuracy = totalQs > 0 ? Math.round((correctCount / totalQs) * 100) : 0;
-                const timeSpent = Math.round((Date.now() - startTimeRef.current) / 1000);
-                const payload = {
-                    scoreValue: newScore,
-                    maxScore: maxScoreConfig || totalQs * 100,
-                    accuracy,
-                    timeSpent,
-                    answersDetail: updatedHistory
-                };
-
-                sessionStorage.setItem("lastScore", newScore.toString());
-                sessionStorage.setItem("lastAccuracy", accuracy.toString());
-                sessionStorage.setItem("lastBreakdown", JSON.stringify(updatedHistory));
-
-                if (onGameOver) {
-                    onGameOver(newScore, accuracy, updatedHistory);
-                    return;
-                }
-
-                finishGame(realGameId, payload).catch(() => { });
-                navigate("/student/result", { state: payload });
+                triggerFinish(newScore, updatedHistory);
             } else {
                 if (onIntermission) onIntermission();
                 setCurrentIdx(prev => prev + 1);
@@ -170,14 +188,14 @@ export default function MazeChaseEngine({ data, onGameOver, onIntermission }: { 
             setTimeLeft((prev) => {
                 if (prev <= 1) {
                     if (timerRef.current) clearInterval(timerRef.current);
-                    handleActionRef.current("TIMEOUT", null);
+                    triggerFinish(score, history);
                     return 0;
                 }
                 return prev - 1;
             });
         }, 1000);
         return () => { if (timerRef.current) clearInterval(timerRef.current); };
-    }, [currentIdx]);
+    }, [score, history, triggerFinish]);
 
     const movePlayer = useCallback((dr: number, dc: number) => {
         if (isBusy.current || lives <= 0) return;
@@ -205,6 +223,15 @@ export default function MazeChaseEngine({ data, onGameOver, onIntermission }: { 
         window.addEventListener("keydown", handleKeyDown);
         return () => window.removeEventListener("keydown", handleKeyDown);
     }, [movePlayer]);
+
+    if (isFinished) {
+        return (
+            <div className="flex flex-col items-center justify-center p-10 text-indigo-400 font-black italic">
+                <div className="animate-spin text-4xl mb-4">🔄</div>
+                Menghitung skor akhir...
+            </div>
+        );
+    }
 
     if (!currentQ) return null;
 

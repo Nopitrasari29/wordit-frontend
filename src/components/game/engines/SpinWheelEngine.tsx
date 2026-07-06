@@ -19,7 +19,11 @@ export default function SpinWheelEngine({ data, onIntermission, onGameOver }: { 
     const [lives, setLives] = useState(3);
     const [completedCount, setCompletedCount] = useState(0);
     const [rotation, setRotation] = useState(0);
-    const [timeLeft, setTimeLeft] = useState(gameConfig?.timeLimit ? Number(gameConfig.timeLimit) : 15);
+    const [timeLeft, setTimeLeft] = useState(() => {
+        const gameLimit = gameConfig?.timeLimit ? Number(gameConfig.timeLimit) : 0;
+        return gameLimit > 0 ? gameLimit : questions.length * 15;
+    });
+    const questionStartTimeRef = useRef(gameConfig?.timeLimit ? Number(gameConfig.timeLimit) : questions.length * 15);
     const [history, setHistory] = useState<any[]>([]);
 
     const choices = useMemo(() => {
@@ -48,20 +52,54 @@ export default function SpinWheelEngine({ data, onIntermission, onGameOver }: { 
         };
     }, []);
 
+    const triggerFinish = useCallback(async (finalScore: number, finalHistory: any[]) => {
+        if (timerRef.current) clearInterval(timerRef.current);
+        if (isSavingRef.current) return;
+        isSavingRef.current = true;
+        setIsFinished(true);
+        const correctCount = finalHistory.filter(h => h.isCorrect).length;
+        const totalQs = questions.length;
+        const accuracy = totalQs > 0 ? Math.round((correctCount / totalQs) * 100) : 0;
+        const maxScoreConfig = gameConfig?.maxScore ? Number(gameConfig.maxScore) : 0;
+
+        const payload = {
+            scoreValue: finalScore,
+            maxScore: maxScoreConfig || totalQs * 100,
+            accuracy,
+            timeSpent: 0,
+            answersDetail: finalHistory
+        };
+
+        sessionStorage.setItem("lastScore", finalScore.toString());
+        sessionStorage.setItem("lastAccuracy", accuracy.toString());
+        sessionStorage.setItem("lastBreakdown", JSON.stringify(finalHistory));
+
+        if (onGameOver) {
+            onGameOver(finalScore, accuracy, finalHistory);
+            return;
+        }
+
+        try {
+            await finishGame(realGameId, payload);
+        } catch (e) {
+            console.error("Gagal simpan skor akhir");
+        }
+        navigate("/student/result", { state: payload });
+    }, [realGameId, questions.length, gameConfig, onGameOver, navigate]);
+
     const startTimer = useCallback(() => {
         if (timerRef.current) clearInterval(timerRef.current);
-        setTimeLeft(gameConfig?.timeLimit ? Number(gameConfig.timeLimit) : 15);
         timerRef.current = setInterval(() => {
             setTimeLeft((prev) => {
                 if (prev <= 1) {
                     if (timerRef.current) clearInterval(timerRef.current);
-                    handleResult(false, "TIMEOUT");
+                    triggerFinish(score, history);
                     return 0;
                 }
                 return prev - 1;
             });
         }, 1000);
-    }, [completedCount, gameConfig]);
+    }, [score, history, triggerFinish]);
 
     const spinWheel = () => {
         if (spinning || isBusy.current || lives <= 0 || completedCount >= questions.length) return;
@@ -125,7 +163,7 @@ export default function SpinWheelEngine({ data, onIntermission, onGameOver }: { 
             selectedAnswer: isCorrect ? finalInput : null,
             question: selectedQuestion?.question || `Soal ${completedCount + 1}`,
             isCorrect, 
-            time: (gameConfig?.timeLimit ? Number(gameConfig.timeLimit) : 15) - timeLeft,
+            time: Math.max(0, questionStartTimeRef.current - timeLeft),
             pointsEarned: earnedPoints
         };
         const updatedHistory = [...history, currentHistoryItem];
@@ -136,34 +174,13 @@ export default function SpinWheelEngine({ data, onIntermission, onGameOver }: { 
         setTimeout(() => {
             const isGameOver = newLives <= 0 || completedCount + 1 >= questions.length;
             if (isGameOver) {
-                if (isSavingRef.current) return;
-                isSavingRef.current = true;
-                const correctCount = updatedHistory.filter(h => h.isCorrect).length;
-                const accuracy = totalQs > 0 ? Math.round((correctCount / totalQs) * 100) : 0;
-                const payload = {
-                    scoreValue: newScore,
-                    maxScore: maxScoreConfig || totalQs * 100,
-                    accuracy,
-                    timeSpent: 0,
-                    answersDetail: updatedHistory
-                };
-
-                sessionStorage.setItem("lastScore", newScore.toString());
-                sessionStorage.setItem("lastAccuracy", accuracy.toString());
-                sessionStorage.setItem("lastBreakdown", JSON.stringify(updatedHistory));
-
-                if (onGameOver) {
-                    onGameOver(newScore, accuracy, updatedHistory);
-                    return;
-                }
-
-                finishGame(realGameId, payload).catch(() => { });
-                navigate("/student/result", { state: payload });
+                triggerFinish(newScore, updatedHistory);
             } else {
                 if (onIntermission) onIntermission();
                 setCompletedCount(prev => prev + 1);
                 setIsAnswered(false);
                 setSelectedQuestion(null);
+                questionStartTimeRef.current = timeLeft;
                 isBusy.current = false;
             }
         }, 2000);

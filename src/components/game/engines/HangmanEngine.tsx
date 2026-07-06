@@ -42,7 +42,11 @@ export default function HangmanEngine({
     const [score, setScore] = useState(0);
     const [isFinished, setIsFinished] = useState(false);
     const [breakdown, setBreakdown] = useState<any[]>([]);
-    const [timeLeft, setTimeLeft] = useState(data?.gameJson?.timeLimit ? Number(data.gameJson.timeLimit) : 30);
+    const [timeLeft, setTimeLeft] = useState(() => {
+        const gameLimit = gameJson?.timeLimit ? Number(gameJson.timeLimit) : 0;
+        return gameLimit > 0 ? gameLimit : quizWords.length * 20; // fallback 20s per question
+    });
+    const questionStartTimeRef = useRef(gameJson?.timeLimit ? Number(gameJson.timeLimit) : quizWords.length * 20);
     const [feedback, setFeedback] = useState<'none' | 'correct' | 'incorrect' | 'timeout' | 'lose'>('none');
     const timerRef = useRef<any>(null);
     const totalTimeRef = useRef(0);
@@ -62,7 +66,8 @@ export default function HangmanEngine({
                     if (timerRef.current) {
                         clearInterval(timerRef.current);
                     }
-                    handleEndTurn('timeout');
+                    // Jika waktu total game habis, langsung akhiri kuis secara keseluruhan
+                    handleFinish(score, breakdown);
                     return 0;
                 }
                 return prev - 1;
@@ -77,7 +82,7 @@ export default function HangmanEngine({
                 clearInterval(timerRef.current);
             }
         };
-    }, [currentIndex, feedback, isFinished, quizWords.length]);
+    }, [currentIndex, feedback, isFinished, quizWords.length, score, breakdown]);
 
     const handleEndTurn = (status: 'correct' | 'timeout' | 'lose') => {
         if (isBusy.current) return;
@@ -119,7 +124,7 @@ export default function HangmanEngine({
             question: `Soal ${currentIndex + 1}: ${word}`,
             isCorrect: isCorrect,
             userAnswer: isCorrect ? word : (status === 'timeout' ? "Waktu Habis ⏰" : "Salah ❌"),
-            time: (gameJson?.timeLimit ? Number(gameJson.timeLimit) : 30) - timeLeft,
+            time: Math.max(0, questionStartTimeRef.current - timeLeft),
             pointsEarned: isCorrect ? earnedPoints : 0
         };
 
@@ -134,7 +139,7 @@ export default function HangmanEngine({
                 setGuess("");
                 setLives(6);
                 setFeedback('none');
-                setTimeLeft(gameJson?.timeLimit ? Number(gameJson.timeLimit) : 30);
+                questionStartTimeRef.current = timeLeft;
                 isBusy.current = false;
             } else {
                 handleFinish(isCorrect ? score + earnedPoints : score, newBreakdown);

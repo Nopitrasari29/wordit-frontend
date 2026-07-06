@@ -16,7 +16,11 @@ export default function FlashcardEngine({ data, onGameOver }: { data: any, onGam
     const [breakdown, setBreakdown] = useState<any[]>([]);
     const [timeSpent, setTimeSpent] = useState(0);
 
-    const [timeLeft, setTimeLeft] = useState(gameConfig?.timeLimit ? Number(gameConfig.timeLimit) : 15);
+    const [timeLeft, setTimeLeft] = useState(() => {
+        const gameLimit = gameConfig?.timeLimit ? Number(gameConfig.timeLimit) : 0;
+        return gameLimit > 0 ? gameLimit : cards.length * 10;
+    });
+    const questionStartTimeRef = useRef(gameConfig?.timeLimit ? Number(gameConfig.timeLimit) : cards.length * 10);
     const isBusy = useRef(false);
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const transitionRef = useRef<any>(null);
@@ -30,81 +34,8 @@ export default function FlashcardEngine({ data, onGameOver }: { data: any, onGam
         return () => clearInterval(globalTimer);
     }, []);
 
-    // 2. 🎯 FUNGSI EVALUASI
-    const handleEvaluation = useCallback(async (isCorrect: boolean, isTimeout = false) => {
-        if (isBusy.current) return;
-        isBusy.current = true;
-
-        if (timerRef.current) clearInterval(timerRef.current);
-
-        setShow(false);
-        // Hitung poin proporsional dari maxScore config
-        const maxScoreConfig = gameConfig?.maxScore ? Number(gameConfig.maxScore) : 0;
-        const totalCards = cards.length;
-        const pointsPerCard = maxScoreConfig && totalCards > 0 ? Math.floor(maxScoreConfig / totalCards) : 100;
-        const points = isCorrect ? pointsPerCard : 0;
-        const newScore = score + points;
-        const newCorrectCount = isCorrect ? correctCount + 1 : correctCount;
-
-        setScore(newScore);
-        setCorrectCount(newCorrectCount);
-
-        const currentAnswer = {
-            questionIndex: index,
-            word: cards[index]?.front || "Kartu",
-            selectedAnswer: isCorrect ? "HAFAL" : (isTimeout ? null : "LUPA"),
-            question: cards[index]?.front || `Kartu ${index + 1}`,
-            userAnswer: isTimeout ? "Waktu Habis" : (isCorrect ? "Hafal" : "Lupa"),
-            isCorrect: isCorrect,
-            pointsEarned: points
-        };
-        const newBreakdown = [...breakdown, currentAnswer];
-        setBreakdown(newBreakdown);
-
-        if (data.shareCode) {
-            const currentAccuracy = Math.round((newCorrectCount / (index + 1)) * 100);
-
-            socket.emit("updateScore", {
-                code: data.shareCode,
-                score: newScore,
-                accuracy: currentAccuracy,
-                progress: `${index + 1}/${cards.length}`,
-            });
-        }
-        submitAnswer(realGameId, index, isCorrect ? "HAFAL" : "LUPA", points).catch(() => { });
-
-        transitionRef.current = setTimeout(() => {
-            if (index < cards.length - 1) {
-                setIndex(prev => prev + 1);
-                isBusy.current = false;
-            } else {
-                handleFinish(newScore, newBreakdown, newCorrectCount);
-            }
-        }, 800);
-    }, [index, score, correctCount, breakdown, cards, realGameId, data.shareCode, gameConfig]);
-
-    // 3. 🎯 TIMER HITUNG MUNDUR
-    useEffect(() => {
-        setTimeLeft(gameConfig?.timeLimit ? Number(gameConfig.timeLimit) : 15);
-        isBusy.current = false;
-
-        if (timerRef.current) clearInterval(timerRef.current);
-
-        timerRef.current = setInterval(() => {
-            setTimeLeft((prev) => {
-                if (prev <= 1) {
-                    if (timerRef.current) clearInterval(timerRef.current);
-                    handleEvaluation(false, true);
-                    return 0;
-                }
-                return prev - 1;
-            });
-        }, 1000);
-
-        return () => { if (timerRef.current) clearInterval(timerRef.current); };
-    }, [index, handleEvaluation, gameConfig]);
-
-    const handleFinish = async (finalScore: number, finalBreakdown: any[], finalCorrect: number) => {
+    // 2. 🎯 FUNGSI PENYELESAIAN
+    const handleFinish = useCallback(async (finalScore: number, finalBreakdown: any[], finalCorrect: number) => {
         if (isFinishing.current) return;
         isFinishing.current = true;
 
@@ -133,9 +64,82 @@ export default function FlashcardEngine({ data, onGameOver }: { data: any, onGam
         } catch (e) {
             console.error(e);
         }
-
         navigate("/student/result", { state: payload });
-    };
+    }, [realGameId, cards.length, gameConfig, onGameOver, navigate, timeSpent]);
+
+    // 🎯 FUNGSI EVALUASI
+    const handleEvaluation = useCallback(async (isCorrect: boolean, isTimeout = false) => {
+        if (isBusy.current) return;
+        isBusy.current = true;
+
+        if (timerRef.current) clearInterval(timerRef.current);
+
+        setShow(false);
+        // Hitung poin proporsional dari maxScore config
+        const maxScoreConfig = gameConfig?.maxScore ? Number(gameConfig.maxScore) : 0;
+        const totalCards = cards.length;
+        const pointsPerCard = maxScoreConfig && totalCards > 0 ? Math.floor(maxScoreConfig / totalCards) : 100;
+        const points = isCorrect ? pointsPerCard : 0;
+        const newScore = score + points;
+        const newCorrectCount = isCorrect ? correctCount + 1 : correctCount;
+
+        setScore(newScore);
+        setCorrectCount(newCorrectCount);
+
+        const currentAnswer = {
+            questionIndex: index,
+            word: cards[index]?.front || "Kartu",
+            selectedAnswer: isCorrect ? "HAFAL" : (isTimeout ? null : "LUPA"),
+            question: cards[index]?.front || `Kartu ${index + 1}`,
+            userAnswer: isTimeout ? "Waktu Habis" : (isCorrect ? "Hafal" : "Lupa"),
+            isCorrect: isCorrect,
+            time: Math.max(0, questionStartTimeRef.current - timeLeft),
+            pointsEarned: points
+        };
+        const newBreakdown = [...breakdown, currentAnswer];
+        setBreakdown(newBreakdown);
+
+        if (data.shareCode) {
+            const currentAccuracy = Math.round((newCorrectCount / (index + 1)) * 100);
+
+            socket.emit("updateScore", {
+                code: data.shareCode,
+                score: newScore,
+                accuracy: currentAccuracy,
+                progress: `${index + 1}/${cards.length}`,
+            });
+        }
+        submitAnswer(realGameId, index, isCorrect ? "HAFAL" : "LUPA", points).catch(() => { });
+
+        transitionRef.current = setTimeout(() => {
+            if (index < cards.length - 1) {
+                setIndex(prev => prev + 1);
+                questionStartTimeRef.current = timeLeft;
+                isBusy.current = false;
+            } else {
+                handleFinish(newScore, newBreakdown, newCorrectCount);
+            }
+        }, 800);
+    }, [index, score, correctCount, breakdown, cards, realGameId, data.shareCode, gameConfig, timeLeft, handleFinish]);
+
+    // 3. 🎯 TIMER HITUNG MUNDUR GLOBAL
+    useEffect(() => {
+        if (isFinishing.current) return;
+
+        const timer = setInterval(() => {
+            setTimeLeft((prev) => {
+                if (prev <= 1) {
+                    clearInterval(timer);
+                    handleFinish(score, breakdown, correctCount);
+                    return 0;
+                }
+                return prev - 1;
+            });
+        }, 1000);
+
+        return () => clearInterval(timer);
+    }, [score, breakdown, correctCount, handleFinish]);
+
 
     useEffect(() => {
         return () => {

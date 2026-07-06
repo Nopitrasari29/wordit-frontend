@@ -187,6 +187,16 @@ export default function ProfilePage() {
           </div>
         </div>
 
+        {/* ─── BIO SECTION ───────────────────────────────────────── */}
+        {user?.profile?.bio && (
+          <div className="max-w-sm mx-auto bg-indigo-50/30 border border-indigo-100/20 rounded-2xl p-5 mb-8 text-center relative overflow-hidden">
+            <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest block mb-2">Biodata / Bio</span>
+            <p className="text-slate-600 text-sm font-semibold leading-relaxed italic">
+              "{user.profile.bio}"
+            </p>
+          </div>
+        )}
+
         {/* ─── ACTION BUTTONS ─────────────────────────────────────── */}
         <div className="flex flex-col sm:flex-row justify-center items-center gap-3 mb-14">
           <Link

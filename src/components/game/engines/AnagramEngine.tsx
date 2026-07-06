@@ -73,7 +73,11 @@ export default function AnagramEngine({ data, onIntermission, onGameOver }: { da
     };
     
     // Timer & UX State
-    const [timeLeft, setTimeLeft] = useState(gameConfig?.timeLimit ? Number(gameConfig.timeLimit) : 15);
+    const [timeLeft, setTimeLeft] = useState(() => {
+        const gameLimit = gameConfig?.timeLimit ? Number(gameConfig.timeLimit) : 0;
+        return gameLimit > 0 ? gameLimit : quizWords.length * 15; // fallback 15s per question
+    });
+    const questionStartTimeRef = useRef(gameConfig?.timeLimit ? Number(gameConfig.timeLimit) : quizWords.length * 15);
     const [feedback, setFeedback] = useState<'none' | 'correct' | 'incorrect' | 'timeout'>('none');
     const correctCountRef = useRef(0);
 
@@ -103,7 +107,8 @@ export default function AnagramEngine({ data, onIntermission, onGameOver }: { da
             setTimeLeft(prev => {
                 if (prev <= 1) {
                     clearInterval(timer);
-                    handleTimeout();
+                    // Langsung panggil handleFinish ketika waktu total habis
+                    handleFinish(score, breakdown);
                     return 0;
                 }
                 return prev - 1;
@@ -111,27 +116,40 @@ export default function AnagramEngine({ data, onIntermission, onGameOver }: { da
         }, 1000);
 
         return () => clearInterval(timer);
-    }, [currentIndex, feedback, isFinished, quizWords.length]);
+    }, [currentIndex, feedback, isFinished, quizWords.length, score, breakdown]);
 
-    function handleTimeout() {
-        playSound('timeout');
-        setFeedback('timeout');
-        setUsedIndices([]);
-        const nextBreakdown = [...breakdown, { 
-            questionIndex: currentIndex,
-            word: targetWord, 
-            selectedAnswer: null,
-            question: `Soal ${currentIndex + 1}: ${targetWord}`,
-            isCorrect: false, 
-            time: gameConfig?.timeLimit ? Number(gameConfig.timeLimit) : 15,
-            pointsEarned: 0
-        }];
-        setBreakdown(nextBreakdown);
-        sessionStorage.setItem("lastBreakdown", JSON.stringify(nextBreakdown));
-        setTimeout(() => {
-            if (onIntermission && currentIndex < quizWords.length - 1) onIntermission();
-            setTimeout(() => moveToNext(nextBreakdown, score), onIntermission ? 3000 : 0);
-        }, 1500);
+
+
+    function handleFinish(finalScore: number, finalBreakdown: any[]) {
+        setIsFinished(true);
+        const accuracy = Math.round((correctCountRef.current / quizWords.length) * 100);
+        const timeSpent = Math.round((Date.now() - startTimeRef.current) / 1000);
+        const maxScoreConfig = Number(gameConfig?.maxScore);
+
+        const payload = {
+            scoreValue: finalScore,
+            maxScore: maxScoreConfig || quizWords.length * 250,
+            accuracy,
+            timeSpent,
+            answersDetail: finalBreakdown,
+        };
+
+        sessionStorage.setItem("lastScore", finalScore.toString());
+        sessionStorage.setItem("lastAccuracy", accuracy.toString());
+        sessionStorage.setItem("lastBreakdown", JSON.stringify(finalBreakdown));
+
+        if (onGameOver) {
+            onGameOver(finalScore, accuracy, finalBreakdown);
+            return;
+        }
+
+        if (gameId) {
+            finishGame(gameId, payload).catch(e =>
+                console.error("finishGame error:", e)
+            );
+        }
+
+        navigate("/student/result", { state: payload });
     }
 
     function moveToNext(currentBreakdown?: any[], currentScore?: number) {
@@ -142,37 +160,9 @@ export default function AnagramEngine({ data, onIntermission, onGameOver }: { da
             setAnswer("");
             setUsedIndices([]);
             setFeedback('none');
-            setTimeLeft(gameConfig?.timeLimit ? Number(gameConfig.timeLimit) : 15);
+            questionStartTimeRef.current = timeLeft;
         } else {
-            setIsFinished(true);
-            const accuracy = Math.round((correctCountRef.current / quizWords.length) * 100);
-            const timeSpent = Math.round((Date.now() - startTimeRef.current) / 1000);
-            const maxScoreConfig = Number(gameConfig?.maxScore);
-
-            const payload = {
-                scoreValue: finalScore,
-                maxScore: maxScoreConfig || quizWords.length * 250,
-                accuracy,
-                timeSpent,
-                answersDetail: finalBreakdown,
-            };
-
-            sessionStorage.setItem("lastScore", finalScore.toString());
-            sessionStorage.setItem("lastAccuracy", accuracy.toString());
-            sessionStorage.setItem("lastBreakdown", JSON.stringify(finalBreakdown));
-
-            if (onGameOver) {
-                onGameOver(finalScore, accuracy, finalBreakdown);
-                return;
-            }
-
-            if (gameId) {
-                finishGame(gameId, payload).catch(e =>
-                    console.error("finishGame error:", e)
-                );
-            }
-
-            navigate("/student/result", { state: payload });
+            handleFinish(finalScore, finalBreakdown);
         }
     }
 
@@ -213,7 +203,7 @@ export default function AnagramEngine({ data, onIntermission, onGameOver }: { da
             const runningAccuracy = Math.round((correctCountRef.current / quizWords.length) * 100);
             sessionStorage.setItem("lastAccuracy", runningAccuracy.toString());
 
-            const currentTimeSpent = (gameConfig?.timeLimit ? Number(gameConfig.timeLimit) : 15) - timeLeft;
+            const currentTimeSpent = Math.max(0, questionStartTimeRef.current - timeLeft);
             const nextBreakdown = [...breakdown, { 
                 questionIndex: currentIndex,
                 word: targetWord, 
