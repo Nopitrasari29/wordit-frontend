@@ -156,6 +156,21 @@ export default function ProfilePage() {
         <h1 className="text-4xl md:text-5xl font-black text-slate-800 mb-2 tracking-tight">{user?.name}</h1>
         <p className="text-slate-400 font-semibold mb-8 text-base">{user?.email}</p>
 
+        {/* ─── BIO ─────────────────────────────────────────────────── */}
+        <div className="max-w-2xl mx-auto mt-6 mb-8">
+          <div className="bg-white border border-slate-200 rounded-3xl shadow-sm p-6 text-left">
+            <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-3">
+              Bio
+            </h3>
+
+            <p className="text-slate-700 leading-relaxed whitespace-pre-line">
+              {user?.profile?.bio?.trim()
+                ? user.profile.bio
+                : "Pengguna belum menambahkan bio."}
+            </p>
+          </div>
+        </div>
+        
         {/* ─── INFO CARD ─────────────────────────────────────────── */}
         <div className="max-w-sm mx-auto bg-slate-50 border border-slate-100 rounded-2xl p-5 mb-8 text-left divide-y divide-slate-100">
           <div className="flex items-center justify-between py-3 first:pt-0">
