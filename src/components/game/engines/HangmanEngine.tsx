@@ -27,6 +27,14 @@ export default function HangmanEngine({
         return json?.words || [];
     }, [data]);
 
+    const gameJson = useMemo(() => {
+        return data?.gameJson && Array.isArray(data.gameJson) ? data.gameJson[0] : data?.gameJson;
+    }, [data]);
+
+    const maxScoreConfig = useMemo(() => {
+        return gameJson?.maxScore ? Number(gameJson.maxScore) : 0;
+    }, [gameJson]);
+
     const [currentIndex, setCurrentIndex] = useState(0);
     const [used, setUsed] = useState<string[]>([]);
     const [guess, setGuess] = useState("");
@@ -80,8 +88,6 @@ export default function HangmanEngine({
         let earnedPoints = 0;
 
         // Hitung poin proporsional dari maxScore config (tidak pakai lives bonus)
-        const gameJson = data?.gameJson && Array.isArray(data.gameJson) ? data.gameJson[0] : data?.gameJson;
-        const maxScoreConfig = gameJson?.maxScore ? Number(gameJson.maxScore) : 0;
         const totalQs = quizWords.length;
         if (isCorrect) {
             earnedPoints = maxScoreConfig && totalQs > 0 ? Math.floor(maxScoreConfig / totalQs) : 100;

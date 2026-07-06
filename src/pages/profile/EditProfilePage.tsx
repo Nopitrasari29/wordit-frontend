@@ -47,6 +47,20 @@ export default function EditProfilePage() {
   function handlePhoto(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
+
+    // Validasi tipe berkas foto
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp"]
+    if (!allowedTypes.includes(file.type)) {
+      toast.error("Format foto tidak didukung! Gunakan JPG, PNG, atau WebP.")
+      return
+    }
+
+    // Validasi ukuran berkas (Maks 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Ukuran foto maksimal 5 MB!")
+      return
+    }
+
     setPhoto(file)
     setPreview(URL.createObjectURL(file))
   }
@@ -99,6 +113,41 @@ export default function EditProfilePage() {
     }
   }
 
+  function changeTab(targetSection: Section) {
+    if (activeSection === targetSection) return;
+
+    // Deteksi unsaved changes di section aktif saat ini
+    let hasChanges = false;
+    if (activeSection === "info") {
+      hasChanges = name !== (user?.name || "") || 
+                   email !== (user?.email || "") || 
+                   phoneNumber !== (user?.phoneNumber || "") || 
+                   schoolOrigin !== (user?.schoolOrigin || "");
+    } else if (activeSection === "photo") {
+      hasChanges = bio !== (user?.profile?.bio || "") || photo !== null;
+    } else if (activeSection === "security") {
+      hasChanges = currentPassword !== "" || newPassword !== "" || confirmPassword !== "";
+    } else if (activeSection === "education") {
+      const currentLevels = user?.educationLevels || [];
+      hasChanges = JSON.stringify(educationLevels.slice().sort()) !== JSON.stringify(currentLevels.slice().sort());
+    }
+
+    if (hasChanges) {
+      const confirmLeave = window.confirm("Ada perubahan yang belum disimpan. Apakah Anda yakin ingin berpindah tab dan membuang perubahan ini?");
+      if (!confirmLeave) return;
+    }
+
+    // Reset password & photo states agar bersih saat ganti tab
+    setCurrentPassword("");
+    setNewPassword("");
+    setConfirmPassword("");
+    setPhoto(null);
+    setPreview(user?.photoUrl ? getImageUrl(user.photoUrl) : null);
+    
+    // Pindah section
+    setActiveSection(targetSection);
+  }
+
   const navItems: { id: Section; label: string; icon: React.ReactNode; desc: string }[] = [
     { id: "info",      label: "Informasi Pribadi", icon: <User size={18} />,          desc: "Nama, email, HP, sekolah" },
     { id: "photo",     label: "Foto & Bio",         icon: <Image size={18} />,         desc: "Foto profil dan deskripsi" },
@@ -135,7 +184,7 @@ export default function EditProfilePage() {
               <button
                 key={item.id}
                 type="button"
-                onClick={() => setActiveSection(item.id)}
+                onClick={() => changeTab(item.id)}
                 className={`flex items-center gap-3 px-4 py-3.5 rounded-2xl text-left transition-all shrink-0 w-full group ${
                   activeSection === item.id
                     ? "bg-white shadow-md border border-indigo-100"

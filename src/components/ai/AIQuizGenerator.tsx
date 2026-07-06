@@ -108,7 +108,15 @@ export default function AIQuizGenerator({
     try {
       const extractedText = await extractTextFromFile(file);
       setDocumentText(extractedText);
-      toast.success(`Berhasil mengekstrak teks dari: ${file.name} 🎉`);
+      
+      if (extractedText.length > 15000) {
+        toast("Dokumen Anda sangat panjang. Kami merekomendasikan mengunggah per bab agar pembuatan kuis maksimal dan cepat. AI akan otomatis memproses ringkasannya.", {
+          icon: "💡",
+          duration: 7000,
+        });
+      } else {
+        toast.success(`Berhasil mengekstrak teks dari: ${file.name} 🎉`);
+      }
     } catch (err: any) {
       toast.error(err.message || "Gagal mengunggah file untuk ekstraksi teks.");
       setUploadedFileName("");
@@ -342,6 +350,30 @@ export default function AIQuizGenerator({
                   <p className="text-xs font-medium text-slate-300 line-clamp-4 leading-relaxed whitespace-pre-line italic">
                     "{documentText}"
                   </p>
+                  
+                  {/* Estimasi Kapasitas Soal (E-05) */}
+                  <div className="mt-4 pt-3 border-t border-slate-700/50 flex flex-col gap-1 text-[10px] font-black text-slate-400 uppercase tracking-wider">
+                    <div className="flex justify-between">
+                      <span>Panjang Materi:</span>
+                      <span className="text-slate-200 font-bold">{documentText.length.toLocaleString()} karakter</span>
+                    </div>
+                    <div className="flex justify-between items-center mt-1">
+                      <span>Rekomendasi Jumlah Soal:</span>
+                      <span className={`px-2 py-0.5 rounded-md font-black ${
+                        documentText.length < 500 
+                          ? "bg-rose-500/10 text-rose-400" 
+                          : documentText.length < 3000 
+                          ? "bg-emerald-500/10 text-emerald-400" 
+                          : "bg-indigo-500/10 text-indigo-400"
+                      }`}>
+                        {documentText.length < 500
+                          ? "Maks 3 Soal (Teks Pendek)"
+                          : documentText.length < 3000
+                          ? "5 - 10 Soal (Ideal)"
+                          : "10 - 20 Soal (Sangat Cukup)"}
+                      </span>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>

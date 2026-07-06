@@ -1,19 +1,35 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { useState, useRef, useEffect } from "react";
 import { getImageUrl } from "../../utils/assets";
 import api from "../../pages/services/api";
 import socket from "../../hooks/useSocket";
 import { toast } from "react-hot-toast";
-import { UserCircle2, LogOut } from "lucide-react";
+import { UserCircle2, LogOut, Menu, X } from "lucide-react";
 
 export default function Navbar() {
   const { user, logout } = useAuth();
   const [open, setOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const location = useLocation();
+
+  // Otomatis tutup menu jika pindah rute/halaman
+  useEffect(() => {
+    setMobileMenuOpen(false);
+    setOpen(false);
+  }, [location.pathname]);
 
   // ✅ FE-NEW-07: State untuk badge PENDING count di menu Users
   const [pendingCount, setPendingCount] = useState(0);
+
+  // State fallback error image avatar
+  const [imgError, setImgError] = useState(false);
+
+  // Reset imgError jika user login/logout atau ganti foto
+  useEffect(() => {
+    setImgError(false);
+  }, [user?.photoUrl, user?.id]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -40,15 +56,9 @@ export default function Navbar() {
 
     async function fetchPendingCount() {
       try {
-        const response = await api.get("/users");
-        const userData = Array.isArray(response.data)
-          ? response.data
-          : response.data?.data;
-        if (Array.isArray(userData)) {
-          const count = userData.filter(
-            (u: any) => u.approvalStatus === "PENDING",
-          ).length;
-          setPendingCount(count);
+        const response = await api.get("/users/pending-count");
+        if (response.data?.success && typeof response.data.data?.count === "number") {
+          setPendingCount(response.data.data.count);
         }
       } catch (err) {
         console.warn("Tidak bisa fetch pending count:", err);
@@ -59,9 +69,13 @@ export default function Navbar() {
       fetchPendingCount();
     }
 
+    let debounceTimer: any = null;
     socket.on("admin_refresh", () => {
       if (user?.role === "SUPER_ADMIN" || user?.role === "SCHOOL_ADMIN") {
-        fetchPendingCount();
+        if (debounceTimer) clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+          fetchPendingCount();
+        }, 800);
       }
     });
 
@@ -190,7 +204,15 @@ export default function Navbar() {
         </div>
 
         {/* MENU KANAN (AUTH/PROFILE) */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 sm:gap-4">
+          {/* Hamburger Button (hanya di mobile) */}
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="md:hidden p-2 rounded-full hover:bg-slate-100 transition-colors text-slate-600 focus:outline-none"
+            aria-label="Toggle Menu"
+          >
+            {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
           {!user && (
             <>
               <Link
@@ -214,13 +236,13 @@ export default function Navbar() {
                 onClick={() => setOpen(!open)}
                 className="flex items-center gap-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 px-2 py-1.5 pr-4 rounded-full transition-colors"
               >
-                {/* Avatar: foto jika ada, initials jika tidak */}
-                {user.photoUrl ? (
+                {/* Avatar: foto jika ada dan tidak error, initials jika tidak */}
+                {user.photoUrl && !imgError ? (
                   <img
                     src={getImageUrl(user.photoUrl)}
                     className="w-8 h-8 rounded-full object-cover border-2 border-white shadow-sm bg-indigo-100"
                     alt={user.name}
-                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+                    onError={() => setImgError(true)}
                   />
                 ) : (
                   <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center border-2 border-white shadow-sm shrink-0">
@@ -263,6 +285,106 @@ export default function Navbar() {
           )}
         </div>
       </nav>
+
+      {/* MOBILE MENU DRAWER */}
+      {mobileMenuOpen && (
+        <div className="md:hidden absolute top-20 left-4 right-4 bg-white/95 backdrop-blur-xl border border-slate-200/50 rounded-[2rem] shadow-xl p-6 flex flex-col gap-3 font-bold text-slate-700 animate-in fade-in slide-in-from-top-4 duration-200 z-50 pointer-events-auto">
+          {user?.role !== "SUPER_ADMIN" && (
+            <Link
+              to="/explore"
+              className="px-4 py-2.5 rounded-2xl hover:bg-indigo-50 hover:text-indigo-600 transition-all text-sm text-left"
+            >
+              Explore
+            </Link>
+          )}
+
+          {user?.role === "STUDENT" && (
+            <>
+              <Link
+                to="/student/dashboard"
+                className="px-4 py-2.5 rounded-2xl hover:bg-indigo-50 hover:text-indigo-600 transition-all text-sm text-left"
+              >
+                Dashboard
+              </Link>
+              <Link
+                to="/student/join"
+                className="px-4 py-2.5 rounded-2xl hover:bg-indigo-50 hover:text-indigo-600 transition-all text-sm text-left"
+              >
+                Join Game
+              </Link>
+            </>
+          )}
+
+          {(user?.role === "TEACHER" || user?.role === "SCHOOL_ADMIN") && (
+            <>
+              <Link
+                to="/teacher/dashboard"
+                className="px-4 py-2.5 rounded-2xl hover:bg-indigo-50 hover:text-indigo-600 transition-all text-sm text-left"
+              >
+                Dashboard
+              </Link>
+              <Link
+                to="/teacher/projects"
+                className="px-4 py-2.5 rounded-2xl hover:bg-indigo-50 hover:text-indigo-600 transition-all text-sm text-left"
+              >
+                My Projects
+              </Link>
+              {user?.role === "SCHOOL_ADMIN" && (
+                <Link
+                  to="/admin/users"
+                  className="px-4 py-2.5 rounded-2xl hover:bg-indigo-50 hover:text-indigo-600 transition-all flex items-center justify-between text-sm text-left"
+                >
+                  <span>Manajemen Sekolah</span>
+                  {pendingCount > 0 && (
+                    <span className="min-w-[18px] h-[18px] bg-rose-500 text-white text-[10px] font-black rounded-full flex items-center justify-center px-1 shadow-md shadow-rose-200">
+                      {pendingCount}
+                    </span>
+                  )}
+                </Link>
+              )}
+            </>
+          )}
+
+          {user?.role === "SUPER_ADMIN" && (
+            <>
+              <Link
+                to="/admin/dashboard"
+                className="px-4 py-2.5 rounded-2xl hover:bg-indigo-50 hover:text-indigo-600 transition-all text-sm text-left"
+              >
+                Admin
+              </Link>
+              <Link
+                to="/admin/users"
+                className="px-4 py-2.5 rounded-2xl hover:bg-indigo-50 hover:text-indigo-600 transition-all flex items-center justify-between text-sm text-left"
+              >
+                <span>Users</span>
+                {pendingCount > 0 && (
+                  <span className="min-w-[18px] h-[18px] bg-rose-500 text-white text-[10px] font-black rounded-full flex items-center justify-center px-1 shadow-md shadow-rose-200">
+                    {pendingCount}
+                  </span>
+                )}
+              </Link>
+            </>
+          )}
+          
+          {!user && (
+            <div className="flex flex-col gap-2 pt-3 border-t border-slate-100">
+              <Link
+                to="/login"
+                className="w-full text-center py-3 rounded-2xl border border-slate-200 hover:bg-slate-50 transition-all text-sm"
+              >
+                Login
+              </Link>
+              <Link
+                to="/register"
+                className="w-full text-center py-3 rounded-2xl bg-indigo-600 text-white hover:bg-indigo-500 transition-all text-sm"
+              >
+                Register
+              </Link>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

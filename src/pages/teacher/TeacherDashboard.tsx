@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { Link, useNavigate } from "react-router-dom"
-import { useAuth } from "../../context/AuthContext" // 🎯 Ambil data user login
+import { useAuth } from "../../hooks/useAuth" // 🎯 Standardized import (B-06)
 import { getMyGames } from "../services/game.service"
 import { templateIcons } from "../../data/templateIcons"
 import AnalyticsClassPage from "./analytics/AnalyticsClassPage"
@@ -17,7 +17,7 @@ export default function TeacherDashboard() {
   // Ambil nama dari database, kalau kosong baru panggil "Teacher"
   const displayName = user?.name || "Teacher";
 
-  async function loadGames() {
+  const loadGames = useCallback(async () => {
     try {
       setLoading(true)
       const data = await getMyGames()
@@ -32,11 +32,11 @@ export default function TeacherDashboard() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
   useEffect(() => {
     loadGames()
-  }, [])
+  }, [loadGames])
 
   // =======================================================================
   // 🛠️ FIX & REAL-TIME SINKRONISASI VIA SOCKET.IO (TOKEN REFRESH SINKRON)
@@ -78,7 +78,7 @@ export default function TeacherDashboard() {
     return () => {
       socket.off("admin_refresh");
     };
-  }, [updateUser]);
+  }, [updateUser, loadGames]);
 
   const totalPlays = games.reduce((a, g) => a + (g.playCount || 0), 0)
   const publishedGames = games.filter(g => g.isPublished).length

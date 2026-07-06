@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Bot, Sparkles, Loader2, ChevronUp } from "lucide-react";
 import { getFeedbackForQuestion } from "../services/ai.service";
 import confetti from "canvas-confetti";
+import { toast } from "react-hot-toast";
 
 export default function ResultPage() {
   const navigate = useNavigate();
@@ -12,6 +13,7 @@ export default function ResultPage() {
   const [accuracy, setAccuracy] = useState(0);
   const [playerName, setPlayerName] = useState("Guest");
   const [breakdown, setBreakdown] = useState<any[]>([]);
+  const confettiShot = useRef(false);
 
   const [activeFeedbackIndex, setActiveFeedbackIndex] = useState<number | null>(
     null,
@@ -27,6 +29,15 @@ export default function ResultPage() {
     breakdown.some((item) => typeof item.isCorrect === "undefined");
 
   useEffect(() => {
+    const hasState = location.state && (location.state.scoreValue !== undefined || location.state.score !== undefined || location.state.breakdown !== undefined || location.state.answersDetail !== undefined);
+    const hasSession = sessionStorage.getItem("lastBreakdown") || sessionStorage.getItem("lastScore");
+    
+    if (!hasState && !hasSession) {
+      toast.error("Hasil kuis tidak ditemukan. Silakan mainkan kuis terlebih dahulu.");
+      navigate("/explore", { replace: true });
+      return;
+    }
+
     const savedName = sessionStorage.getItem("playerName") || "Player";
     setPlayerName(savedName);
 
@@ -59,15 +70,16 @@ export default function ResultPage() {
     setAccuracy(finalAccuracy);
     setBreakdown(enrichedBreakdown);
 
-    if (finalAccuracy >= 80) {
+    if (finalAccuracy >= 80 && !confettiShot.current) {
       confetti({
         particleCount: 150,
         spread: 85,
         origin: { y: 0.6 },
         colors: ["#6366f1", "#3b82f6", "#10b981", "#f59e0b", "#ec4899"],
       });
+      confettiShot.current = true;
     }
-  }, [location]);
+  }, [location, navigate]);
 
   const getStars = (acc: number) => {
     if (acc >= 90) return 5;

@@ -10,6 +10,10 @@ export default function ExplorePage() {
   const [level, setLevel] = useState<string>("ALL")
   const [loading, setLoading] = useState(true)
 
+  // State pagination
+  const [page, setPage] = useState<number>(1)
+  const [totalPages, setTotalPages] = useState<number>(1)
+
   // State untuk Preview Modal
   const [selectedGameId, setSelectedGameId] = useState<string | null>(null)
   const [previewGame, setPreviewGame] = useState<any>(null)
@@ -37,10 +41,14 @@ export default function ExplorePage() {
     }
   }, [search, subject])
 
-  async function loadGames(levelFilter?: string, searchFilter?: string, classFilter?: string, subjectFilter?: string) {
+  async function loadGames(levelFilter?: string, searchFilter?: string, classFilter?: string, subjectFilter?: string, pageNumber?: number) {
     setLoading(true)
     try {
-      const params: any = {}
+      const activePage = pageNumber !== undefined ? pageNumber : page
+      const params: any = {
+        page: activePage,
+        limit: 12, // 12 item per halaman agar grid 3x4 rapi
+      }
       const activeLevel = levelFilter !== undefined ? levelFilter : level
       const activeSearch = searchFilter !== undefined ? searchFilter : debouncedSearch
       const activeClass = classFilter !== undefined ? classFilter : classGrade
@@ -58,23 +66,38 @@ export default function ExplorePage() {
       if (activeSubject.trim()) {
         params.subject = activeSubject.trim()
       }
-      const data = await getGames(params)
+      
+      // Ambil games beserta pagination metadata
+      const res = await getGames(params, true)
 
-      if (data && Array.isArray(data)) {
-        setGames(data)
+      if (res && res.games && Array.isArray(res.games)) {
+        setGames(res.games)
+        setTotalPages(res.pagination?.totalPages || 1)
+      } else if (Array.isArray(res)) {
+        setGames(res)
+        setTotalPages(1)
       } else {
         setGames([])
+        setTotalPages(1)
       }
     } catch (err) {
       console.error("Gagal memuat game:", err)
       setGames([])
+      setTotalPages(1)
     }
     setLoading(false)
   }
 
+  // Trigger saat filter berubah: Reset halaman ke 1
   useEffect(() => {
-    loadGames(level, debouncedSearch, classGrade, debouncedSubject)
+    setPage(1)
+    loadGames(level, debouncedSearch, classGrade, debouncedSubject, 1)
   }, [level, debouncedSearch, classGrade, debouncedSubject])
+
+  // Trigger saat halaman berubah secara eksplisit
+  useEffect(() => {
+    loadGames(level, debouncedSearch, classGrade, debouncedSubject, page)
+  }, [page])
 
   // Fetch detail game saat modal terpilih
   useEffect(() => {
@@ -380,6 +403,49 @@ export default function ExplorePage() {
             ))
           )}
         </div>
+
+        {/* PAGINATION CONTROLS */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-center gap-2 mt-12 bg-white/60 backdrop-blur-md border border-slate-100 p-4 rounded-3xl w-fit mx-auto shadow-sm">
+            <button
+              onClick={() => setPage(prev => Math.max(1, prev - 1))}
+              disabled={page === 1}
+              className="flex items-center justify-center w-10 h-10 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:hover:bg-white text-slate-600 transition-all font-bold cursor-pointer"
+            >
+              ←
+            </button>
+            
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => {
+              if (totalPages > 5 && Math.abs(p - page) > 1 && p !== 1 && p !== totalPages) {
+                if (p === 2 || p === totalPages - 1) {
+                  return <span key={p} className="text-slate-400 px-1 font-bold">...</span>;
+                }
+                return null;
+              }
+              return (
+                <button
+                  key={p}
+                  onClick={() => setPage(p)}
+                  className={`w-10 h-10 rounded-2xl font-black text-sm transition-all cursor-pointer ${
+                    page === p
+                      ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/20 scale-105"
+                      : "bg-white text-slate-600 border border-slate-200 hover:bg-indigo-50 hover:text-indigo-600"
+                  }`}
+                >
+                  {p}
+                </button>
+              );
+            })}
+
+            <button
+              onClick={() => setPage(prev => Math.min(totalPages, prev + 1))}
+              disabled={page === totalPages}
+              className="flex items-center justify-center w-10 h-10 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:hover:bg-white text-slate-600 transition-all font-bold cursor-pointer"
+            >
+              →
+            </button>
+          </div>
+        )}
       </div>
 
       {/* GAME PREVIEW MODAL */}

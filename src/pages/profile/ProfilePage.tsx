@@ -1,7 +1,7 @@
 import { useAuth } from "../../hooks/useAuth"
 import { Link } from "react-router-dom"
 import { getImageUrl } from "../../utils/assets"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { toast } from "react-hot-toast"
 import { requestSchoolAdmin, cancelSchoolAdmin } from "../../pages/services/user.service"
 import ConfirmModal from "../../components/ui/ConfirmModal"
@@ -13,6 +13,12 @@ import {
 export default function ProfilePage() {
   const { user, updateUser } = useAuth()
   const [requesting, setRequesting] = useState(false)
+  const [imgError, setImgError] = useState(false)
+
+  // Reset imgError jika user berubah atau upload foto baru
+  useEffect(() => {
+    setImgError(false)
+  }, [user?.photoUrl, user?.id])
 
   const [confirmConfig, setConfirmConfig] = useState<{
     isOpen: boolean;
@@ -76,7 +82,7 @@ export default function ProfilePage() {
 
   // Initials fallback for avatar
   const initials = user?.name
-    ? user.name.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase()
+    ? user.name.split(" ").map((w: string) => w[0]).slice(0, 2).join("").toUpperCase()
     : "?"
 
   const roleLabel: Record<string, string> = {
@@ -116,11 +122,12 @@ export default function ProfilePage() {
           {/* Avatar with ring */}
           <div className="relative">
             <div className="w-36 h-36 md:w-44 md:h-44 rounded-full p-1 bg-gradient-to-br from-indigo-400 via-violet-400 to-cyan-400 shadow-2xl">
-              {user?.photoUrl ? (
+              {user?.photoUrl && !imgError ? (
                 <img
                   src={getImageUrl(user.photoUrl)}
                   alt={user.name}
                   className="w-full h-full rounded-full object-cover bg-white border-4 border-white"
+                  onError={() => setImgError(true)}
                 />
               ) : (
                 <div className="w-full h-full rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center border-4 border-white">

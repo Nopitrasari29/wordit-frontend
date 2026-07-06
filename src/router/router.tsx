@@ -104,7 +104,7 @@ export default function Router() {
         </Route>
 
         {/* ================= ADMIN ROUTES (SUPER_ADMIN + SCHOOL_ADMIN for users) ================= */}
-        <Route element={<ProtectedRoute role="ADMIN" />}>
+        <Route element={<ProtectedRoute role="SCHOOL_ADMIN" />}>
           <Route element={<AdminLayout />}>
             <Route path="/admin/users" element={<UserManagementPage />} />
           </Route>

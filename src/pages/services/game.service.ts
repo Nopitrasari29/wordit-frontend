@@ -4,17 +4,26 @@ import type { Game, TemplateType, EducationLevel } from "../../types/game";
 /**
  * 🎯 GET ALL GAMES (Explore)
  */
-export const getGames = async (params?: {
-  educationLevel?: EducationLevel;
-  templateType?: TemplateType;
-  search?: string;
-  classGrade?: string;
-  subject?: string;
-  page?: number;
-  limit?: number;
-}) => {
+export const getGames = async (
+  params?: {
+    educationLevel?: EducationLevel;
+    templateType?: TemplateType;
+    search?: string;
+    classGrade?: string;
+    subject?: string;
+    page?: number;
+    limit?: number;
+  },
+  returnMeta = false
+) => {
   const res = await api.get("/games", { params });
   if (res.data?.data && typeof res.data.data === "object" && "games" in res.data.data) {
+    if (returnMeta) {
+      return {
+        games: res.data.data.games,
+        pagination: res.data.data.pagination,
+      };
+    }
     return res.data.data.games;
   }
   return res.data.data;

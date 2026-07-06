@@ -3,7 +3,7 @@ import { Link } from "react-router-dom"
 import { getGames } from "../services/game.service"
 import { templateIcons } from "../../data/templateIcons"
 import ScoreChart from "../../components/analytics/ScoreChart"
-import { useAuth } from "../../context/AuthContext"
+import { useAuth } from "../../hooks/useAuth"
 import { getMyAnalytics } from "../services/analytics.service"
 
 // ✅ FE-19: Helper untuk format detik menjadi string waktu yang mudah dibaca
@@ -17,91 +17,40 @@ const formatStudyTime = (totalSeconds: number): string => {
   return `${totalSeconds} detik`;
 };
 
-const badgeStyles: Record<string, {
-  bg: string;
-  border: string;
-  glow: string;
-  iconBg: string;
-  textColor: string;
-}> = {
-  "First Blood": {
-    bg: "bg-rose-50/70 backdrop-blur-md",
-    border: "border-rose-200/60",
-    glow: "shadow-rose-100 hover:shadow-rose-300/60",
-    iconBg: "bg-gradient-to-tr from-rose-400 to-pink-500",
-    textColor: "text-rose-700"
-  },
-  "Rajin Belajar": {
-    bg: "bg-blue-50/70 backdrop-blur-md",
-    border: "border-blue-200/60",
-    glow: "shadow-blue-100 hover:shadow-blue-300/60",
-    iconBg: "bg-gradient-to-tr from-blue-400 to-indigo-500",
-    textColor: "text-blue-700"
-  },
-  "Master Quiz": {
-    bg: "bg-amber-50/70 backdrop-blur-md",
-    border: "border-amber-200/60",
-    glow: "shadow-amber-100 hover:shadow-amber-300/60",
-    iconBg: "bg-gradient-to-tr from-amber-400 to-orange-500",
-    textColor: "text-amber-700"
-  },
-  "Brainiac": {
-    bg: "bg-indigo-50/70 backdrop-blur-md",
-    border: "border-indigo-200/60",
-    glow: "shadow-indigo-100 hover:shadow-indigo-300/60",
-    iconBg: "bg-gradient-to-tr from-indigo-400 to-violet-500",
-    textColor: "text-indigo-700"
-  },
-  "Perfectionist": {
-    bg: "bg-cyan-50/70 backdrop-blur-md",
-    border: "border-cyan-200/60",
-    glow: "shadow-cyan-100 hover:shadow-cyan-300/60",
-    iconBg: "bg-gradient-to-tr from-cyan-400 to-teal-500",
-    textColor: "text-cyan-700"
-  },
-  "Fast & Furious": {
-    bg: "bg-yellow-50/70 backdrop-blur-md",
-    border: "border-yellow-200/60",
-    glow: "shadow-yellow-100 hover:shadow-yellow-300/60",
-    iconBg: "bg-gradient-to-tr from-yellow-400 to-amber-500",
-    textColor: "text-yellow-700"
-  },
-  "Konsisten": {
-    bg: "bg-emerald-50/70 backdrop-blur-md",
-    border: "border-emerald-200/60",
-    glow: "shadow-emerald-100 hover:shadow-emerald-300/60",
-    iconBg: "bg-gradient-to-tr from-emerald-400 to-teal-500",
-    textColor: "text-emerald-700"
-  },
-  "Speedrun Demon": {
-    bg: "bg-amber-50/70 backdrop-blur-md",
-    border: "border-amber-200/60",
-    glow: "shadow-amber-100 hover:shadow-amber-300/60",
-    iconBg: "bg-gradient-to-tr from-amber-400 to-orange-500",
-    textColor: "text-amber-700"
-  },
-  "Unstoppable": {
-    bg: "bg-orange-50/70 backdrop-blur-md",
-    border: "border-orange-200/60",
-    glow: "shadow-orange-100 hover:shadow-orange-300/60",
-    iconBg: "bg-gradient-to-tr from-orange-400 to-red-500 animate-pulse",
-    textColor: "text-orange-700"
-  },
-  "Underdog Hero": {
-    bg: "bg-indigo-50/70 backdrop-blur-md",
-    border: "border-indigo-200/60",
-    glow: "shadow-indigo-100 hover:shadow-indigo-300/60",
-    iconBg: "bg-gradient-to-tr from-indigo-400 to-violet-500",
-    textColor: "text-indigo-700"
-  }
-};
+const badgeThemes = [
+  { bg: "bg-rose-50/70 backdrop-blur-md", border: "border-rose-200/60", glow: "shadow-rose-100 hover:shadow-rose-300/60", iconBg: "bg-gradient-to-tr from-rose-400 to-pink-500", textColor: "text-rose-700" },
+  { bg: "bg-blue-50/70 backdrop-blur-md", border: "border-blue-200/60", glow: "shadow-blue-100 hover:shadow-blue-300/60", iconBg: "bg-gradient-to-tr from-blue-400 to-indigo-500", textColor: "text-blue-700" },
+  { bg: "bg-amber-50/70 backdrop-blur-md", border: "border-amber-200/60", glow: "shadow-amber-100 hover:shadow-amber-300/60", iconBg: "bg-gradient-to-tr from-amber-400 to-orange-500", textColor: "text-amber-700" },
+  { bg: "bg-indigo-50/70 backdrop-blur-md", border: "border-indigo-200/60", glow: "shadow-indigo-100 hover:shadow-indigo-300/60", iconBg: "bg-gradient-to-tr from-indigo-400 to-violet-500", textColor: "text-indigo-700" },
+  { bg: "bg-cyan-50/70 backdrop-blur-md", border: "border-cyan-200/60", glow: "shadow-cyan-100 hover:shadow-cyan-300/60", iconBg: "bg-gradient-to-tr from-cyan-400 to-teal-500", textColor: "text-cyan-700" },
+  { bg: "bg-yellow-50/70 backdrop-blur-md", border: "border-yellow-200/60", glow: "shadow-yellow-100 hover:shadow-yellow-300/60", iconBg: "bg-gradient-to-tr from-yellow-400 to-amber-500", textColor: "text-yellow-700" },
+  { bg: "bg-emerald-50/70 backdrop-blur-md", border: "border-emerald-200/60", glow: "shadow-emerald-100 hover:shadow-emerald-300/60", iconBg: "bg-gradient-to-tr from-emerald-400 to-teal-500", textColor: "text-emerald-700" },
+  { bg: "bg-orange-50/70 backdrop-blur-md", border: "border-orange-200/60", glow: "shadow-orange-100 shadow-orange-300/60", iconBg: "bg-gradient-to-tr from-orange-400 to-red-500 animate-pulse", textColor: "text-orange-700" },
+];
 
-const fallbackStyle = {
-  bg: "bg-slate-50/70 backdrop-blur-md",
-  border: "border-slate-200/60",
-  glow: "shadow-slate-100 hover:shadow-slate-300/60",
-  iconBg: "bg-gradient-to-tr from-slate-400 to-slate-500",
-  textColor: "text-slate-700"
+const getBadgeStyle = (name: string) => {
+  const presets: Record<string, typeof badgeThemes[0]> = {
+    "First Blood": badgeThemes[0],
+    "Rajin Belajar": badgeThemes[1],
+    "Master Quiz": badgeThemes[2],
+    "Brainiac": badgeThemes[3],
+    "Perfectionist": badgeThemes[4],
+    "Fast & Furious": badgeThemes[5],
+    "Konsisten": badgeThemes[6],
+    "Speedrun Demon": badgeThemes[2], // Amber theme
+    "Unstoppable": badgeThemes[7],
+    "Underdog Hero": badgeThemes[3],
+  };
+
+  if (presets[name]) return presets[name];
+
+  // Hash nama lencana secara sederhana untuk mendapatkan index tema secara dinamis
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const index = Math.abs(hash) % badgeThemes.length;
+  return badgeThemes[index];
 };
 
 export default function StudentDashboard() {
@@ -341,7 +290,7 @@ export default function StudentDashboard() {
             badges
               .filter((b: any) => b.isUnlocked)
               .map((badge: any, i: number) => {
-                const style = badgeStyles[badge.name] || fallbackStyle;
+                const style = getBadgeStyle(badge.name);
                 return (
                   <div
                     key={i}
